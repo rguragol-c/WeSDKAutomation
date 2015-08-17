@@ -1,0 +1,19 @@
+package com.pismo.lib.appSpecific;
+
+import org.openqa.selenium.WebDriver;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Log;
+
+public class UserPreference 
+{
+	
+	public static void gotoUserPreferencePage(WebDriver driver)
+	{
+		Log.info("Navigate to User Preference page.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeLoginMenu));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeLanguageMenu));
+	}
+
+}

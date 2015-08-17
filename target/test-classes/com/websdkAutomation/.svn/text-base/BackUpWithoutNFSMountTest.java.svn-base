@@ -1,0 +1,287 @@
+package com.pismo.PismoAutomation;
+
+import java.io.IOException;
+
+import org.apache.log4j.Logger;
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.jcraft.jsch.JSchException;
+import com.pismo.lib.appSpecific.Backup;
+import com.pismo.lib.appSpecific.SystemAdministration;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SSHConnect;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class BackUpWithoutNFSMountTest  {
+	
+	private WebDriver driver =null;
+	SoftAssert softassert=new SoftAssert();
+	TestAssert testassert=new TestAssert();
+	public static Logger log = Logger.getLogger(BackUpWithoutNFSMountTest.class.getName());
+	public String baseWindowHandle;
+	
+@BeforeClass
+public void setUp() throws IOException, InterruptedException {
+	
+	driver=Fixtures.setupFixture("Backup without NFS mount test class setup initiated.");
+    
+    //Mount NFS if nfs is not mounted
+    
+	baseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+	SystemAdministration.goToSysadminPage(driver);
+	
+	
+	Browser.getSwitchto().switchToPopupWindow(driver,"LDAP");	
+			
+	if(SystemAdministration.CheckNFSMountStatus(driver)==true){
+		
+		SystemAdministration.mountNFS(driver,"0.0.0.0", Browser.getPropertyFromConfigFile(ConfigProperties.NFS_MountPath),4);
+	}		
+	 Backup.goToBackUp(driver);       
+	
+	}
+	/**
+	   * TIMS ID :  Trv588925c,Trv588867c: 
+	   * @throws InterruptedException
+	 * @throws IOException 
+	   */
+	 
+	
+@Test(description="Trv588925c,Trv588867c:",groups={"Sanity"}, enabled=true)
+public void manualBackupLocalStorageEndToEnd() throws InterruptedException, IOException, JSchException {
+		
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="templocal"+backupdt;		
+		
+		//*******************Navigate to backup page and start manual backup on Local Storage device**************************** 
+		
+		Backup.manualBackUP(driver,"Local Storage","","","","",backupfolder);
+		Backup.startManualBackup(driver);
+		
+		//************Verify backup completed and Last successful status message*********************
+		softassert.merge(Backup.VerifyBackupCompletedstatus(driver));		
+		softassert.merge(Backup.VerifyLastSuccessfulstatus(driver,backupfolder));
+		
+		//*************Check backup file is copied to backup location on FTP device****************************	  	  
+		String backupfilepath="/"+backupfolder+ "/";
+		softassert.assertTrue(GenericUtils.checkBackuptarexistsonNFSorLocal(backupfilepath)," path not found.");  
+				
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588925c,Trv588867c| Manual backup on Local Storage is successful.");
+}
+	 
+	 /**
+	   * TIMS ID :  Trv588868c 
+	   * @throws InterruptedException
+	 * @throws IOException 
+	   */
+	 
+	 
+@Test(description="Trv588925c,Trv588868c",groups={"Sanity"}, enabled=true)
+public void manualBackupLocalStorageWithMediaFiles() throws InterruptedException, IOException, JSchException {
+		  
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="templocal"+backupdt;
+		
+		//*******************Navigate to backup page and start manual backup on NFS device**************************** 
+		Backup.manualBackUP(driver,"Local Storage","","","","", backupfolder);
+						
+		Backup.setBackUpOption(driver,"withmediafile");
+		
+		Backup.startManualBackup(driver); 
+		
+		//************Verify backup completed and Last successful status message*********************
+		softassert.merge(Backup.VerifyBackupCompletedstatus(driver));		
+		softassert.merge(Backup.VerifyLastSuccessfulstatus(driver,backupfolder));
+		
+		//*************Check backup file is copied to backup location on FTP device****************************	  	  
+		String backupfilepath="/"+backupfolder+ "/";
+		softassert.assertTrue(GenericUtils.checkBackuptarexistsonNFSorLocal(backupfilepath));  
+				
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588925c,Trv588868c | Manual backup with media files on Local Storage is successful.");
+}
+	 
+	 
+@Test(description="Tims ID: Trv588027c",groups={"Sanity"}, enabled=true)
+public void manualFTPBackUpEndToEnd() throws InterruptedException, IOException, JSchException {
+		  
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt;
+		
+		//*******************Navigate to backup page and start manual backup on FTP device**************************** 
+		
+		Backup.manualBackUP(driver,"FTP",Browser.getPropertyFromConfigFile(ConfigProperties.ftphost),Browser.getPropertyFromConfigFile(ConfigProperties.ftpport),Browser.getPropertyFromConfigFile(ConfigProperties.ftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.ftppassword), backupfolder);
+		Backup.startManualBackup(driver); 
+		
+		//************Verify backup completed and Last successful status message*********************
+		softassert.merge(Backup.VerifyBackupCompletedstatus(driver));
+		
+		softassert.merge(Backup.VerifyLastSuccessfulstatus(driver,backupfolder));
+		
+		//*************Check backup file is copied to backup location on FTP device****************************	  	  
+		String backupfilepath=backupfolder+ "/";		
+		softassert.merge(GenericUtils.CheckBackuptarexistsonFTP(backupfilepath));
+		
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588191c| Manual FTP backup successful.");
+}
+	 /**
+	   * TIMS ID :  Trv588845c: Verify Single box data Manual backup on SFTP server when NFS is not mounted on it.
+	   * @throws InterruptedException
+	 * @throws IOException 
+	   */
+	 
+@Test(description="Trv588845c",groups={"Sanity"}, enabled=true)
+public void manualSFTPBackUpEndToEnd() throws Exception {
+		
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt;
+		
+		//*******************Navigate to backup page and start manual backup on FTP device**************************** 		
+		Backup.manualBackUP(driver,"SFTP",Browser.getPropertyFromConfigFile(ConfigProperties.sftphost),Browser.getPropertyFromConfigFile(ConfigProperties.sftpport),Browser.getPropertyFromConfigFile(ConfigProperties.sftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.sftppassword), backupfolder);
+		Backup.startManualBackup(driver);  
+		
+		//************Verify backup completed and Last successful status message*********************
+		softassert.merge(Backup.VerifyBackupCompletedstatus(driver));		
+		softassert.merge(Backup.VerifyLastSuccessfulstatus(driver,backupfolder));
+		
+		//*************Check backup file is copied to backup location on SFTP device****************************	  	  
+		String backupfilepath=backupfolder+ "/";
+		int portno=Integer.valueOf(Browser.getPropertyFromConfigFile(ConfigProperties.sftpport));
+		
+		softassert.assertTrue(GenericUtils.CheckBackuptarexistsonSFTP(backupfilepath, portno),"Failed to verify port no.");  
+				
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588845c| Manual SFTP backup successful.");
+}
+	  
+@Test(enabled=true)
+public void testBackUpOptionWhenNFSNotMounted() throws InterruptedException, IOException, JSchException {
+		  
+		softassert.assertTrue(Backup.verifyBackupOptionPresent(driver,"FTP"),"FTP device is not found.");		
+		softassert.assertTrue(Backup.verifyBackupOptionPresent(driver,"SFTP"),"SFTP device is not found.");		
+		softassert.assertTrue(Backup.verifyBackupOptionPresent(driver,"Local Storage"),"Local Storage device is not found.");		
+		softassert.assertFalse(Backup.verifyBackupOptionPresent(driver,"NFS"),"NFS device is not found.");
+				
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID :  | Test backup options when NFS is not mountes is successful.");
+	}
+@Test( enabled=true)
+public void manualMultiLevelSFTPBackUp() throws Exception {
+		
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt+"/b/c";
+		
+		//*******************Navigate to backup page and start manual backup on FTP device**************************** 
+		
+		Backup.manualBackUP(driver,"SFTP",Browser.getPropertyFromConfigFile(ConfigProperties.sftphost),Browser.getPropertyFromConfigFile(ConfigProperties.sftpport),Browser.getPropertyFromConfigFile(ConfigProperties.sftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.sftppassword), backupfolder);
+		Backup.startManualBackup(driver);
+				
+		//************Verify backup completed and Last successful status message*********************
+		softassert.merge(Backup.VerifyBackupCompletedstatus(driver));		
+		softassert.merge(Backup.VerifyLastSuccessfulstatus(driver,backupfolder));
+		
+		//*************Check backup file is copied to backup location on SFTP device****************************	  	  
+		String backupfilepath=backupfolder+ "/";
+		int portno=Integer.valueOf(Browser.getPropertyFromConfigFile(ConfigProperties.sftpport));
+		softassert.assertTrue(GenericUtils.CheckBackuptarexistsonSFTP(backupfilepath, portno));  
+			
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588191c| Manual FTP backup successful.");
+}
+	  
+ @Test(groups={"Sanity"}, enabled=true)
+public void manualSFTPBackUpWithMediaFile() throws Exception {
+	 	
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt+"/b/c";
+		
+		//*******************Navigate to backup page and start manual backup on FTP device****************************
+		
+		Backup.manualBackUP(driver,"SFTP",Browser.getPropertyFromConfigFile(ConfigProperties.sftphost),Browser.getPropertyFromConfigFile(ConfigProperties.sftpport),Browser.getPropertyFromConfigFile(ConfigProperties.sftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.sftppassword), backupfolder);		
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnLocalConfigContent1));
+				
+		Backup.startManualBackup(driver);  
+		
+		//************Verify backup completed and Last successful status message*********************		
+		softassert.merge(Backup.VerifyBackupCompletedstatus(driver));
+		
+		//*************Check backup file is copied to backup location on SFTP device****************************	  	  
+		String backupfilepath=backupfolder+ "/";
+		int portno=Integer.valueOf(Browser.getPropertyFromConfigFile(ConfigProperties.sftpport));
+		softassert.assertTrue(GenericUtils.CheckBackuptarexistsonSFTP(backupfilepath, portno));  
+				
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : | Manual SFTP backup with media file is successful.");
+}
+	  
+ @AfterClass
+	public void tearDown(){
+	 
+	    String ftphomedir="/home/"+Browser.getPropertyFromConfigFile(ConfigProperties.ftpusername);
+		String sftphomedir="/home/"+Browser.getPropertyFromConfigFile(ConfigProperties.sftpusername);
+		
+				
+		String ftpcommand="rm -rf "+ftphomedir+"/temp*";
+		String sftpcommand="rm -rf "+sftphomedir+"/temp*";		
+		String localstoragecommand="rm -rf /templocal*";		
+			
+		
+		//****************delete ftp backup files*************************************
+		
+		SSHConnect.connectToServer(Browser.getPropertyFromConfigFile(ConfigProperties.ftphost), Browser.getPropertyFromConfigFile(ConfigProperties.ftpvmusername),Browser.getPropertyFromConfigFile(ConfigProperties.ftpvmpassword));
+		int status=SSHConnect.executeCommand(ftpcommand);
+		if(status==0)
+		{
+			Log.info("Backup files are deleted successfully from FTP device ");		
+		}
+		else
+		{
+			Log.error("Failed to delete backup files from FTP device  ");			
+		}
+		
+		SSHConnect.disconnectFromServer();
+		
+		//********************delete sftp backup files************************************
+		SSHConnect.connectToServer(Browser.getPropertyFromConfigFile(ConfigProperties.sftphost), Browser.getPropertyFromConfigFile(ConfigProperties.sftpvmusername),Browser.getPropertyFromConfigFile(ConfigProperties.sftpvmpassword));
+		status=SSHConnect.executeCommand(sftpcommand);
+		if(status==0)
+		{
+			Log.info("Backup files are deleted successfully from SFTP device ");		
+		}
+		else
+		{
+			Log.error("Failed to delete backup files from SFTP device");			
+		}
+		
+		SSHConnect.disconnectFromServer();
+		
+		//**********************delete nfs backup files*********************************
+		SSHConnect.connectToServer(Browser.getPropertyFromConfigFile(ConfigProperties.sshhost), Browser.getPropertyFromConfigFile(ConfigProperties.sshuser),Browser.getPropertyFromConfigFile(ConfigProperties.sshpassword));
+		
+		status=SSHConnect.executeCommand(localstoragecommand);
+		if(status==0)
+		{
+			Log.info("Backup files are deleted successfully from SFTP device ");		
+		}
+		else
+		{
+			Log.error("Failed to delete backup files from SFTP device");			
+		}
+		SSHConnect.disconnectFromServer();
+				
+		Fixtures.tearDownFixture(driver);
+ 	
+ }	 
+}

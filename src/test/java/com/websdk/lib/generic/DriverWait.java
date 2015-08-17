@@ -1,0 +1,102 @@
+package com.websdk.lib.generic;
+
+import java.util.concurrent.TimeUnit;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+public class DriverWait 
+{
+	//Wait conditions
+	
+	//implicit wait function
+	public void wait(WebDriver driver,int timeInSeconds)
+	{
+		Log.debug("Webdriver implicit wait set to " + timeInSeconds + " Seconds");
+		driver.manage().timeouts().implicitlyWait(timeInSeconds, TimeUnit.SECONDS);
+	}
+	
+	public void wait(WebDriver driver)
+	{
+		//default wait of 10 seconds
+		wait(driver,10);
+	}
+	
+	//explicit wait functions
+	
+	public Object wait(WebDriver driver, String ElementTags, String Locateby, String ExpectedCondition,
+			int timeInSeconds, String Texttobepresent)
+	{
+		Log.debug("Webdriver explicit wait for " + timeInSeconds + " Seconds");
+		WebDriverWait wait = new WebDriverWait(driver, timeInSeconds);
+		Object element =null;
+		By Locater = null;
+		if (Locateby==null)
+		{
+			Locater = Browser.getElements().locater(ElementTags);
+			Locateby =  Browser.getElements().getLocateBy();
+		}else
+		{
+			Locater = Browser.getElements().locater(ElementTags,Locateby);
+		}
+		
+		try
+		{
+			switch (ExpectedCondition)
+			{
+			case "elementToBeClickable":
+				element = wait.until(ExpectedConditions.elementToBeClickable(Locater));
+				break;
+			case "invisibilityOfElementLocated":
+				element = wait.until(ExpectedConditions.invisibilityOfElementLocated(Locater));
+				break;
+			case "elementToBeSelected":
+				element = wait.until(ExpectedConditions.elementToBeSelected(Locater));
+				break;
+			case "presenceOfElementLocated":
+				element = wait.until(ExpectedConditions.presenceOfElementLocated(Locater));
+				break;
+			case "invisibilityOfElementWithText":
+				element = wait.until(ExpectedConditions.invisibilityOfElementWithText(Locater, Texttobepresent));
+				break;
+			case "textToBePresentInElementLocated":
+				element = wait.until(ExpectedConditions.textToBePresentInElementLocated(Locater, Texttobepresent));
+				break;
+			case "visibilityOfElementLocated":
+				element = wait.until(ExpectedConditions.visibilityOfElementLocated(Locater));
+				break;
+			case "textToBePresentInElementValue":
+				element = wait.until(ExpectedConditions.textToBePresentInElementValue(Locater, Texttobepresent));
+				break;
+			case "visibilityOfAllElementsLocatedBy":
+				element = wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(Locater));
+				break;
+			case "presenceOfAllElementsLocatedBy":
+				element = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(Locater));
+				break;
+			}
+		}catch(Exception e)
+		{
+			TestStatus.fail("Unable to find element '" + Locater  + "' by '" + Locateby +"'");
+		}
+		return element;
+	}
+	
+	 	
+	public Object wait(WebDriver driver, String ElementTags,String ExpectedCondition,int timeInSeconds, String Texttobepresent)
+	{
+		return wait(driver, ElementTags, null, ExpectedCondition, timeInSeconds, Texttobepresent);
+	}
+	
+	public void wait (int seconds)
+	{
+		try {
+			Thread.sleep((seconds*1000));
+		} catch (InterruptedException e) {
+			Log.debug(e.getMessage());
+		}
+	}
+	
+}

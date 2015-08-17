@@ -1,0 +1,351 @@
+package com.pismo.PismoAutomation;
+
+import java.io.IOException;
+
+import org.apache.log4j.Logger;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.jcraft.jsch.JSchException;
+import com.pismo.lib.appSpecific.Backup;
+import com.pismo.lib.appSpecific.SystemAdministration;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SSHConnect;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class BackUpFtpAndSftpTest {
+	
+	private WebDriver driver =  null;
+	SoftAssert softassert=new SoftAssert();
+	TestAssert testassert=new TestAssert();
+	
+	public static Logger log = Logger.getLogger(BackUpFtpAndSftpTest.class.getName());
+	public String baseWindowHandle;	
+	
+	
+ @BeforeClass
+	public void setUp() throws IOException, InterruptedException 
+	{
+	    driver=Fixtures.setupFixture("Backup with ftp and sftp test class setup initiated.");
+	    
+	    baseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		SystemAdministration.goToSysadminPage(driver);
+		
+		Browser.getSwitchto().switchToPopupWindow(driver,"LDAP");
+		Backup.goToBackUp(driver);
+		
+	}	
+
+ @Test(description="Trv582145c,Trv588191c",groups={"Sanity"}, enabled=true)
+public void manualFTPBackUpEndToEnd() throws InterruptedException, IOException, JSchException {
+		  
+	    String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt;
+		
+		//*******************Navigate to backup page and start manual backup on FTP device**************************** 
+		
+		Backup.manualBackUP(driver,"FTP",Browser.getPropertyFromConfigFile(ConfigProperties.ftphost),Browser.getPropertyFromConfigFile(ConfigProperties.ftpport),Browser.getPropertyFromConfigFile(ConfigProperties.ftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.ftppassword), backupfolder);
+		Backup.startManualBackup(driver);  
+				
+		//************Verify backup completed and Last successful status message*********************			
+		softassert.merge(Backup.VerifyBackupCompletedstatus(driver));		
+		softassert.merge(Backup.VerifyLastSuccessfulstatus(driver, backupfolder));
+		
+		//*************Check backup file is copied to backup location on FTP device****************************	  	  
+		
+		String backupfilepath=backupfolder+ "/";
+		softassert.merge(GenericUtils.CheckBackuptarexistsonFTP(backupfilepath));
+		
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588191c,Trv582145c| Manual FTP backup successful.");
+}
+	  
+	 /**
+	   * TIMS ID : Trv588825c: Verify that back-up file is created after SFTP backup.
+	   * Trv588857c
+	   * @throws InterruptedException
+	 * @throws IOException 
+	   */
+@Test(description="Trv588825c,Trv588857c",groups={"Sanity"}, enabled=true)
+public void manualSFTPBackUpEndToEnd() throws Exception {
+		  
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt;
+		
+		//*******************Navigate to backup page and start manual backup on FTP device**************************** 
+			
+		Backup.manualBackUP(driver,"SFTP",Browser.getPropertyFromConfigFile(ConfigProperties.sftphost),Browser.getPropertyFromConfigFile(ConfigProperties.sftpport),Browser.getPropertyFromConfigFile(ConfigProperties.sftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.sftppassword), backupfolder);
+		Backup.startManualBackup(driver);  
+		
+		//************Verify backup completed and Last successful status message*********************		
+		softassert.merge(Backup.VerifyBackupCompletedstatus(driver));		
+		softassert.merge(Backup.VerifyLastSuccessfulstatus(driver,backupfolder));
+		
+		//*************Check backup file is copied to backup location on SFTP device****************************	  	  
+		String backupfilepath=backupfolder+ "/";
+		int portno=Integer.valueOf(Browser.getPropertyFromConfigFile(ConfigProperties.sftpport));
+		
+		softassert.assertTrue(GenericUtils.CheckBackuptarexistsonSFTP(backupfilepath, portno),"Failed"); 		
+			
+		softassert.showResults();
+		
+		TestStatus.pass("PASSED | TIMS ID : Trv588825c,Trv588857c	| Verify that back-up file is created after SFTP backup.");
+}
+	  
+@Test(description="", enabled=true)
+public void manualSFTPErrorMessageValidation() throws Exception {
+	
+			
+		//*******************Navigate to backup page and start manual backup on FTP device****************************		
+		Backup.manualBackUP(driver,"SFTP","","","","", "");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnManualBackup));		
+		Browser.getWaits().wait(5);	
+		
+		softassert.assertEquals(Browser.getElements().element(driver,ElementTags.MsgManualBlankHost).getText(),"This field cannot be empty");		
+		softassert.assertEquals(Browser.getElements().element(driver,ElementTags.MsgManualBlankPort).getText(),"This field cannot be empty");		
+		softassert.assertEquals(Browser.getElements().element(driver,ElementTags.MsgManualBlankusername).getText(),"This field cannot be empty");		
+		softassert.assertEquals(Browser.getElements().element(driver,ElementTags.MsgManualBlankpassword).getText(),"This field cannot be empty");		
+		softassert.assertEquals(Browser.getElements().element(driver,ElementTags.MsgManualBlankLocation).getText(),"This field cannot be empty");
+				
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : |Verify SFTP details. ");
+}
+	  
+@Test(description="", enabled=true)
+public void manualFTPErrorMessageValidation() throws Exception {
+		  
+		//*******************Navigate to backup page and start manual backup on FTP device**************************** 
+		
+		Backup.manualBackUP(driver,"FTP","","","","", "");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnManualBackup));		
+		Browser.getWaits().wait(5);	
+		
+		softassert.assertEquals(Browser.getElements().element(driver,ElementTags.MsgManualBlankHost).getText(),"This field cannot be empty");		
+		softassert.assertEquals(Browser.getElements().element(driver,ElementTags.MsgManualBlankPort).getText(),"This field cannot be empty");		
+		softassert.assertEquals(Browser.getElements().element(driver,ElementTags.MsgManualBlankusername).getText(),"This field cannot be empty");		
+		softassert.assertEquals(Browser.getElements().element(driver,ElementTags.MsgManualBlankpassword).getText(),"This field cannot be empty");		
+		softassert.assertEquals(Browser.getElements().element(driver,ElementTags.MsgManualBlankLocation).getText(),"This field cannot be empty");
+				
+		softassert.showResults();
+		
+		TestStatus.pass("PASSED | TIMS ID : | Verify FTP details. ");		 
+		   
+	  }
+	 
+// Trv587995c
+@Test(description="",enabled=true)
+public void manualFTPWithInvalidPort() throws Exception {
+		  
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt;
+		
+		String ExpMsgbackupstatus="";
+		//*******************Navigate to backup page and start manual backup on FTP device**************************** 
+		WebElement element = Browser.getElements().element(driver,ElementTags.MsgBackupStatus);
+		ExpMsgbackupstatus=element.getText();
+		
+		Backup.manualBackUP(driver,"FTP",Browser.getPropertyFromConfigFile("ftphost"),"20",Browser.getPropertyFromConfigFile("ftpusername"),Browser.getPropertyFromConfigFile("ftppassword"), backupfolder);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnManualBackup));		
+						
+		WebDriverWait wait = new WebDriverWait(driver, 20);				
+		element = wait.until(ExpectedConditions.visibilityOf(Browser.getElements().element(driver,ElementTags.MsgBackupStatus)));
+				
+		String ActualMsgbackupstatus =element.getText();
+		
+		testassert.assertEquals(ExpMsgbackupstatus,ActualMsgbackupstatus);
+		
+		Log.info("FTP backup not taken place due to wrong port no");
+				
+		TestStatus.pass("PASSED | TIMS ID : |  Verify FTP port no.");
+}
+	  
+@Test(description="", enabled=true)
+public void manualSFTPWithInvalidPort() throws Exception {
+		  
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt;
+		
+		String ExpMsgbackupstatus="";
+		 
+		WebElement element = Browser.getElements().element(driver,ElementTags.MsgBackupStatus);
+		ExpMsgbackupstatus=element.getText();
+		
+		//*******************Navigate to backup page and start manual backup on SFTP device**************************** 
+		
+		Backup.manualBackUP(driver,"SFTP",Browser.getPropertyFromConfigFile(ConfigProperties.sftphost),"20",Browser.getPropertyFromConfigFile("sftpusername"),Browser.getPropertyFromConfigFile("sftppassword"), backupfolder);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnManualBackup));		
+		Browser.getWaits().wait(5);	
+		
+		WebDriverWait wait = new WebDriverWait(driver, 10);				
+		element = wait.until(ExpectedConditions.visibilityOf(Browser.getElements().element(driver,ElementTags.MsgBackupStatus)));
+		
+		String ActualMsgbackupstatus =element.getText();
+		
+		testassert.assertEquals(ExpMsgbackupstatus,ActualMsgbackupstatus);		
+		Log.info("SFTP backup not taken place due to wrong port no");
+		
+		TestStatus.pass("PASSED | TIMS ID : | Verify SFTP port no.");
+}
+	  
+/**
+	   * TIMS ID :  Trv588836c: Verify proper message "Invalid or unreachable host" is displayed for wrong host,username or password of SFTP server.
+	   * @throws InterruptedException
+	 * @throws IOException 
+*/
+@Test(description="Trv588836c,Trv587990c", enabled=true)
+public void manualFTPWithInvalidCredential() throws Exception {
+		  
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt;
+		
+		String ExpMsgbackupstatus="";
+		 
+		WebElement element = Browser.getElements().element(driver,ElementTags.MsgBackupStatus);
+		ExpMsgbackupstatus=element.getText();
+		
+		//*******************Navigate to backup page and start manual backup on FTP device**************************** 		
+		Backup.manualBackUP(driver,"FTP",Browser.getPropertyFromConfigFile("ftphost"),Browser.getPropertyFromConfigFile("ftpport"),"ftp11","ftpw", backupfolder);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnManualBackup));		
+		Browser.getWaits().wait(5);	
+		
+		WebDriverWait wait = new WebDriverWait(driver, 20);				
+		element = wait.until(ExpectedConditions.visibilityOf(Browser.getElements().element(driver,ElementTags.MsgBackupStatus)));
+				
+		String ActualMsgbackupstatus =element.getText();
+		
+		testassert.assertEquals(ExpMsgbackupstatus,ActualMsgbackupstatus);		
+			
+		Log.info("Invalid or unreachable host");		
+		
+		TestStatus.pass("PASSED | TIMS ID : Trv588836c,Trv587990c| Verify proper message Invalid or unreachable host is displayed for wrong host,username or password of SFTP server.");
+}
+	  
+ @Test( description="Trv588836c",enabled=true)
+public void manualSFTPWithInvalidCredential() throws Exception {
+		  
+	 	String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt;		
+		
+		String ExpMsgbackupstatus="";
+		 
+		WebElement element = Browser.getElements().element(driver,ElementTags.MsgBackupStatus);
+		ExpMsgbackupstatus=element.getText();
+		
+		Backup.manualBackUP(driver,"SFTP",Browser.getPropertyFromConfigFile(ConfigProperties.sftphost),Browser.getPropertyFromConfigFile(ConfigProperties.sftpport),"user","us", backupfolder);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnManualBackup));		
+		Browser.getWaits().wait(5);
+		
+		WebDriverWait wait = new WebDriverWait(driver, 20);				
+		element = wait.until(ExpectedConditions.visibilityOf(Browser.getElements().element(driver,ElementTags.MsgBackupStatus)));
+				
+		String ActualMsgbackupstatus =element.getText();		
+		testassert.assertEquals(ExpMsgbackupstatus,ActualMsgbackupstatus);		
+		
+		Log.info("Invalid or unreachable host");	
+		TestStatus.pass("PASSED | TIMS ID : | ");
+}
+	  
+@Test(description="Trv588836c", enabled=true)
+public void manualMultiLevelFTPBackUp() throws InterruptedException, IOException, JSchException {
+		  
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt+"/b/c";
+		
+		//*******************Navigate to backup page and start manual backup on FTP device**************************** 
+				
+		Backup.manualBackUP(driver,"FTP",Browser.getPropertyFromConfigFile("ftphost"),Browser.getPropertyFromConfigFile("ftpport"),Browser.getPropertyFromConfigFile("ftpusername"),Browser.getPropertyFromConfigFile("ftppassword"), backupfolder);
+		Backup.startManualBackup(driver); 
+		
+		//************Verify backup completed and Last successful status message*********************
+		softassert.merge(Backup.VerifyBackupCompletedstatus(driver));
+		
+		softassert.merge(Backup.VerifyLastSuccessfulstatus(driver,backupfolder));
+		
+		//*************Check backup file is copied to backup location on FTP device****************************	  	  
+		String backupfilepath=backupfolder+ "/";				  
+		softassert.merge(GenericUtils.CheckBackuptarexistsonFTP(backupfilepath));
+		
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : |  manual multilevel FTP backup successful.");
+}
+	  
+@Test(groups={"Sanity"}, enabled=true)
+public void manualMultiLevelSFTPBackUp() throws Exception {
+		  
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt+"/b/c";
+		
+		//*******************Navigate to backup page and start manual backup on SFTP device**************************** 
+		
+		Backup.manualBackUP(driver,"SFTP",Browser.getPropertyFromConfigFile(ConfigProperties.sftphost),Browser.getPropertyFromConfigFile(ConfigProperties.sftpport),Browser.getPropertyFromConfigFile("sftpusername"),Browser.getPropertyFromConfigFile("sftppassword"), backupfolder);
+		Backup.startManualBackup(driver);  
+		
+		//************Verify backup completed and Last successful status message*********************
+		softassert.merge(Backup.VerifyBackupCompletedstatus(driver));		
+		softassert.merge(Backup.VerifyLastSuccessfulstatus(driver,backupfolder));
+		
+		//*************Check backup file is copied to backup location on SFTP device****************************	  	  
+		String backupfilepath=backupfolder+ "/";
+		int portno=Integer.valueOf(Browser.getPropertyFromConfigFile(ConfigProperties.sftpport));
+		
+		softassert.assertTrue(GenericUtils.CheckBackuptarexistsonSFTP(backupfilepath, portno));  
+				
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : | ");
+}
+
+@AfterClass
+public void tearDown(){
+	
+	String ftphomedir="/home/"+Browser.getPropertyFromConfigFile(ConfigProperties.ftpusername);
+	String sftphomedir="/home/"+Browser.getPropertyFromConfigFile(ConfigProperties.sftpusername);
+				
+	String ftpcommand="rm -rf "+ftphomedir+"/temp*";
+	String sftpcommand="rm -rf "+sftphomedir+"/temp*";		
+	
+	//****************delete ftp backup files*************************************
+	
+	SSHConnect.connectToServer(Browser.getPropertyFromConfigFile(ConfigProperties.ftphost), Browser.getPropertyFromConfigFile(ConfigProperties.ftpvmusername),Browser.getPropertyFromConfigFile(ConfigProperties.ftpvmpassword));
+	int status=SSHConnect.executeCommand(ftpcommand);
+	if(status==0)
+	{
+		Log.info("Backup files are deleted successfully from FTP device ");		
+	}
+	else
+	{
+		Log.error("Failed to delete backup files from FTP device  ");			
+	}
+	
+	SSHConnect.disconnectFromServer();
+	
+	//********************delete sftp backup files************************************
+	SSHConnect.connectToServer(Browser.getPropertyFromConfigFile(ConfigProperties.sftphost), Browser.getPropertyFromConfigFile(ConfigProperties.sftpvmusername),Browser.getPropertyFromConfigFile(ConfigProperties.sftpvmpassword));
+	status=SSHConnect.executeCommand(sftpcommand);
+	if(status==0)
+	{
+		Log.info("Backup files are deleted successfully from SFTP device ");		
+	}
+	else
+	{
+		Log.error("Failed to delete backup files from SFTP device");			
+	}
+	
+	SSHConnect.disconnectFromServer();
+	
+	Fixtures.tearDownFixture(driver);
+}
+
+}
+

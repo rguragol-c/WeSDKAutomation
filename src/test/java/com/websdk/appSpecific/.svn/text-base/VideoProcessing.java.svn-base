@@ -1,0 +1,550 @@
+package com.pismo.lib.appSpecific;
+
+
+import java.util.List;
+
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+import com.pismo.lib.autoit.AutoItUtils;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.ExpectedCondition;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.TestStatus;
+
+public class VideoProcessing  {
+
+	private static String videoFolderPath= System.getProperty("user.dir") + "\\testdata\\Videos\\";
+	private static String captionFolderPath=System.getProperty("user.dir") + "\\testdata\\Captions\\";
+	private static String AttachmentsFolderPath=System.getProperty("user.dir") + "\\testdata\\Attachments\\";
+	private static String ThumbnailsFolderPath=System.getProperty("user.dir") + "\\testdata\\Thumbnails\\";
+
+	public static void uploadAndpublishVideo(WebDriver driver, String VideoName,String VideoTitle,
+			String VideoDescription,boolean canEveryOneView,String userPermission[][],String Category,String [] Tags,
+			String ThumbnailName,String [] AttachmentNames,String [][] Captions,boolean ApprovalWorkFlowStatus)
+	{
+		Log.info("Uploading and publishing video : " + VideoTitle );
+		uploadVideo(driver, VideoName);
+		verifyUpload(driver);
+		verifyVideoProcessStatus(driver);
+		setBasicVideo(driver, VideoTitle, VideoDescription);
+		setCategory(driver, Category);
+		addTags(driver, Tags);
+		setPrivacyAndPermission(driver, canEveryOneView, userPermission);
+		uploadThumbnailImage(driver, ThumbnailName);
+		uploadAttachments(driver, AttachmentNames);
+		uploadCaptions(driver, Captions);
+		if (ApprovalWorkFlowStatus==false)
+		{
+			publishVideo(driver);
+		}else
+		{
+			sendVideoForApproval(driver);
+			Home.goToHomePage(driver);
+			VideoPendingApproval.goToPendingApprovalPage(driver);
+			String md5 =SolrQueryUtils.getVideoMD5FromSolr(VideoTitle);
+			Browser.getActions().click(Browser.getElements().element(driver, "title_"+ md5, LocateBy.id));
+			approveRejectVideo(driver,"Approve","Approved");
+		}
+
+	}
+
+	public static void deletePublishedVideo(WebDriver driver, String [] Videos
+			)
+	{
+		Log.info("Deleting published videos");
+		VideoIUploaded.goToVideosIUploaded(driver);
+		if (Browser.getElements().isElementPresent(driver, ElementTags.publishVideoSeeAll))
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.publishVideoSeeAll));
+			for (String video : Videos) {
+				String md5 =SolrQueryUtils.getVideoMD5FromSolr(video);
+				if (md5!=null)
+				{
+					Browser.getWaits().wait(2);
+					if (Browser.getElements().isElementPresent(driver, "hr-slider-" + md5  , LocateBy.id))
+					{
+						Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(driver, "delete_video_" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(driver, "deleteVideoBtn", LocateBy.id));
+					}else
+					{
+						Log.warn("Video" + video + "doesn't exisits, Can not delete video");
+					}
+				}else
+				{
+					Log.warn("Video" + video + "doesn't exisits, Can not delete video");
+				}
+			}
+		}else
+		{
+			WebElement publishedvideolist= Browser.getElements().element(driver, ElementTags.blockPublishedVideo);
+			for (String video : Videos) {
+				String md5 =SolrQueryUtils.getVideoMD5FromSolr(video);
+				if (md5!=null)
+				{
+					if (Browser.getElements().isElementPresent(driver,publishedvideolist, "hr-slider-" + md5  , LocateBy.id))
+					{
+						Browser.getActions().click(Browser.getElements().element(publishedvideolist, "hr-slider-" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(publishedvideolist, "delete_video_" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(driver, "deleteVideoBtn", LocateBy.id));
+					}else
+					{
+						Log.warn("Video " + video + " doesn't exisits, Can not delete video");
+					}
+				}else
+				{
+					Log.warn("Video " + video + " doesn't exisits, Can not delete video");
+				}
+			}
+		}
+	}
+
+	public static void deleteDraftVideos(WebDriver driver, String [] Videos)
+	{
+		Log.info("Deleting draft videos");
+		VideoIUploaded.goToVideosIUploaded(driver);
+		if (Browser.getElements().isElementPresent(driver, ElementTags.draftVideoSeeAll))
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.draftVideoSeeAll));
+			for (String video : Videos) {
+				String md5 =SolrQueryUtils.getVideoMD5FromSolr(video);
+				if (md5!=null)
+				{
+					if (Browser.getElements().isElementPresent(driver, "hr-slider-" + md5  , LocateBy.id))
+					{
+						Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(driver, "delete_video_" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(driver, "deleteVideoBtn", LocateBy.id));
+					}else
+					{
+						Log.warn("Video " + video + " doesn't exisits, Can not delete video");
+					}
+				}else
+				{
+					Log.warn("Video " + video + " doesn't exisits, Can not delete video");
+				}
+			}
+		}else
+		{
+			WebElement draftvideolist= Browser.getElements().element(driver, ElementTags.blockDraftVideo);
+			for (String video : Videos) {
+				String md5 =SolrQueryUtils.getVideoMD5FromSolr(video);
+				if (md5!=null)
+				{
+					if (Browser.getElements().isElementPresent(driver,draftvideolist, "hr-slider-" + md5  , LocateBy.id))
+					{
+						Browser.getActions().click(Browser.getElements().element(draftvideolist, "hr-slider-" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(draftvideolist, "delete_video_" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(driver, "deleteVideoBtn", LocateBy.id));
+					}else
+					{
+						Log.warn("Video " + video + " doesn't exisits, Can not delete video");
+					}
+				}else
+				{
+					Log.warn("Video " + video + " doesn't exisits, Can not delete video");
+				}
+			}
+		}
+	}
+
+	public static void deleteRejectedVideos(WebDriver driver, String [] Videos)
+	{
+		Log.info("Deleting Rejected videos");
+		VideoIUploaded.goToVideosIUploaded(driver);
+		if (Browser.getElements().isElementPresent(driver, ElementTags.rejectedVideoSeeAll))
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.rejectedVideoSeeAll));
+			for (String video : Videos) {
+				String md5 =SolrQueryUtils.getVideoMD5FromSolr(video);
+				if (md5!=null)
+				{
+					if (Browser.getElements().isElementPresent(driver, "hr-slider-" + md5  , LocateBy.id))
+					{
+						Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(driver, "delete_video_" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(driver, "deleteVideoBtn", LocateBy.id));
+						Browser.getWaits().wait(2);// page is getting refreshed after delete. adding delay 
+					}else
+					{
+						Log.warn("Video " + video + " doesn't exisits, Can not delete video");
+					}
+				}else
+				{
+					Log.warn("Video " + video + " doesn't exisits, Can not delete video");
+				}
+			}
+		}else
+		{
+			WebElement rejectedvideolist= Browser.getElements().element(driver, ElementTags.blockRejectVideo);
+			for (String video : Videos) {
+				String md5 =SolrQueryUtils.getVideoMD5FromSolr(video);
+				if (md5!=null)
+				{
+					if (Browser.getElements().isElementPresent(driver,rejectedvideolist, "hr-slider-" + md5  , LocateBy.id))
+					{
+						Browser.getActions().click(Browser.getElements().element(rejectedvideolist, "hr-slider-" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(rejectedvideolist, "delete_video_" + md5  , LocateBy.id));
+						Browser.getActions().click(Browser.getElements().element(driver, "deleteVideoBtn", LocateBy.id));
+					}else
+					{
+						Log.warn("Video " + video + " doesn't exisits, Can not delete video");
+					}
+				}else
+				{
+					Log.warn("Video " + video + " doesn't exisits, Can not delete video");
+				}
+			}
+		}
+	}
+
+	public static void deletePendingVideos(WebDriver driver, String [] Videos)
+	{
+		for (String Video : Videos) {
+
+			Home.goToHomePage(driver);
+			VideoPendingApproval.goToPendingApprovalPage(driver);
+			String VideoMD5= SolrQueryUtils.getVideoMD5FromSolr(Video);
+			if (VideoPendingApproval.isVideoPresentMD5(driver, VideoMD5))
+			{
+				VideoPendingApproval.selectVideoFromListMD5(driver, VideoMD5);
+				approveRejectVideo(driver, "approve", "REJECT it");
+			}else
+			{
+				Log.warn("Video is not present in pending approval list to delete.");
+			}
+		}
+		deletePublishedVideo(driver, Videos);
+	}
+
+	public static void uploadVideo(WebDriver driver, String VideoName) 
+	{	
+		String filepath= "\"" + videoFolderPath + VideoName + "\"";
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomePlusIcon));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkVideoUpload));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSelectuploadFile));
+		AutoItUtils.browseFile(filepath);
+		Log.info("Uploading Video...");
+	}
+
+	public static void uploadThumbnailImage(WebDriver driver,String ThumbnailName)
+	{
+		if(ThumbnailName!=null)
+		{
+			String filepath= "\"" + ThumbnailsFolderPath + ThumbnailName + "\"";
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCustomThumbnailImage));
+			AutoItUtils.browseFile(filepath);
+			Log.info("Uploading thumbnail image...");
+		}
+	}
+
+	public static void uploadAttachments(WebDriver driver, String [] AttachementNames)
+	{
+		if (AttachementNames!= null)
+		{
+			for (String Attachement : AttachementNames) {
+				uploadAttachment(driver, Attachement);
+			}
+		}
+	}
+
+	public static void uploadAttachment(WebDriver driver,String AttachmentName)
+	{
+		if (AttachmentName!=null)
+		{
+			String filepath= "\"" + AttachmentsFolderPath + AttachmentName + "\"";
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnUploadAttachments));
+			AutoItUtils.browseFile(filepath);
+			Log.info("Uploading attachments...");
+		}
+	}
+
+	public static void uploadCaptions(WebDriver driver,String [][] Captions)
+	{
+		if (Captions!=null)
+		{
+			for (int i = 0; i < Captions.length; i++) {
+				uploadCaption(driver, Captions[i][0],Captions[i][1],Captions[i][2]);
+				Browser.getWaits().wait(3);
+			}
+		}
+	}
+
+	public static void uploadCaption(WebDriver driver, String CaptionFileName,String TrackName,String Language) 
+	{	
+		if (CaptionFileName!=null)
+		{
+			String filepath= "\"" + captionFolderPath + CaptionFileName + "\"";
+			System.out.println(filepath);
+			Browser.getWaits().wait(driver, ElementTags.bttnAddCaption,ExpectedCondition.elementToBeClickable, 5, null);
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnAddCaption));
+			Browser.getElements().selectDropDownValueByVisibleText(
+					Browser.getElements().element(driver, ElementTags.dropDownCaptionLanguage),Language);
+			WebElement  ele = Browser.getElements().element(driver, ElementTags.txtTrackName);
+			if(TrackName!=null){
+				ele.clear();
+				Browser.getActions().sendKeys(ele,TrackName);
+			}
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSelectCaptionFile));
+			AutoItUtils.browseFile(filepath);
+			Browser.getWaits().wait(driver, ElementTags.bttnCaptionSelectionOk,ExpectedCondition.elementToBeClickable, 5, null);
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCaptionSelectionOk));
+			Log.info("Caption file upload for Video...");
+		}
+	}
+
+	public static boolean downloadCaption(WebDriver driver, String CaptionTitle) 
+	{      
+		boolean result=false;
+		List<WebElement> CaptionElements = Browser.getElements().elements(driver, ".//*[@id='captionsTabEdit']/div/span[2]/a",LocateBy.xpath);
+		for(WebElement captionHyperLink : CaptionElements){
+			System.out.println("Count: "+CaptionElements.size()+"text is:"+captionHyperLink.getText());
+			if(captionHyperLink.getText().equals(CaptionTitle)){
+				captionHyperLink.click();
+				result=true;
+			}
+		}
+		if(result==false)
+		{
+			Log.error("Given "+CaptionTitle+" is not present" );
+		}
+		return result;
+	}
+
+	public static boolean deleteCaption(WebDriver driver, String CaptionTitle, boolean allFlag) 
+	{      
+		boolean result=false;
+		List<WebElement> CaptionElements = Browser.getElements().elements(driver, ".//*[@id='captionsTabEdit']/div/span[3]/a",LocateBy.xpath);
+		for(WebElement captionHyperLink : CaptionElements){
+			if(allFlag)
+				captionHyperLink.click();
+			String caption = Browser.getElements().element(driver, "//*[@id='captionsTabEdit']/div/span[2]/a", LocateBy.xpath).getText();
+			System.out.println("Count: "+caption);
+			if(caption.equals(CaptionTitle)){
+				System.out.println("inside delete if");
+				captionHyperLink.click();
+				result=true;
+			}
+		}
+		if(result==false && allFlag==false)
+		{
+			Log.error("Given "+CaptionTitle+" is not present" );
+		}else
+			result=true;
+		return result;
+	}
+	public static void verifyCaptions(WebDriver driver,String [][] Captions)
+	{
+		if (Captions!=null)
+		{
+			for (int i = 0; i < Captions.length; i++) {
+				verifyCaptionFile(driver, Captions[i][0],Captions[i][1],Captions[i][2]);
+				Browser.getWaits().wait(3);
+			}
+		}
+	}
+	public static boolean verifyCaptionFile(WebDriver driver, String language, String track, String captionFile){
+		List<WebElement> CaptionElements = Browser.getElements().elements(driver, ".//*[@id='captionsTabEdit']/div",LocateBy.xpath);
+		String format ;
+		if(track!=null)
+			format= "[ "+language+" - "+track+" ]"+captionFile;
+		else
+			format= "["+language+"]"+captionFile;
+		boolean formatFlag = false;
+		for(WebElement caption : CaptionElements){
+			System.out.println("first");
+			String langTrack[] = caption.getText().split("\n");
+			formatFlag = (langTrack[0]+langTrack[1]).equals(format);
+			return formatFlag;
+		}
+		if(formatFlag==false)
+		{
+			Log.error("Given "+captionFile+" is not present" );
+		}
+		return formatFlag;
+	}
+
+	public static void verifyUpload(WebDriver driver)
+	{
+		WebElement element = (WebElement) Browser.getWaits().wait(driver, 
+				ElementTags.labelUploadSuccessmsg, ExpectedCondition.visibilityOfElementLocated,
+				10, null);
+		int i =0;
+		while(!element.getText().contains("Video"))
+		{
+			if (i>20)
+			{
+				TestStatus.fail("Video file not upload using file browser.");
+				break;
+			}else
+			{
+				Browser.getWaits().wait(5);
+				i++;
+			}
+		}
+		Log.info(element.getText());
+	}
+
+	public static void verifyVideoProcessStatus(WebDriver driver)
+	{
+		Log.info("Waiting till edit video link is displayed after video processing");
+		Browser.getWaits().wait(driver, ElementTags.linkReadyToView, ExpectedCondition.visibilityOfElementLocated,
+				600, null);
+	}
+
+	public static void setBasicVideo(WebDriver driver,String videoTitle,String description)
+	{
+		Log.info("Setting Video basic Metadata");
+		if (videoTitle!=null)
+		{
+			WebElement txttitle = Browser.getElements().element(driver, ElementTags.txtVideoTitle);
+			txttitle.clear();
+			Browser.getActions().sendKeys(txttitle, videoTitle);
+		}
+		if (description!=null)
+		{
+			WebElement txtdescription =Browser.getElements().element(driver, ElementTags.txtVideoDescription);
+			txtdescription.clear();
+			Browser.getActions().sendKeys(txtdescription, description);
+		}
+	}
+
+	public static void setPrivacyAndPermission(WebDriver driver, boolean canEveryOneView, String userPermission[][] )
+	{
+		Log.info("Setting Video permissions");
+		int k=2;
+		WebElement ViewAllPermission = Browser.getElements().element(driver, ElementTags.chkEveryOnePermission);
+		if(canEveryOneView==true)
+		{
+			Browser.getElements().selectDropDownValueByVisibleText(ViewAllPermission, "Viewer");
+		}
+		else
+		{
+			Browser.getElements().selectDropDownValueByVisibleText(ViewAllPermission, "No");
+		}
+		if(userPermission!=null)
+		{
+			for(int i=0;i<userPermission.length;i++)
+			{
+				if(userPermission[i][0]!=null)
+				{
+
+					Browser.getElements().element(driver, ElementTags.txtReciepientName).clear();
+					Browser.getElements().element(driver, ElementTags.txtReciepientName).sendKeys(userPermission[i][0]);
+					Browser.getActions().click(Browser.getElements().element(driver, userPermission[i][0],LocateBy.partiallinktext));
+					if(userPermission[i][1].equalsIgnoreCase("Viewer"))
+					{
+
+						Browser.getElements().selectDropDownValueByVisibleText(
+								Browser.getElements().element(driver, "userPermissionsList["+k+"][role]", LocateBy.name),"Viewer");
+					}
+					else
+					{
+						Browser.getElements().selectDropDownValueByVisibleText(
+								Browser.getElements().element(driver, "userPermissionsList["+k+"][role]", LocateBy.name),"Editor");
+					}
+				}
+				k++;
+			}
+		}
+	}
+
+	public static void setCategory(WebDriver driver,String Category)
+	{
+		Log.info("Setting Video Category");
+		if(Category!=null)
+		{
+			Browser.getElements().selectDropDownValueByVisibleText(
+					Browser.getElements().element(driver, ElementTags.optionEditSelectCategory), Category);
+		}
+	}
+
+	public static void addTags(WebDriver driver,String [] Tags)
+	{
+		Log.info("Adding Video Tags");
+		if (Tags!=null)
+		{
+			for (String tag : Tags) {
+				if (tag!=null)
+				{
+					Browser.getActions().sendKeys(
+							Browser.getElements().element(driver, ElementTags.txtEditTags), tag);	
+					Browser.getActions().sendKeys(
+							Browser.getElements().element(driver, ElementTags.txtEditTags), Keys.TAB);
+				}
+			}
+		}
+	}
+
+	public static String saveVideo(WebDriver driver)
+	{
+		Log.info("Save Video");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSaveEdit));
+		WebElement element = (WebElement) Browser.getWaits().wait(driver, ElementTags.labelApprovalMessage, 
+				ExpectedCondition.visibilityOfElementLocated, 3, null);
+		String msg = element.getText();
+		Log.info(msg);
+		return msg;
+	}
+
+	public static boolean publishVideo(WebDriver driver)
+	{
+		Log.info("Publishing video");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSendForApproval));
+		WebElement element= (WebElement) Browser.getWaits().wait(driver, ElementTags.bttnRevertToDraft,
+				ExpectedCondition.visibilityOfElementLocated, 10, null);
+		if(element.isDisplayed())
+		{
+			return true;
+		}
+		return false;
+	}
+
+	public static String sendVideoForApproval(WebDriver driver)
+	{
+		Log.info("Sending Video for approval");
+		WebElement bttnSave=Browser.getElements().element(driver, ElementTags.bttnSaveEdit);
+		// work around for metadata is not saved when approval work flow is on.
+		if(bttnSave.isDisplayed() && bttnSave.isEnabled())
+		{
+			Browser.getActions().click(bttnSave);
+		}
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSendForApproval));
+		Browser.getWaits().wait(3);
+		WebElement element = (WebElement) Browser.getWaits().wait(driver, ElementTags.labelApprovalMessage, 
+				ExpectedCondition.visibilityOfElementLocated, 3, null);
+		String msg = element.getText();
+		Log.info(msg);
+		return msg;
+	}
+
+	public static void revertToDraft(WebDriver driver)
+	{
+		Log.info("Revert Video to draft");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnRevertToDraft));
+	}
+
+	public static String approveRejectVideo(WebDriver driver, String decision, String comment)
+	{
+		Log.info(decision + " video.");
+		Browser.getWaits().wait(3);
+		Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtApproveComment), comment); 
+		String msg = null;
+		if(decision.equalsIgnoreCase("Approve and publish") || decision.equalsIgnoreCase("Approve"))
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnApproveNPublish));
+		}
+		else
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnRejectVideo));
+		}
+		msg= Browser.getElements().element(driver, ElementTags.labelApproveMsg).getText();
+		Log.info(msg);
+		return msg;
+	}
+
+}

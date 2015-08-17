@@ -1,0 +1,429 @@
+package com.pismo.lib.appSpecific;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import com.jcraft.jsch.JSchException;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class Backup {
+
+	static SoftAssert softassert=new SoftAssert();
+	TestAssert testassert=new TestAssert();
+	
+	public static void goToBackUp(WebDriver driver) 
+	{	
+		Log.info("Navigate to Backup page");
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkMaintenance));
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkBackupPage));					
+	}
+	
+	public static void manualBackUP(WebDriver driver,String device, String host, String port, String username, String password, String backUpLocation)
+	{			
+		
+		try{
+			Browser.getElements().selectDropDownValueByVisibleText(Browser.getElements().element(driver, "backupDevice",LocateBy.id), device);
+		}catch(Exception e)
+		{
+			Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkgenerateCSR));
+			
+		}
+		Browser.getElements().selectDropDownValueByVisibleText(Browser.getElements().element(driver, "backupDevice",LocateBy.id), device);
+		
+		Browser.getWaits().wait(2);
+		
+			if(device.equalsIgnoreCase("FTP"))
+			{	
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtHostName));
+				Browser.getElements().element(driver,ElementTags.txtHostName).sendKeys(host);		
+															
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtPortNo));			
+				Browser.getElements().element(driver,ElementTags.txtPortNo).sendKeys(port);
+				
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtFtpUserName));
+				Browser.getElements().element(driver,ElementTags.txtFtpUserName).sendKeys(username);
+				
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtFtpPassword));			
+				Browser.getElements().element(driver,ElementTags.txtFtpPassword).sendKeys(password);		
+						
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtFtpBackupLocation));			
+				Browser.getElements().element(driver,ElementTags.txtFtpBackupLocation).sendKeys(backUpLocation);
+				
+				Log.info("Entered FTP details for Backup");
+			}
+			else if(device.equalsIgnoreCase("NFS"))
+			{
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtNfsBackupLocation));
+				Browser.getElements().element(driver,ElementTags.txtNfsBackupLocation).sendKeys(backUpLocation);
+				Log.info("Entered NFS details for Backup");
+			
+			}else if(device.equalsIgnoreCase("Local Storage")){
+			
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtLocalBackupLocation));
+				Browser.getElements().element(driver,ElementTags.txtLocalBackupLocation).sendKeys(backUpLocation);
+				
+				Log.info("Entered Local Storage details for Backup");
+				
+			}else if(device.equalsIgnoreCase("SFTP"))
+			{
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtHostName));
+				Browser.getElements().element(driver,ElementTags.txtHostName).sendKeys(host);
+			
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtPortNo));			
+				Browser.getElements().element(driver,ElementTags.txtPortNo).sendKeys(port);
+			
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtFtpUserName));
+				Browser.getElements().element(driver,ElementTags.txtFtpUserName).sendKeys(username);
+				
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtFtpPassword));			
+				Browser.getElements().element(driver,ElementTags.txtFtpPassword).sendKeys(password);
+			
+				Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtFtpBackupLocation));			
+				Browser.getElements().element(driver,ElementTags.txtFtpBackupLocation).sendKeys(backUpLocation);
+				
+				Log.info("Entered SFTP details for Backup");
+		}
+		
+	}
+	
+	public static SoftAssert startManualBackup(WebDriver driver)  
+	{
+				
+		Log.info("Click on Manual backup button");	
+		
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnManualBackup));		
+		Browser.getWaits().wait(5);	
+		
+		WebDriverWait wait = new WebDriverWait(driver, 20);				
+		WebElement element = wait.until(ExpectedConditions.visibilityOf(Browser.getElements().element(driver,ElementTags.MsgBackupStatus)));		
+				
+		String BackupInProgressmsg =element.getText();
+		Log.info("Backup in progress" +BackupInProgressmsg);			
+		
+		if(BackupInProgressmsg.contains("Backup is in progress (tasks")||BackupInProgressmsg.contains("Backup is pending (tasks") ||BackupInProgressmsg.contains("Backup completed successfully on "))
+		{
+			softassert.assertTrue(BackupInProgressmsg.contains("Started on"),"");
+			softassert.assertTrue(BackupInProgressmsg.contains("by anisinha"),"");
+			
+		}
+		else
+		{
+			softassert.fail("Backup is not started");
+		}
+		
+		return softassert;						
+	}	
+	
+			
+	public static SoftAssert VerifyBackupCompletedstatus(WebDriver driver) 		{
+			
+			Log.info("Verify Backup completed message is displayed or not");
+			
+			WebDriverWait wait = new WebDriverWait(driver, 70);
+			WebElement element1 = wait.until(ExpectedConditions.visibilityOf(Browser.getElements().element(driver,ElementTags.MsgBackupStatus)));		
+			String BackupInProgressmsg =element1.getText();
+			
+			while(BackupInProgressmsg.contains("Backup is in progress (tasks"))
+			{
+				BackupInProgressmsg =Browser.getElements().element(driver,ElementTags.MsgBackupStatus).getText();
+				Browser.getWaits().wait(5);
+			}					
+			
+			WebElement element2 = wait.until(ExpectedConditions.visibilityOf(Browser.getElements().element(driver,ElementTags.MsgBackupStatus)));
+			String BackupCompletemsg =element2.getText();
+			Integer itr=1;
+			
+			while(!BackupCompletemsg.contains("Backup completed successfully"))
+			{						
+				Browser.getWaits().wait(10);
+				itr++;
+				if(itr>30){
+					TestStatus.fail("Backup is not completed successfully within 5 mins");
+				}
+				BackupCompletemsg =element1.getText();
+			}
+			
+			softassert.assertTrue(BackupCompletemsg.contains("Backup completed successfully"));
+			Log.info(BackupCompletemsg);
+			
+			return softassert;		
+									
+	}
+		
+	public static SoftAssert VerifyLastSuccessfulstatus(WebDriver driver,String backuppath) {
+			
+			Log.info("Verify Last successful message is displayed or not");
+			
+			WebDriverWait wait1 = new WebDriverWait(driver, 70);
+			WebElement element1 = wait1.until(ExpectedConditions.visibilityOf(Browser.getElements().element(driver,ElementTags.MsgLastBackupstatus)));
+						
+			String Lastsuccessfulstatusmsg=element1.getText();
+			
+			Log.info(Lastsuccessfulstatusmsg);
+			
+			if(Lastsuccessfulstatusmsg.contains("Last successful Backup was taken"))
+			{
+				softassert.assertTrue(Lastsuccessfulstatusmsg.contains("by anisinha"));	
+				softassert.assertTrue(Lastsuccessfulstatusmsg.contains(backuppath));				
+			}
+			else
+			{
+				softassert.fail();	
+			}
+			
+			return softassert;	
+		}
+		
+	
+	public static String cancelBackUp(WebDriver driver) 
+	{
+		
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkgenerateCSR));		
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnManualBacupCancel));
+		
+		Browser.getWaits().wait(5);
+			
+		String msg = Browser.getElements().element(driver,ElementTags.MsgBackupStatus).getText(); 
+		return msg;
+	}
+	
+	
+	public static void setScheduledBackUp(WebDriver driver,String frequency, String day, String time, String device, String host, String port, String username, String password, String location)
+	{
+		
+		try{
+						
+			if(!Browser.getElements().element(driver,ElementTags.bttnSceduleBackup).isDisplayed())
+			{				
+				Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkBackupAutomatic));
+				Browser.getWaits().wait(5);
+			}
+		}catch(Exception e)
+		{			
+			Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkBackupAutomatic));
+			Browser.getWaits().wait(5);
+		}	
+		
+
+		Browser.getElements().selectDropDownValueByVisibleText(Browser.getElements().element(driver, "backupFrequency", LocateBy.id),frequency);		
+		
+		if(!(day.equals("")||day.equals(null)))
+		{
+			Browser.getElements().selectDropDownValueByVisibleText(Browser.getElements().element(driver, "backupDay", LocateBy.id),day);
+		}
+								
+		Browser.getElements().selectDropDownValueByVisibleText(Browser.getElements().element(driver, "backupTime", LocateBy.id),time);			
+		
+		Log.info("UTC: "+driver.findElement(By.id("backupTime")).getAttribute("value"));
+		Browser.getElements().selectDropDownValueByVisibleText(Browser.getElements().element(driver, "ScheduleBackupDevice", LocateBy.id),device);
+		
+		if(device.equalsIgnoreCase("FTP"))
+		{			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpHost));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpHost).sendKeys(host);
+			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpPort));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpPort).sendKeys(port);
+			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpUsername));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpUsername).sendKeys(username);
+			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpPassword));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpPassword).sendKeys(password);
+			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpLocation));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpLocation).sendKeys(location);
+			
+			Log.info("Entered FTP Automatic backup details");
+			
+		}else if(device.equalsIgnoreCase("NFS"))
+		{
+			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupLocation));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupLocation).sendKeys(location);
+			Log.info("Entered NFS Automatic backup details");
+		}
+		
+		else if(device.equalsIgnoreCase("Local Storage"))
+		{
+			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupLocation));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupLocation).sendKeys(location);
+			Log.info("Entered Local Storage Automatic backup details");
+			
+		}else if(device.equalsIgnoreCase("SFTP"))
+		{
+			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpHost));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpHost).sendKeys(host);
+			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpPort));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpPort).sendKeys(port);
+			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpUsername));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpUsername).sendKeys(username);
+			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpPassword));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpPassword).sendKeys(password);
+			
+			Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpLocation));
+			Browser.getElements().element(driver,ElementTags.txtScheduleBackupFtpLocation).sendKeys(location);
+			
+			Log.info("Entered SFTP Automatic backup details");
+			
+		}		
+	}
+
+	public static void ClickScheduleBackup(WebDriver driver)
+	{
+		
+		Log.info("Click on Schedule button");
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.bttnSceduleBackup));
+		Browser.getWaits().wait(10);
+			
+		
+	}
+	
+	public static boolean verifyScheduleSuccess(WebDriver driver, String time, String device, String location) throws InterruptedException
+	{
+		boolean flag = false;
+				
+		String sucessMessage=Browser.getElements().element(driver,ElementTags.MsgSchedulebackup).getText();		
+		Log.info("Message :"+sucessMessage);
+		
+	    if(sucessMessage.contains("Next Backup scheduled for"))
+	    {
+	    	if(sucessMessage.contains(time))
+	    	{	    		
+	    			if(sucessMessage.contains("to be saved on "+device))
+	    			{
+
+	    	    		if(sucessMessage.contains(location))
+	    	    		{
+	    	    			flag=true;
+	    	    		}
+	    			}	    		
+	    	}
+	    }
+		
+		return flag;
+	}
+	
+	public static String cancelScheduledBackUp(WebDriver driver)
+	{
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.bttnCancelSceduleBackup));
+		Browser.getWaits().wait(5);	
+		
+		return Browser.getElements().element(driver,ElementTags.MsgBackupStatus).getText();
+	}
+	
+	
+	
+	public static boolean verifyBackupOptionPresent(WebDriver driver,String device)
+	{		
+		WebElement elem = Browser.getElements().element(driver, "backupDevice",LocateBy.id);
+		List<WebElement> options = elem.findElements(By.tagName("option"));
+		for (int i=0;i<options.size();i++)
+		{
+			if(options.get(i).getText().equalsIgnoreCase(device))
+				return true;
+		}
+		return false;
+	}
+	
+	public static void setBackUpOption(WebDriver driver,String backUpOption)
+	{
+		if(backUpOption.equalsIgnoreCase("withmediafile"))	{			
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnLocalConfigContent));
+			
+		}else if(backUpOption.equalsIgnoreCase("withoutmediafile"))
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnLocalConfig));			
+		}		
+	}
+	
+	public static void goToSysadminPage(WebDriver driver){
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeLoginMenu));
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkHomeAdminMenu));
+     }
+	
+	
+public static String Getschedulebackupday() throws JSchException, IOException{
+		
+		String serverdate=GenericUtils.GetServerDate();
+		String serday[]=serverdate.split(" ");
+		String day="Monday";
+		
+		switch(serday[0])
+		
+		{
+			case "Mon":
+				day="Tuesday";	
+				break;
+			case "Tue":
+				day="Wednesday";
+				break;
+			case "wed":
+				day="Thrusday";
+				break;
+			case "Thru":
+				day="Friday";
+				break;
+			case "Fri":
+				day="Saturday";
+				break;
+			case "Sat":
+				day="Sunday";
+				break;
+			case "Sun":		
+				day="Monday";	
+				break;
+		}		
+		
+		return day;		
+		
+	}
+	
+public static String Getschedulebackuptime() throws JSchException, IOException
+{				
+	String servertime=GenericUtils.GetServerTime();				
+	 
+	String[] sertime=servertime.split(":");
+	
+	int stime=Integer.parseInt(sertime[0]);
+	int systime;
+	String time = "01";
+	
+	if(stime==12){
+		systime=01;
+		time =systime + ":00";
+	}
+	else if(stime<12){
+		systime=stime+1;
+		time="0"+systime+":00";
+	}
+	else if(stime>12)
+	{
+		systime=stime+1;
+		time=systime+":00";
+	}				
+	
+	return time;		
+			
+}
+	
+	
+}

@@ -1,0 +1,231 @@
+package com.pismo.lib.generic;
+
+import java.io.File;
+import java.util.List;
+
+import org.apache.log4j.Logger;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.Select;
+
+public class Elements 
+{
+	public static Logger log = Logger.getLogger(TestStatus.class.getName());
+	private static String LocateBy = null;
+	private static String ElementLocater = null;
+	private static XMLReader reader= null;
+	private static String objectRepositoryFile = System.getProperty("user.dir")
+			+ "\\repository\\ObjRepository.xml" ; 
+	
+	public Elements() {
+		File file = new File(objectRepositoryFile);
+		if (file.exists()==false)
+		{
+			TestStatus.fail("Object Repository File doesn't exists!!!");
+		}
+		reader= new XMLReader(file.getAbsolutePath());
+	}
+	
+	public String getLocateBy() {
+		return LocateBy;
+	}
+
+	private void setLocateBy(String locateBy) {
+		LocateBy = locateBy;
+	}
+	
+	public void setElementLocater(String elementLocater) {
+		ElementLocater = elementLocater;
+	}
+	
+	public String getElementLocater() {
+		return ElementLocater;
+	}
+	
+	public void getElementLocater(String ElementTags)
+	{
+		setElementLocater(reader.getElmentValue(ElementTags)); 
+		setLocateBy(reader.getAttribute());
+	}
+	
+	public WebElement element(WebDriver driver,String ElementTags)
+	{
+		getElementLocater(ElementTags);
+		return element(driver,getElementLocater(),getLocateBy());
+	}
+	
+	public WebElement element(WebElement element,String ElementTags)
+	{
+		getElementLocater(ElementTags);
+		return element(element,getElementLocater(),getLocateBy());
+	}
+	
+	public List<WebElement> elements(WebDriver driver,String ElementTags)
+	{
+		getElementLocater(ElementTags);
+		return elements(driver,getElementLocater(),getLocateBy());
+	}
+	
+	public List<WebElement> elements(WebElement element,String ElementTags)
+	{
+		getElementLocater(ElementTags);
+		return elements(element,getElementLocater(),getLocateBy());
+	}
+	
+	public WebElement element(WebDriver driver,String ElementLocater, String LocateBy)
+	{
+		Log.debug("Locating element " + ElementLocater + " on the page by " + LocateBy);
+		WebElement element = null;
+		try{
+			element = driver.findElement(locater(ElementLocater, LocateBy));
+		}catch(Exception ex)
+		{
+			TestStatus.fail("Unable to find element '" + ElementLocater  + "' by '" + LocateBy +"'" );
+		}
+		return element;
+	}
+	
+	public WebElement element(WebElement element,String ElementLocater, String LocateBy)
+	{
+		Log.debug("Locating element " + ElementLocater + " on the page by " + LocateBy);
+		WebElement element1 = null;
+		try{
+			element1 = element.findElement(locater(ElementLocater, LocateBy));
+		}catch(Exception ex)
+		{
+			TestStatus.fail("Unable to find element '" + ElementLocater  + "' by '" + LocateBy +"'" );
+		}
+		return element1;
+	}
+	
+	
+	public List<WebElement> elements(WebDriver driver,String ElementLocater, String LocateBy)
+	{
+		Log.debug("Locating elements " + ElementLocater + " on the page by " + LocateBy);
+		List<WebElement> elements = null;
+		try{
+			elements = driver.findElements(locater(ElementLocater, LocateBy));
+		}catch(Exception ex)
+		{
+			TestStatus.fail("Unable to find elements '" + ElementLocater  + "' by '" + LocateBy +"'");
+		}
+		return elements;
+	}
+	
+	public List<WebElement> elements(WebElement element,String ElementLocater, String LocateBy)
+	{
+		Log.debug("Locating elements " + ElementLocater + " on the page by " + LocateBy);
+		List<WebElement> elements = null;
+		try{
+			elements = element.findElements(locater(ElementLocater, LocateBy));
+		}catch(Exception ex)
+		{
+			TestStatus.fail("Unable to find elements '" + ElementLocater  + "' by '" + LocateBy +"'");
+		}
+		return elements;
+	}
+	
+	public By locater(String ElementTags)
+	{
+		getElementLocater(ElementTags);
+		return locater(getElementLocater(),getLocateBy());
+	}
+	
+	public By locater(String ElementLocater,String LocateBy)
+	{
+		By by= null;
+		switch (LocateBy.toLowerCase()) {
+		case "id":
+			by =  By.id(ElementLocater);
+			break;
+		case "linktext":
+			by =  By.linkText(ElementLocater);
+			break;
+		case "xpath":
+			by =  By.xpath(ElementLocater);
+			break;
+		case "name":
+			by =  By.name(ElementLocater);
+			break;
+		case "classname":
+			by =  By.className(ElementLocater);
+			break;
+		case "tagname":
+			by =  By.tagName(ElementLocater);
+			break;
+		case "partiallinktext":
+			by =  By.partialLinkText(ElementLocater);
+			break;
+		case "css":
+			by =  By.cssSelector(ElementLocater);
+			break;
+		default:
+			TestStatus.fail("Incorrect Locate By for the element.");
+		}
+		return by;
+	}
+	
+	public boolean isElementPresent(WebDriver driver,String ElementTags,String LocateBy)
+	{
+		Browser.getWaits().wait(driver, 2);
+		try {
+			driver.findElement(locater(ElementTags, LocateBy));
+			Browser.getWaits().wait(driver);
+			return true;
+		}catch (Exception e)
+		{
+			Browser.getWaits().wait(driver);
+			return false;
+		}
+	}
+	
+	public boolean isElementPresent(WebDriver driver,String ElementTags)
+	{
+		Browser.getWaits().wait(driver, 2);
+		try {
+			driver.findElement(locater(ElementTags));
+			Browser.getWaits().wait(driver);
+			return true;
+		}catch (Exception e)
+		{
+			Browser.getWaits().wait(driver);
+			return false;
+		}
+	}
+
+	public void selectDropDownValueByVisibleText(WebElement element, String value)
+	{
+		Select select = new Select (element);
+		select.selectByVisibleText(value);
+	}
+
+	public boolean isElementPresent(WebDriver driver,WebElement element,
+			String ElementTags, String LocateBy) {
+		Browser.getWaits().wait(driver, 2);
+		try {
+			element.findElement(locater(ElementTags,LocateBy));
+			Browser.getWaits().wait(driver);
+			return true;
+		}catch (Exception e)
+		{
+			Browser.getWaits().wait(driver);
+			return false;
+		}
+	}
+	
+	public boolean isElementPresent(WebDriver driver,WebElement element,
+			String ElementTags) {
+		Browser.getWaits().wait(driver, 2);
+		try {
+			element.findElement(locater(ElementTags));
+			Browser.getWaits().wait(driver);
+			return true;
+		}catch (Exception e)
+		{
+			Browser.getWaits().wait(driver);
+			return false;
+		}
+	}
+	
+}

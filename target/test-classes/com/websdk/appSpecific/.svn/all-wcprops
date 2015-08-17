@@ -1,0 +1,131 @@
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/mxabu/mxabu-auto-svn/!svn/ver/3727/PismoAutomation/src/test/java/com/pismo/lib/appSpecific
+END
+PortalSettings.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/mxabu/mxabu-auto-svn/!svn/ver/3737/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/PortalSettings.java
+END
+EmailProcessing.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/mxabu/mxabu-auto-svn/!svn/ver/3719/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/EmailProcessing.java
+END
+VideoProcessing.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/mxabu/mxabu-auto-svn/!svn/ver/3726/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/VideoProcessing.java
+END
+Restore.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/mxabu/mxabu-auto-svn/!svn/ver/3719/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/Restore.java
+END
+VideoIUploaded.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/mxabu/mxabu-auto-svn/!svn/ver/3644/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/VideoIUploaded.java
+END
+CloseCaption.java
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/mxabu/mxabu-auto-svn/!svn/ver/3727/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/CloseCaption.java
+END
+ECDS.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/mxabu/mxabu-auto-svn/!svn/ver/3522/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/ECDS.java
+END
+SystemAdministration.java
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/mxabu/mxabu-auto-svn/!svn/ver/3719/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/SystemAdministration.java
+END
+VideoICanEdit.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/mxabu/mxabu-auto-svn/!svn/ver/3721/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/VideoICanEdit.java
+END
+SolrQueryUtils.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/mxabu/mxabu-auto-svn/!svn/ver/3325/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/SolrQueryUtils.java
+END
+LDAP.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/mxabu/mxabu-auto-svn/!svn/ver/3546/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/LDAP.java
+END
+VideoICanView.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/mxabu/mxabu-auto-svn/!svn/ver/3694/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/VideoICanView.java
+END
+UserPreference.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/mxabu/mxabu-auto-svn/!svn/ver/3660/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/UserPreference.java
+END
+Backup.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/mxabu/mxabu-auto-svn/!svn/ver/3620/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/Backup.java
+END
+SearchVideos.java
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/mxabu/mxabu-auto-svn/!svn/ver/3271/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/SearchVideos.java
+END
+VideoPendingApproval.java
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/mxabu/mxabu-auto-svn/!svn/ver/3723/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/VideoPendingApproval.java
+END
+Home.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/mxabu/mxabu-auto-svn/!svn/ver/3719/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/Home.java
+END
+VideoSharedWithMe.java
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/mxabu/mxabu-auto-svn/!svn/ver/3694/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/VideoSharedWithMe.java
+END
+Authentication.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/mxabu/mxabu-auto-svn/!svn/ver/3669/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/Authentication.java
+END
+VideoWatchLater.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/mxabu/mxabu-auto-svn/!svn/ver/3695/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/VideoWatchLater.java
+END
+PlayerControls.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/mxabu/mxabu-auto-svn/!svn/ver/3719/PismoAutomation/src/test/java/com/pismo/lib/appSpecific/PlayerControls.java
+END

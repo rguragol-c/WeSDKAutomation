@@ -1,0 +1,184 @@
+package com.pismo.lib.appSpecific;
+
+import java.util.List;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+
+public class VideoPendingApproval 
+{
+	private static SoftAssert SAssert = new SoftAssert();
+	
+	public static void goToPendingApprovalPage(WebDriver driver)
+	{
+		Log.info("Navigate to Pending approval page");
+		Browser.getElements().element(driver, ElementTags.linkHomeVideo).click();
+		Browser.getElements().element(driver, ElementTags.linkHomePendingVideo).click();
+	}
+	
+	public static void selectVideoFromListMD5(WebDriver driver,String VideoMD5)
+	{
+		Browser.getActions().scrollPageIntoView(driver, "thumbnail_link_" + VideoMD5 , LocateBy.id, 10);
+		Browser.getActions().click(Browser.getElements().element(driver,"thumbnail_link_" + VideoMD5 , LocateBy.id));
+	}
+	
+	public static void selectVideoFomList(WebDriver driver,String videoName)
+	{
+		selectVideoFromListMD5(driver, SolrQueryUtils.getVideoMD5FromSolr(videoName));
+	}
+	
+	public static boolean isVideoPresentMD5(WebDriver driver,String VideoMD5)
+	{
+		if (Browser.getElements().isElementPresent(driver, "thumbnail_link_" + VideoMD5, LocateBy.id))
+			return true;
+		else
+			return false;
+	}
+	
+	public static boolean isVideoPresent(WebDriver driver,String videoName)
+	{
+		return isVideoPresentMD5(driver, SolrQueryUtils.getVideoMD5FromSolr(videoName));
+	}
+	
+	public static SoftAssert verifyPendingApprovalVideo(WebDriver driver, String videoName, String duration, 
+			String uploadedBefore, String author, String likes, String views, String description, 
+			String categories, String [] tags, String TimsID)
+	{
+		int position = getVideoPositionFromVideoListing(driver, videoName);
+		String md5 = SolrQueryUtils.getVideoMD5FromSolr(videoName);
+		//Verify video title
+		SAssert.assertEquals(Browser.getElements().element(driver, "title_" + md5,LocateBy.id).getText()
+				, videoName ,"FAILED | TIMS ID:" + TimsID + " | Video name is not correct or missing for video item");
+		
+		//Verify video duration
+		SAssert.assertEquals(Browser.getElements().element(driver, "//*[@id='watchLater_" + md5 +"']/span[1]" ,LocateBy.xpath).getText(),
+				"Duration:","FAILED | TIMS ID:" + TimsID + " | Duration: lable is not correct or missing for video item");
+		SAssert.assertEquals(Browser.getElements().element(driver, "//*[@id='watchLater_" + md5 +"']/span[2]" ,LocateBy.xpath).getText(),
+				duration ,"FAILED | TIMS ID:" + TimsID + " | Video duration is not correct or missing for video item" );
+		//verify video upload time
+		SAssert.assertTrue(Browser.getElements().element(driver, "//*[@id='watchLater_" + md5 +"']/span[3]" ,LocateBy.xpath).getText().contains(uploadedBefore)
+				 ,"FAILED | TIMS ID:" + TimsID + " | Video last updated is not correct or missing for video item");
+		//verify video author name
+		SAssert.assertEquals(Browser.getElements().element(driver,"video_author_link_" + md5
+				, LocateBy.id).getText(), author ,"FAILED | TIMS ID:" + TimsID + " | Auther is not correct or missing for video item");
+		//Verify Description
+		if (description!=null)
+		{
+			if(Browser.getElements().isElementPresent(driver, "videoDescriptionDisplay_" + md5, LocateBy.id))
+			{
+				SAssert.assertEquals(Browser.getElements().element(driver,"videoDescriptionDisplay_" + md5
+						, LocateBy.id).getText(),description,"FAILED | TIMS ID:" + TimsID + " | Description is incorrect for video item");
+			}else
+			{
+				SAssert.fail("TIMS ID:" + TimsID + " | Video doesn't have description.");
+			}
+		}
+		//verify Category
+		if (categories!=null)
+			{
+			if (Browser.getElements().isElementPresent(driver, getCategoryLabel(position), LocateBy.xpath))
+			{
+				SAssert.assertEquals(Browser.getElements().element(driver, getCategoryLabel( position), LocateBy.xpath).getText()
+							,"Category:","FAILED | TIMS ID:" + TimsID + " | Category: lable is not correct or missing for video item");
+				SAssert.assertEquals(Browser.getElements().element(driver, getCategoryValue(position), LocateBy.xpath).getText()
+						, categories , "FAILED | TIMS ID:" + TimsID + " | Category is not correct or missing for video item");
+			}else 
+			{
+				SAssert.fail("TIMS ID:" + TimsID + " | Video doesn't have category.");
+			}
+		}
+		//Verify Tags
+		if (tags!=null)
+		{
+			if (Browser.getElements().isElementPresent(driver, getTagslabel(position), LocateBy.xpath))
+			{
+				SAssert.assertEquals(Browser.getElements().element(driver, getTagslabel(position), LocateBy.xpath).getText()
+						, "Tags:" ,"FAILED | TIMS ID:" + TimsID + " | Tags: lable is  not correct or missing for video item");
+				String [] VideoTags = new String[10];
+				int i=0;
+				//Verify Tags
+				List<WebElement> taglist = Browser.getElements().elements(Browser.getElements().element(driver,getTagsElementXpath(position),
+						LocateBy.xpath), ElementTags.linkPendingApprovalTags);
+				for (WebElement tag : taglist) 
+				{
+					VideoTags[i]=tag.getText();
+					i++;
+				}
+				SAssert.assertEquals(taglist.size(),5,"FAILED | TIMS ID:" + TimsID + " | More than five tags are displayed for video item.");
+				SAssert.assertEquals(VideoTags, tags,"FAILED | TIMS ID:" + TimsID + " | Video Tags are incorrect for video item.");
+			}else 
+			{
+				SAssert.fail("TIMS ID:" + TimsID + " | Video doesn't have Tags.");
+			}
+		}
+		return SAssert;
+	}
+		
+	public static String getCategoryLabel(int position)
+	{
+		if (position==0)
+		{
+			return 	"//*[@id='videoSearchResult']/div/div[2]/div[6]/span[1]";
+		}else
+		{
+			return 	"//*[@id='videoSearchResult']/div["+ position +"]/div[2]/div[6]/span[1]";
+		}
+	}
+	
+	public static String getCategoryValue(int position)
+	{
+		if (position==0)
+		{
+			return 	"//*[@id='videoSearchResult']/div/div[2]/div[6]/span[2]/a";
+		}else
+		{
+			return "//*[@id='videoSearchResult']/div["+ position +"]/div[2]/div[6]/span[2]/a";
+		}
+	}
+	
+	public static String getTagslabel(int position)
+	{
+		if (position==0)
+		{
+			return "//*[@id='videoSearchResult']/div/div[2]/div[6]/span[3]";
+		}else
+		{
+			return "//*[@id='videoSearchResult']/div["+ position +"]/div[2]/div[6]/span[3]";
+		}
+	}
+	
+	public static String getTagsElementXpath(int position)
+	{
+		if (position==0)
+		{
+			return "//*[@id='videoSearchResult']/div/div[2]/div[6]";
+		}else
+		{
+			return "//*[@id='videoSearchResult']/div["+ position +"]/div[2]/div[6]";
+		}
+	}
+	
+	public static int getVideoPositionFromVideoListing(WebDriver driver, String videoName)
+	{
+		List<WebElement> VideoTitles= Browser.getElements().elements(driver, ElementTags.linkPendingApprovalVideoTitle);
+		if (VideoTitles.size()==1)
+		{
+			return 0;
+		}else
+		{
+			for (int i=0 ; i<VideoTitles.size();i++) {
+				if (VideoTitles.get(i).getText().equals(videoName))
+				{
+					return i;
+				}
+			}
+		}
+		return -1;
+	}
+}

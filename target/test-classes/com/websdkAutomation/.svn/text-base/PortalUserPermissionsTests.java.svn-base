@@ -1,0 +1,478 @@
+package com.pismo.PismoAutomation;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.SolrQueryUtils;
+import com.pismo.lib.appSpecific.VideoICanEdit;
+import com.pismo.lib.appSpecific.VideoICanView;
+import com.pismo.lib.appSpecific.VideoPendingApproval;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.ExpectedCondition;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class PortalUserPermissionsTests 
+{
+	private WebDriver driver= null;
+	private String BaseWindowHandle= null;
+	private SoftAssert sassert = new SoftAssert();
+	private String UserName=Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_2);
+	private String UserID=Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_2);
+	private String Password = Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_2);
+	private String GroupID= "TestGroup";
+	private String arr[][]={{UserName,"Editor"}};
+	private String md5_published=null;
+	private String md5_pendingapproval=null;
+	private String PendingApproval="PendingApprovalVideo" + GenericUtils.getRandomNumber();
+	private String Publishedvideo = "PublishedTestVideo" + GenericUtils.getRandomNumber();
+	
+	@BeforeClass
+	public void setUp() 
+	{
+		driver = Fixtures.setupFixture("Portal Settings user permissions test class started.");
+		BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setALLLDAPUserPermissionsWithUser(driver, false, false, false, "Anindya Sinha (anisinha)", "anisinha",
+				true, true, true);
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, "Yes", null, null, null, null, null, null, null);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+				Publishedvideo, "Video Description", false, arr, null, null,null,null,null, true);
+		Home.goToHomePage(driver);
+		VideoProcessing.uploadVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2));
+		VideoProcessing.verifyUpload(driver);
+		VideoProcessing.verifyVideoProcessStatus(driver);
+		VideoProcessing.setBasicVideo(driver, PendingApproval , "Approve Video");
+		VideoProcessing.setPrivacyAndPermission(driver, false, arr);
+		VideoProcessing.sendVideoForApproval(driver);
+		md5_published = SolrQueryUtils.getVideoMD5FromSolr(Publishedvideo);
+		md5_pendingapproval = SolrQueryUtils.getVideoMD5FromSolr(PendingApproval);
+		Home.goToHomePage(driver);
+	}
+	
+	@Test(description="TIMS ID : Trv617900c,Trv617895c",priority=1)
+	public void verifyAddUserPermission()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnEditUserPermission));
+		Browser.getWaits().wait(2);
+		Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtPermissionAddUser), UserID);
+		Browser.getActions().click(Browser.getElements().element(driver, UserName,LocateBy.partiallinktext));
+		int row_number= PortalSettings.getUserFromUserPermissionsTable(driver, UserID);
+		sassert.assertEquals(Browser.getElements().element(driver, "//*[@id='listOfGroupPermission']/tbody/tr[" + row_number + "]/td[1]/span",
+				LocateBy.xpath).getText(),UserID,	"FAILED | TIMS ID: Trv588128c,Trv617895c | User ID is not added to typeahed text box.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCancelUserPermissions));
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv617900c,Trv617895c");
+	}
+	
+	@Test(description="TIMS ID : Trv617896c",priority=2)
+	public void verifyAddGroupPermission()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnEditUserPermission));
+		Browser.getWaits().wait(2);
+		Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtPermissionAddUser), GroupID);
+		Browser.getActions().click(Browser.getElements().element(driver, GroupID,LocateBy.partiallinktext));
+		int row_number= PortalSettings.getUserFromUserPermissionsTable(driver, GroupID);
+		sassert.assertEquals(Browser.getElements().element(driver,  "//*[@id='listOfGroupPermission']/tbody/tr[" + row_number + "]/td[1]/span",
+				LocateBy.xpath).getText(), GroupID, "FAILED | TIMS ID: Trv617896c | Group ID is not added to typeahed text box.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCancelUserPermissions));
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv617896c");
+	}
+	
+	@Test(description="TIMS ID : Trv617887c",priority=3)
+	public void verifyAddUserWithNoPermissions()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setUserPermissions(driver, UserName , UserID, false, false, false);
+		Browser.getWaits().wait(driver, ElementTags.bttnEditUserPermission, ExpectedCondition.visibilityOfElementLocated, 5, null);
+		int row_number= PortalSettings.getUserFromUserPermissionsTable(driver, UserID);
+		sassert.assertEquals(Browser.getElements().element(driver, "//*[@id='listOfGroupPermission']/tbody/tr[" + row_number + "]/td[5]/span",
+				LocateBy.xpath).getText(), "Guest access only",	"FAILED | TIMS ID: Trv617887c | User Persmission is not added for Guest Access Only");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, UserID, Password, false);
+		sassert.assertFalse(Authentication.isUserloggedIn(driver), 
+				"FAILED | TIMS ID: Trv617887c | User having guest access only is able to login");
+		Authentication.doLogin(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.removeUserPermission(driver,UserID);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv617887c");
+	}
+	
+	@Test(description="TIMS ID : Trv617888c,Trv617894c",priority=4)
+	public void verifyAddUserWithAllPermissions()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setUserPermissions(driver, UserName , UserID, true, true, true);
+		Browser.getWaits().wait(driver, ElementTags.bttnEditUserPermission, ExpectedCondition.visibilityOfElementLocated, 5, null);
+		int row_number= PortalSettings.getUserFromUserPermissionsTable(driver, UserID);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='creatorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617888c,Trv617894c | Upload Video Permission is not checked.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='editorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617888c,Trv617894c | Video view and edit permission is not checked.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='approverDisplay_" + row_number + "']/img",LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617888c,Trv617894c | Approve video permission is not checked.");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, UserID, Password, true);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.linkHomePlusIcon), 
+				"FAILED | TIMS ID: Trv617888c,Trv617894c | Upload icon is not present for user in header menu.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomePlusIcon));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkVideoUpload));
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSelectuploadFile), 
+				"FAILED | TIMS ID: Trv617888c,Trv617894c | User is not able to upload videos.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCacelUpload));
+		VideoICanView.goToVideosICanView(driver);
+		sassert.assertTrue(VideoICanView.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617888c,Trv617894c | User is not able to view Videos on I can View Page.");
+		VideoICanView.selectVideoFromListMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.iconVideoPlay),"FAILED | TIMS ID: Trv617888c,Trv617894c | User is not able to view video.");
+		Home.goToHomePage(driver);
+		VideoICanEdit.goToVideosICanEdit(driver);
+		sassert.assertTrue(VideoICanEdit.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617888c,Trv617894c | User is not able to edit Videos on I can Edit page.");
+		VideoICanEdit.clickEditVideoMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSendForApproval),"FAILED | TIMS ID: Trv617888c,Trv617894c | User is not able to Edit video.");
+		Home.goToHomePage(driver);
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		sassert.assertTrue(VideoPendingApproval.isVideoPresentMD5(driver, md5_pendingapproval), "FAILED | TIMS ID: Trv617888c,Trv617894c | User is not able to view Videos on Pending my approval page.");
+		VideoPendingApproval.selectVideoFromListMD5(driver, md5_pendingapproval);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnApproveNPublish),"FAILED | TIMS ID: Trv617888c,Trv617894c | User is not able to Approve video.");
+		Home.goToHomePage(driver);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.removeUserPermission(driver,UserID);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv617888c");
+	}
+	
+	@Test(description="TIMS ID : Trv617889c,Trv617892c",priority=5)
+	public void verifyAddUserWithUploadPermission()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setUserPermissions(driver, UserName , UserID, true, true, false);
+		Browser.getWaits().wait(driver, ElementTags.bttnEditUserPermission, ExpectedCondition.visibilityOfElementLocated, 5, null);
+		int row_number= PortalSettings.getUserFromUserPermissionsTable(driver, UserID);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='creatorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617889c,Trv617892c | Upload Video Permission is not checked.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='editorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617889c,Trv617892c | Video view and edit permission is not checked.");
+		sassert.assertFalse(Browser.getElements().isElementPresent(driver, "//*[@id='approverDisplay_" + row_number + "']/img",LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617889c,Trv617892c | Approve video permission is checked.");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, UserID, Password, true);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.linkHomePlusIcon), 
+				"FAILED | TIMS ID: Trv617889c,Trv617892c | Upload icon is not present for user in header menu.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomePlusIcon));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkVideoUpload));
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSelectuploadFile), 
+				"FAILED | TIMS ID: Trv617889c,Trv617892c | User is not able to upload videos.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCacelUpload));
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.removeUserPermission(driver,UserID);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv617889c,Trv617892c");
+	}
+	
+	@Test(description="TIMS ID : Trv617890c",priority=6)
+	public void verifyAddUserWithViewNEditPermission()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setUserPermissions(driver, UserName , UserID, false, true, false);
+		Browser.getWaits().wait(driver, ElementTags.bttnEditUserPermission, ExpectedCondition.visibilityOfElementLocated, 5, null);
+		int row_number= PortalSettings.getUserFromUserPermissionsTable(driver, UserID);
+		sassert.assertFalse(Browser.getElements().isElementPresent(driver, "//*[@id='creatorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617890c | Upload Video Permission is checked.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='editorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617890c | Video view and edit permission is not checked.");
+		sassert.assertFalse(Browser.getElements().isElementPresent(driver, "//*[@id='approverDisplay_" + row_number + "']/img",LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617890c | Approve video permission is checked.");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, UserID, Password, true);
+		sassert.assertFalse(Browser.getElements().isElementPresent(driver, ElementTags.linkHomePlusIcon), 
+				"FAILED | TIMS ID: Trv617890c | Upload icon is present for user in header menu.");
+		VideoICanView.goToVideosICanView(driver);
+		sassert.assertTrue(VideoICanView.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617890c | User is not able to view Videos on I can View Page.");
+		VideoICanView.selectVideoFromListMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.iconVideoPlay),"FAILED | TIMS ID: Trv617890c | User is not able to view video.");
+		Home.goToHomePage(driver);
+		VideoICanEdit.goToVideosICanEdit(driver);
+		sassert.assertTrue(VideoICanEdit.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617890c | User is not able to edit Videos on I can Edit page.");
+		VideoICanEdit.clickEditVideoMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSendForApproval),"FAILED | TIMS ID: Trv617890c | User is not able to Edit video.");
+		Home.goToHomePage(driver);
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		sassert.assertFalse(VideoPendingApproval.isVideoPresentMD5(driver, md5_pendingapproval), "FAILED | TIMS ID: Trv617890c | User is able to view Videos on Pending my approval page.");
+		Home.goToHomePage(driver);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.removeUserPermission(driver,UserID);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv617890c");
+	}
+	
+	@Test(description="TIMS ID : Trv617891c",priority=7)
+	public void verifyAddUserWithApprovePermission()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		Log.info("Setting User permissions");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnEditUserPermission));
+		Browser.getWaits().wait(2);
+		Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtPermissionAddUser), UserID);
+		Browser.getActions().click(Browser.getElements().element(driver, UserName,LocateBy.partiallinktext));
+		int row_number= PortalSettings.getUserFromUserPermissionsTable(driver, UserID);
+		WebElement checkbox  = Browser.getElements().element(driver, "permission_select_approver_" + row_number ,LocateBy.id);
+		sassert.assertFalse(checkbox.isEnabled(),
+				"FAILED | TIMS ID: Trv617891c | Approver check box is enabled even if upload and Editor checkboxes are not checked.");
+		Browser.getActions().click(Browser.getElements().element(driver, "permission_select_creator_" + row_number ,LocateBy.id));
+		Browser.getActions().click(checkbox);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSaveUserPermissions));	
+		Browser.getWaits().wait(driver, ElementTags.bttnEditUserPermission, ExpectedCondition.visibilityOfElementLocated, 5, null);
+		row_number= PortalSettings.getUserFromUserPermissionsTable(driver, UserID);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='creatorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617891c | Upload Video Permission is not checked.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='editorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617891c | Video view and edit permission is not checked.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='approverDisplay_" + row_number + "']/img",LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617891c | Approve video permission is not checked.");
+		
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, UserID, Password, true);
+		VideoICanView.goToVideosICanView(driver);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.linkHomePlusIcon), 
+				"FAILED | TIMS ID: Trv617893c | Upload icon is present for user in header menu.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomePlusIcon));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkVideoUpload));
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSelectuploadFile), 
+				"FAILED | TIMS ID: Trv617889c,Trv617892c | User is not able to upload videos.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCacelUpload));
+		VideoICanView.goToVideosICanView(driver);
+		sassert.assertTrue(VideoICanView.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617891c | User is not able to view Videos on I can View Page.");
+		VideoICanView.selectVideoFromListMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.iconVideoPlay),"FAILED | TIMS ID: Trv617891c | User is not able to view video.");
+		Home.goToHomePage(driver);
+		VideoICanEdit.goToVideosICanEdit(driver);
+		sassert.assertTrue(VideoICanEdit.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617891c | User is not able to edit Videos on I can Edit page.");
+		VideoICanEdit.clickEditVideoMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSendForApproval),"FAILED | TIMS ID: Trv617891c | User is not able to Edit video.");
+		Home.goToHomePage(driver);
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		sassert.assertTrue(VideoPendingApproval.isVideoPresentMD5(driver, md5_pendingapproval), "FAILED | TIMS ID: Trv617891c | User is not able to view Videos on Pending my approval page.");
+		VideoPendingApproval.selectVideoFromListMD5(driver, md5_pendingapproval);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnApproveNPublish),"FAILED | TIMS ID: Trv617891c | User is not able to Approve video.");
+		Home.goToHomePage(driver);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.removeUserPermission(driver,UserID);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv617891c");
+	}
+	
+	@Test(description="TIMS ID : Trv617893c",priority=8)
+	public void verifyAddUserWithViewNEditNApprovePermission()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setUserPermissions(driver, UserName , UserID, false, true, true);
+		Browser.getWaits().wait(driver, ElementTags.bttnEditUserPermission, ExpectedCondition.visibilityOfElementLocated, 5, null);
+		int row_number= PortalSettings.getUserFromUserPermissionsTable(driver, UserID);
+		sassert.assertFalse(Browser.getElements().isElementPresent(driver, "//*[@id='creatorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617893c | Upload Video Permission is checked.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='editorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617893c | Video view and edit permission is not checked.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='approverDisplay_" + row_number + "']/img",LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617893c | Approve video permission is not checked.");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, UserID, Password, true);
+		sassert.assertFalse(Browser.getElements().isElementPresent(driver, ElementTags.linkHomePlusIcon), 
+				"FAILED | TIMS ID: Trv617893c | Upload icon is present for user in header menu.");
+		VideoICanView.goToVideosICanView(driver);
+		sassert.assertTrue(VideoICanView.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617893c | User is not able to view Videos on I can View Page.");
+		VideoICanView.selectVideoFromListMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.iconVideoPlay),"FAILED | TIMS ID: Trv617893c | User is not able to view video.");
+		Home.goToHomePage(driver);
+		VideoICanEdit.goToVideosICanEdit(driver);
+		sassert.assertTrue(VideoICanEdit.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617893c | User is not able to edit Videos on I can Edit page.");
+		VideoICanEdit.clickEditVideoMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSendForApproval),"FAILED | TIMS ID: Trv617893c | User is not able to Edit video.");
+		Home.goToHomePage(driver);
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		sassert.assertTrue(VideoPendingApproval.isVideoPresentMD5(driver, md5_pendingapproval), "FAILED | TIMS ID: Trv617893c | User is not able to view Videos on Pending my approval page.");
+		VideoPendingApproval.selectVideoFromListMD5(driver, md5_pendingapproval);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnApproveNPublish),"FAILED | TIMS ID: Trv617893c | User is not able to Approve video.");
+		Home.goToHomePage(driver);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.removeUserPermission(driver,UserID);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv617893c");
+	}
+	
+	@Test(description="TIMS ID : Trv617897c",priority=9)
+	public void verifyUserPermissionsWithGroupForAllPermissions()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, true, true, true);
+		PortalSettings.setUserPermissions(driver, UserName , UserID, true, true, true);
+		Browser.getWaits().wait(driver, ElementTags.bttnEditUserPermission, ExpectedCondition.visibilityOfElementLocated, 5, null);
+		int row_number= PortalSettings.getUserFromUserPermissionsTable(driver, UserID);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='creatorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617897c | Upload Video Permission is not checked.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='editorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617897c | Video view and edit permission is not checked.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='approverDisplay_" + row_number + "']/img",LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617897c | Approve video permission is not checked.");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, UserID, Password, true);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.linkHomePlusIcon), 
+				"FAILED | TIMS ID: Trv617897c | Upload icon is not present for user in header menu.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomePlusIcon));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkVideoUpload));
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSelectuploadFile), 
+				"FAILED | TIMS ID: Trv617897c | User is not able to upload videos.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCacelUpload));
+		VideoICanView.goToVideosICanView(driver);
+		sassert.assertTrue(VideoICanView.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617897c | User is not able to view Videos on I can View Page.");
+		VideoICanView.selectVideoFromListMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.iconVideoPlay),"FAILED | TIMS ID: Trv617897c | User is not able to view video.");
+		Home.goToHomePage(driver);
+		VideoICanEdit.goToVideosICanEdit(driver);
+		sassert.assertTrue(VideoICanEdit.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617897c | User is not able to edit Videos on I can Edit page.");
+		VideoICanEdit.clickEditVideoMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSendForApproval),"FAILED | TIMS ID: Trv617897c | User is not able to Edit video.");
+		Home.goToHomePage(driver);
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		sassert.assertTrue(VideoPendingApproval.isVideoPresentMD5(driver, md5_pendingapproval), "FAILED | TIMS ID: Trv617897c | User is not able to view Videos on Pending my approval page.");
+		VideoPendingApproval.selectVideoFromListMD5(driver, md5_pendingapproval);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnApproveNPublish),"FAILED | TIMS ID: Trv617897c | User is not able to Approve video.");
+		Home.goToHomePage(driver);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, false, false, false);
+		PortalSettings.removeUserPermission(driver,UserID);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv617897c");
+	}
+	
+	@Test(description="TIMS ID : Trv617898c",priority=10)
+	public void verifyUserPermissionsWithGroupForSelectedPermissions()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, false, true, false);
+		PortalSettings.setUserPermissions(driver, UserName , UserID, true, true, false);
+		Browser.getWaits().wait(driver, ElementTags.bttnEditUserPermission, ExpectedCondition.visibilityOfElementLocated, 5, null);
+		int row_number= PortalSettings.getUserFromUserPermissionsTable(driver, UserID);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='creatorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617898c | Upload Video Permission is not checked.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='editorDisplay_" + row_number + "']/img" ,LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617898c | Video view and edit permission is not checked.");
+		sassert.assertFalse(Browser.getElements().isElementPresent(driver, "//*[@id='approverDisplay_" + row_number + "']/img",LocateBy.xpath),
+				"FAILED | TIMS ID: Trv617898c | Approve video permission is checked.");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, UserID, Password, true);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.linkHomePlusIcon), 
+				"FAILED | TIMS ID: Trv617898c | Upload icon is not present for user in header menu.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomePlusIcon));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkVideoUpload));
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSelectuploadFile), 
+				"FAILED | TIMS ID: Trv617898c | User is not able to upload videos.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCacelUpload));
+		VideoICanView.goToVideosICanView(driver);
+		sassert.assertTrue(VideoICanView.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617898c | User is not able to view Videos on I can View Page.");
+		VideoICanView.selectVideoFromListMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.iconVideoPlay),"FAILED | TIMS ID: Trv617897c | User is not able to view video.");
+		Home.goToHomePage(driver);
+		VideoICanEdit.goToVideosICanEdit(driver);
+		sassert.assertTrue(VideoICanEdit.isVideoPresentMD5(driver, md5_published), "FAILED | TIMS ID: Trv617898c | User is not able to edit Videos on I can Edit page.");
+		VideoICanEdit.clickEditVideoMD5(driver, md5_published);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSendForApproval),"FAILED | TIMS ID: Trv617898c | User is not able to Edit video.");
+		Home.goToHomePage(driver);
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		sassert.assertFalse(VideoPendingApproval.isVideoPresentMD5(driver, md5_pendingapproval), "FAILED | TIMS ID: Trv617898c | User is able to view Videos on Pending my approval page.");
+		Home.goToHomePage(driver);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, false, false, false);
+		PortalSettings.removeUserPermission(driver,UserID);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv617898c");
+	}
+	
+	@AfterClass
+	public void tearDown()
+	{
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		VideoPendingApproval.selectVideoFomList(driver, PendingApproval);
+		VideoProcessing.approveRejectVideo(driver, "Approve","Approved");
+		Home.goToHomePage(driver);
+		String [] Videos = {PendingApproval,Publishedvideo};
+		VideoProcessing.deletePublishedVideo(driver, Videos);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, true, true, true);
+		PortalSettings.removeUserPermission(driver,"anisinha");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Fixtures.tearDownFixture(driver);
+	}
+}

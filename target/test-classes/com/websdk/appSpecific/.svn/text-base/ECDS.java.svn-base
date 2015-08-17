@@ -1,0 +1,263 @@
+package com.pismo.lib.appSpecific;
+
+import org.openqa.selenium.Alert;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.ExpectedCondition;
+import com.pismo.lib.generic.SoftAssert;
+
+public class ECDS {
+
+	private static SoftAssert SAssert = new SoftAssert();
+	
+	public static void cleanUp(WebDriver driver){
+		if(Browser.getElements().element(driver, ElementTags.bttnDelete).isEnabled()){
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnDelete));
+			SAssert.merge(ECDS.alertConfirm(driver, "Are you sure to delete CDS registration ?","Trv590820c, Trv590819c, Trv590826c"));
+			ECDS.gotoCDSPage(driver);
+		}
+	}
+
+	public static void enterDetails(WebDriver driver, String ip, String port,
+			String contentOrigin, String username, String password) {
+		// TODO Auto-generated method stub
+		WebElement ele = null;
+		
+		if (ip != null) {
+			ele = Browser.getElements().element(driver,
+					ElementTags.txtCDMAddress);
+			ele.clear();
+			ele.sendKeys(ip);
+		}
+		if (port != null) {
+			ele = Browser.getElements().element(driver, ElementTags.txtPort);
+			ele.clear();
+			ele.sendKeys(port);
+		}
+		if (contentOrigin != null) {
+			ele = Browser.getElements().element(driver,
+					ElementTags.txtContentOrigin);
+			ele.clear();
+			ele.sendKeys(contentOrigin);
+		}
+		if (username != null) {
+			ele = Browser.getElements().element(driver,
+					ElementTags.txtCDMUsername);
+			ele.clear();
+			ele.sendKeys(username);
+		}
+		if (password != null) {
+			ele = Browser.getElements().element(driver,
+					ElementTags.txtCDMPassword);
+			ele.clear();
+			ele.sendKeys(password);
+		}
+	}
+
+	
+	public static SoftAssert verifyUI(WebDriver driver, String timsID) {
+
+		SAssert.assertTrue(
+			Browser.getElements().element(driver, ElementTags.labelECDS)
+			.getText().equals("Media Delivery"),
+				"FAILED | TIMS ID: " + timsID + " | Title verification failed");
+		SAssert.assertFalse(
+			Browser.getElements().element(driver, ElementTags.bttnSNS)
+			.isSelected(), "FAILED | TIMS ID: " + timsID
+			+ "  | SNS radio option is selected");
+		SAssert.assertTrue(
+				Browser.getElements().element(driver, ElementTags.bttnCDS)
+				.isSelected(), "FAILED | TIMS ID: " + timsID
+				+ "  | CDS radio option is not selected");
+		SAssert.assertTrue(
+				Browser.getElements()
+				.element(driver, ElementTags.txtCDMAddress)
+				.isDisplayed(), "FAILED | TIMS ID: " + timsID
+				+ "  | IP textfield is not displayed");
+		SAssert.assertTrue(
+				Browser.getElements().element(driver, ElementTags.txtPort)
+				.isDisplayed(), "FAILED | TIMS ID: " + timsID
+				+ "  | Port textfield is not displayed");
+		SAssert.assertTrue(
+				Browser.getElements()
+				.element(driver, ElementTags.txtContentOrigin)
+				.isDisplayed(), "FAILED | TIMS ID: " + timsID
+				+ "  |Content-type textfield is not displayed");
+		SAssert.assertTrue(
+				Browser.getElements()
+				.element(driver, ElementTags.txtCDMUsername)
+				.isDisplayed(), "FAILED | TIMS ID: " + timsID
+				+ "  | Username textfield is not displayed");
+		SAssert.assertTrue(
+				Browser.getElements()
+				.element(driver, ElementTags.txtCDMPassword)
+				.isDisplayed(), "FAILED | TIMS ID: " + timsID
+				+ "  | Password textfield is not displayed");
+		SAssert.assertTrue(
+				Browser.getElements().element(driver, ElementTags.bttnRegister)
+				.isEnabled(), "FAILED | TIMS ID: " + timsID
+				+ "  | Register button is enabled");
+		SAssert.assertTrue(
+				Browser.getElements().element(driver, ElementTags.bttnCancel)
+				.isEnabled(), "FAILED | TIMS ID: " + timsID
+				+ "  | Cancel button is enabled");
+		SAssert.assertFalse(
+				Browser.getElements().element(driver, ElementTags.bttnDelete)
+				.isEnabled(), "FAILED | TIMS ID: " + timsID
+				+ "  | Delete button is not disabled");
+		return SAssert;
+	}
+
+	public static SoftAssert verifyMediaDeliveryUI(WebDriver driver,
+			String timsID) {
+		SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.labelECDS)		
+				.getText().equals("Media Delivery"),
+				"FAILED | TIMS ID: " + timsID + "  | Title mismatch ");
+				
+		SAssert.assertTrue(
+				Browser.getElements()
+				.element(driver, ElementTags.labelOptionTitle)
+				.getText().equals("Select media delivery option"),
+				"FAILED | TIMS ID: " + timsID
+				+ "  | Select Media message not displayed ");
+
+		SAssert.assertTrue(
+				Browser.getElements().element(driver, ElementTags.bttnSNS)
+				.isSelected(), "FAILED | TIMS ID: " + timsID
+				+ "  |SNS radio option is not selected");
+		SAssert.assertFalse(
+				Browser.getElements().element(driver, ElementTags.bttnCDS)
+				.isSelected(), "FAILED | TIMS ID: " + timsID
+				+ "  |CDS radio option is selected");
+
+		return SAssert;
+	}
+
+	public static SoftAssert verifyEmptyFields(WebDriver driver, String timsID) {
+
+		SAssert.assertTrue(
+				Browser.getElements()
+				.element(driver, ElementTags.txtCDMAddress)
+				.getAttribute("value").contentEquals(""),
+				"FAILED | TIMS ID: " + timsID + "  |IP textfield is not empty");
+		SAssert.assertTrue(
+				Browser.getElements().element(driver, ElementTags.txtPort)
+				.getAttribute("value").contentEquals(""),
+				"FAILED | TIMS ID: " + timsID
+				+ "  |Port textfield is not empty");
+		SAssert.assertTrue(
+				Browser.getElements()
+				.element(driver, ElementTags.txtContentOrigin)
+				.getAttribute("value").contentEquals(""),
+				"FAILED | TIMS ID: " + timsID
+				+ "  |Content Origin textfield is not empty");
+		SAssert.assertTrue(
+				Browser.getElements()
+				.element(driver, ElementTags.txtCDMUsername)
+				.getAttribute("value").contentEquals(""),
+				"FAILED | TIMS ID: " + timsID
+				+ "  |Username textfield is not empty");
+		SAssert.assertTrue(
+				Browser.getElements()
+				.element(driver, ElementTags.txtCDMPassword)
+				.getAttribute("value").contentEquals(""),
+				"FAILED | TIMS ID: " + timsID
+				+ "  |Password textfield is not empty");
+
+		return SAssert;
+
+	}
+
+	public static void save(WebDriver driver) {
+		Browser.getActions().click(
+				Browser.getElements().element(driver, ElementTags.selectRow));
+		Browser.getActions().click(
+				Browser.getElements().element(driver, ElementTags.bttnSave));
+	}
+
+	public static SoftAssert alertConfirm(WebDriver driver, String message, String timsID) {
+		Alert al = Browser.getSwitchto().alert(driver);
+		SAssert.assertEquals(message, al.getText(),"FAILED | TIMS ID: "+timsID+ " "+al.getText()+ "not displayed");
+		al.accept();
+		return SAssert;
+	}
+
+	public static void gotoCDSPage(WebDriver driver) {
+		Browser.getActions().click(
+				Browser.getElements().element(driver,
+						ElementTags.linkMediaDelivery));
+		Browser.getActions().click(
+				Browser.getElements().element(driver,
+						ElementTags.linkDeliveryService));
+
+	}
+
+	public static SoftAssert verifyRegisterTableData(WebDriver driver,
+			String expectedDSName, String expectedSRDN,
+			String expectedDiskQuota, String expectedUsedQuota, String timsID) {
+
+		SAssert.assertTrue(
+					Browser.getElements().element(driver, ElementTags.labelDSName)
+					.getText().contentEquals(expectedDSName),
+					"FAILED | TIMS ID: " + timsID + " | DSName does not match");
+		SAssert.assertTrue(
+					Browser.getElements().element(driver, ElementTags.labelSRDN)
+					.getText().contentEquals(expectedSRDN) || Browser.getElements().element(driver, ElementTags.labelSRDN)
+					.getText().contentEquals("coho.ecdstest.com"),
+					"FAILED | TIMS ID: " + timsID + " | SRDN does not match");
+		SAssert.assertTrue(
+					Browser.getElements()
+					.element(driver, ElementTags.labelDiskQuota).getText()
+					.contentEquals(expectedDiskQuota), "FAILED | TIMS ID: "
+							+ timsID + " | Disk Quota does not match");
+		SAssert.assertTrue(
+					Browser.getElements()
+					.element(driver, ElementTags.labelUsedQuota).getText()
+					.contentEquals(expectedUsedQuota), "FAILED | TIMS ID: "
+							+ timsID + "  | Used Quota does not match");
+
+		return SAssert;
+	}
+
+	public static SoftAssert verifyIncorrectErrorMessages(WebDriver driver,
+			String ip, String port, String contentOrigin, String username,
+			String password, String message, String tims) {
+
+		enterDetails(driver, ip, port, contentOrigin, username, password);
+
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnRegister));
+
+		if (!ip.contentEquals("")) {
+			SAssert.assertTrue(
+					Browser.getElements()
+					.element(driver, ElementTags.labelMessage)
+					.getText()
+					.equals("ECDS Registration is in progress..."),
+					"FAILED | TIMS ID: " + tims
+					+ " | Required Error message not displayed ");
+			
+			Browser.getWaits().wait(driver, ElementTags.labelMessage,
+					ExpectedCondition.textToBePresentInElementLocated, 15,
+					message);
+			
+			SAssert.assertTrue(
+					Browser.getElements()
+					.element(driver, ElementTags.labelMessage)
+					.getText().equals(message), "FAILED | TIMS ID: "
+							+ tims + " | Required Error message not displayed");
+		} else {
+
+			SAssert.assertTrue(
+					Browser.getElements()
+					.element(driver, ElementTags.labelEmptyError)
+					.getText().equals(message), "FAILED | TIMS ID: "
+							+ tims + " | Required Error message not displayed");
+		}
+		return SAssert;
+
+	}
+
+}

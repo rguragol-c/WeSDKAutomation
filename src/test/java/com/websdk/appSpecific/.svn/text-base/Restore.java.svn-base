@@ -1,0 +1,154 @@
+package com.pismo.lib.appSpecific;
+
+
+
+import org.openqa.selenium.WebDriver;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SSHConnect;
+import com.pismo.lib.appSpecific.Backup;
+import com.pismo.lib.generic.SoftAssert;
+
+
+
+public class Restore {
+	
+	private static SoftAssert softassert=new SoftAssert();
+	private static String bkphost;
+	private static String bkpfile;
+	private static String username;
+	private static String password;
+	private static String port;
+	
+	
+	
+	public static boolean portalRestore(String deviceType,String host,String userName,String userpassword,String devicePort,String filepath)
+	{
+		boolean flag=false;
+		SSHConnect.connectToServer(Browser.getPropertyFromConfigFile(ConfigProperties.sshhost), Browser.getPropertyFromConfigFile(ConfigProperties.sshuser),Browser.getPropertyFromConfigFile(ConfigProperties.sshpassword));
+		
+		bkphost=host;
+		username=userName;
+		password=userpassword;
+		port=devicePort;
+		bkpfile=filepath;
+		String Command=null;
+		
+		switch(deviceType)
+		{
+		case "local":
+			Command="/opt/cisco/platform/bin/cohorestore.sh restore -t=local -f="+bkpfile;
+			break;
+			
+		case "ftp":
+			Command="/opt/cisco/platform/bin/cohorestore.sh restore -h="+bkphost+" --user="+username+" --pass="+password+" --port="+port+" -f="+bkpfile+" -t=ftp";
+
+			break;
+			
+		case "sftp":
+			Command="/opt/cisco/platform/bin/cohorestore.sh restore -h="+bkphost+" --user="+username+" --pass="+password+" --port="+port+" -f="+bkpfile+" -t=sftp";
+			break;
+			
+		case "nfs":
+			Command="/opt/cisco/platform/bin/cohorestore.sh restore -h="+bkphost+" --user="+username+" --pass="+password+" --port="+port+" -f="+bkpfile+" -t=nfs ;echo $?";			
+			break;
+			
+		default: 
+			Log.error("Invalid device type");
+			return false;
+		}
+		
+		int status=SSHConnect.executeCommand(Command);
+		if(status==0)
+		{
+			Log.info("Restore is sucessfully done through "+deviceType);
+			flag=true;
+		}
+		else
+		{
+			Log.error("Restore failed through "+ deviceType);
+			flag=false;
+		}
+		SSHConnect.disconnectFromServer();
+		return flag;
+	}
+	
+	public static String backupbundleforRestore(WebDriver driver,String bkupdevice,String bkupfolder){
+			String backupfilepathonUI="";
+			String NFSmountpath="";
+			String Completebackupfilepath="";
+			
+			 Backup.goToBackUp(driver);
+			 
+			//*************Navigate to backup page*******************************		
+			switch(bkupdevice)
+			{
+			case "local":
+				Backup.manualBackUP(driver,"Local Storage","","","","",bkupfolder);
+				break;
+				
+			case "ftp":
+				Backup.manualBackUP(driver,"FTP",Browser.getPropertyFromConfigFile(ConfigProperties.ftphost),Browser.getPropertyFromConfigFile(ConfigProperties.ftpport),Browser.getPropertyFromConfigFile(ConfigProperties.ftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.ftppassword), bkupfolder);				
+				backupfilepathonUI =  "/"+ bkupfolder;
+				break;
+				
+			case "sftp":
+				Backup.manualBackUP(driver,"SFTP",Browser.getPropertyFromConfigFile(ConfigProperties.sftphost),Browser.getPropertyFromConfigFile(ConfigProperties.sftpport),Browser.getPropertyFromConfigFile(ConfigProperties.sftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.sftppassword), bkupfolder);
+				backupfilepathonUI =  "/"+ bkupfolder;
+				break;
+				
+			case "NFS":
+				Backup.manualBackUP(driver,"NFS", "", "", "", "",bkupfolder);
+				NFSmountpath = Browser.getPropertyFromConfigFile(ConfigProperties.NFS_MountPath);				
+				backupfilepathonUI = NFSmountpath + "/"+ bkupfolder;
+				break;
+				
+			default: 
+				Log.error("Invalid backup device ");
+				return "";
+			}
+						
+			softassert=Backup.startManualBackup(driver);
+			softassert.merge(softassert);
+			
+			// ************Verify backup completed and Last successful statusmessage*********************//
+
+			softassert=Backup.VerifyBackupCompletedstatus(driver);
+			softassert.merge(softassert);						
+			
+			
+			softassert=Backup.VerifyLastSuccessfulstatus(driver,backupfilepathonUI);
+			softassert.merge(softassert);
+			
+			// *************Check backup tar is copied to backup location on NFSdevice****************************
+			switch(bkupdevice)
+			{
+			case "local":				
+				break;
+				
+			case "ftp":				
+				Completebackupfilepath="/"+bkupfolder+ "/"+GenericUtils.getBackupTarFilename("ftp", ""+bkupfolder+ "", Browser.getPropertyFromConfigFile(ConfigProperties.ftphost),Browser.getPropertyFromConfigFile(ConfigProperties.ftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.ftppassword));
+				break;
+				
+			case "sftp":				
+				Completebackupfilepath=bkupfolder+ "/"+GenericUtils.getBackupTarFilename("sftp", "/"+bkupfolder+ "/", Browser.getPropertyFromConfigFile(ConfigProperties.sftphost),Browser.getPropertyFromConfigFile(ConfigProperties.sftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.sftppassword));
+				break;
+				
+			case "NFS":
+				Completebackupfilepath = GenericUtils.getBackupTarFilename("nfs", "/cxs/nfs_shared/" + bkupfolder + "/",Browser.getPropertyFromConfigFile( ConfigProperties.IP), null, null);				
+				break;
+				
+			default: 
+				Log.error("Invalid backup device ");
+				return "";
+			}
+			
+			return Completebackupfilepath;	
+		
+	}
+	
+
+}

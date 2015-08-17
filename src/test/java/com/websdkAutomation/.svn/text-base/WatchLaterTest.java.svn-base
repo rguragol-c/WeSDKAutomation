@@ -1,0 +1,291 @@
+package com.pismo.PismoAutomation;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.SolrQueryUtils;
+import com.pismo.lib.appSpecific.VideoIUploaded;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.appSpecific.VideoWatchLater;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class WatchLaterTest{
+
+	private WebDriver driver =  null;
+	private SoftAssert SAssert=new SoftAssert();
+	private String videos[] = {"WatchLaterVideo1"};
+	private static String VideoDuration ="00:00:04";
+	private static String desc="This video has no description. Add a description to make your video easier to find.Created by: Anindya Sinha (anisinha)";
+	private static String Categories[]={"category1"};
+	private static String Tags[]={"test1"};
+	@BeforeClass
+	public void setup(){
+		driver=Fixtures.setupFixture("Watch Later test class setup initiated.");
+
+		VideoProcessing.uploadAndpublishVideo(driver, 
+				Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+				videos[0], desc, true, null, Categories[0], Tags,null,null,null, false);
+
+		Home.goToHomePage(driver);
+
+	}
+
+
+	@Test(description="Trv602949c,Trv602953c",enabled=true, priority=1)
+	public void verifyAddtoWatchLater(){
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+		String msg;
+		//..verify grayed out icon
+		//..add to watch later
+
+		if(Browser.getElements().element(driver,"watch-later-"+ md5, LocateBy.id).getAttribute("class").contains("vid-inactive-watch")){
+			msg = VideoWatchLater.clickOnWatchLater(driver, md5);
+			SAssert.assertEquals(msg, "Video removed from watch later list","FAILED | TIMS ID: Trv602949c | Video not removed from watch later successfully.");
+			Browser.getWaits().wait(3);
+		}
+		msg = VideoWatchLater.clickOnWatchLater(driver, md5);
+		SAssert.assertEquals(msg, "Video added to watch later list","FAILED | TIMES ID: Trv602953c | Video not added to watch later successfully.");
+		Browser.getWaits().wait(3);
+		SAssert.assertTrue(Browser.getElements().element(driver,"watch-later-"+ md5, LocateBy.id).getAttribute("class").contains("vid-inactive-watch"),
+				"FAILED | TIMS ID: Trv602949c | Watchlater icon is enabled.");
+
+		VideoWatchLater.goToWatchLater(driver);
+
+		//..play the video for Watched label verification
+		Browser.getActions().click(Browser.getElements().element(driver, "thumbnailImage_"+md5,LocateBy.id));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		Home.goToHomePage(driver);
+
+		VideoWatchLater.goToWatchLater(driver);
+		SAssert.assertTrue(Browser.getElements().isElementPresent(driver, "//*[@id='watched_" + md5 + "']/span/img" , LocateBy.xpath),"FAILED  |" +
+				" TIMS ID: Trv602953c| watched icon is not present.");
+
+		SAssert.showResults();
+		TestStatus.pass("PASSED | Trv602953c, Trv602949c| Video added successfully to Watch later page");
+	}
+
+
+	@Test(description="TIMS ID: Trv602948c", enabled=true,  priority=2)
+	public void verifyVideowithAllDetails(){
+		//..verify video with desc 
+		//..verify other details (thumbnail, title, author, duration, relative time, action menu slider)
+
+		Home.goToHomePage(driver);
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+
+		VideoWatchLater.goToWatchLater(driver);
+
+		//..desc
+		SAssert.assertEquals(Browser.getElements().element(driver, "videoDescriptionDisplay_"+ md5, LocateBy.id).getText(),desc,"FAILED | TIMS ID: Trv602948c | Description mismatch");
+
+		//..thumbnail 
+		WebElement thumbnailVideo = Browser.getElements().element(driver, "thumbnailImage_"+md5,LocateBy.id);
+		SAssert.assertTrue(thumbnailVideo.isDisplayed(),"FAILED | TIMS ID: Trv602948c| Thumbnail not available");
+
+		// videoTitle  
+		String videoTitle=Browser.getElements().element(driver, "title_"+md5,LocateBy.id).getText();
+		SAssert.assertEquals(videoTitle,videos[0],"FAILED | TIMS ID : Trv602948c | Video title mismatch");
+
+		// Duration 
+		String videoDuration=Browser.getElements().element(driver, "//*[@id='watchLater_" + md5 +"']/span[2]",LocateBy.xpath).getText();
+		SAssert.assertEquals(videoDuration,VideoDuration,"FAILED | TIMS ID : Trv602948c | Video duration mismatch");
+
+		//..author
+		WebElement author = Browser.getElements().element(driver, "video_author_link_"+ md5, LocateBy.id);
+		SAssert.assertEquals(author.getText(), "Anindya Sinha", "FAILED | TIMS ID: Trv602948c | Author is not anisinha");
+
+		//..relative time
+		WebElement relativeTime = Browser.getElements().element(driver, "//*[@id='watchLater_" + md5 +"']/span[3]",LocateBy.xpath);
+		boolean relativeFlag = relativeTime.getText().contains("mins ago")||relativeTime.getText().contains("minute ago")||relativeTime.getText().contains("min ago");
+		SAssert.assertTrue(relativeFlag,"FAILED | TIMS ID: Trv602948c | Relative time contains "+relativeTime.getText());
+
+		//..View count
+		WebElement viewCount = Browser.getElements().element(driver, ".//*[@id='watchLaterDiv_"+md5+"']/div[2]/div[2]/form/span[5]/span/span[4]", LocateBy.xpath);
+		SAssert.assertEquals(Integer.parseInt(viewCount.getText()),0,"FAILED |TIMS ID : Trv602948c |view count is not zero.");
+		int position =  VideoWatchLater.getVideoPositionFromSearchResults(driver, videos[0]);
+
+		if (Browser.getElements().isElementPresent(driver, VideoWatchLater.getCategoryLabel(driver, position), LocateBy.xpath))
+		{
+			SAssert.assertEquals(Browser.getElements().element(driver, VideoWatchLater.getCategoryLabel(driver, position), LocateBy.xpath).getText()
+					,"Category:","FAILED | TIMS ID: Trv602948c | Category: lable is not correct or missing for search result");
+			SAssert.assertEquals(Browser.getElements().element(driver, VideoWatchLater.getCategoryValue(driver, position), LocateBy.xpath).getText()
+					, Categories[0] , "FAILED | TIMS ID: Trv602948c | Category is not correct or missing for search result");
+		}else 
+		{
+			Log.warn("TIMS ID: Trv602948c | Video doen't have category.");
+		}
+
+
+		if (Browser.getElements().isElementPresent(driver, VideoWatchLater.getTagslabel(driver, position), LocateBy.xpath))
+		{
+			SAssert.assertEquals(Browser.getElements().element(driver, VideoWatchLater.getTagslabel(driver, position), LocateBy.xpath).getText()
+					, "Tags:" ,"FAILED | TIMS ID: Trv602948c | Tags: lable is  not correct or missing for search result");
+		}else 
+		{
+			Log.warn("TIMS ID: Trv602948c | Video doen't have Tags.");
+		}
+
+		SAssert.showResults();
+
+		TestStatus.pass("PASSED | TIMS Id:Trv602948c | Latest Video added to watch later verified successfully with all details");
+	}
+
+	@Test(description="Trv602951c, Trv602955c", enabled=true, priority=3)
+	public void verifyTitleandThumbnailClick(){
+
+		Home.goToHomePage(driver);
+		VideoWatchLater.goToWatchLater(driver);
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+
+		if(Browser.getElements().isElementPresent(driver, "thumbnailImage_"+md5,LocateBy.id)){
+			//..click on thumbnail and verify play page
+			WebElement likeCount = Browser.getElements().element(driver, ".//*[@id='watchLaterDiv_"+md5+"\']/div[2]/div[2]/form/span[5]/span/span[2]", LocateBy.xpath);
+			SAssert.assertEquals(Integer.parseInt(likeCount.getText()),0,"FAILED |TIMS ID : Trv602955c |like count is not zero.");
+
+			Browser.getActions().click(Browser.getElements().element(driver, "thumbnailImage_"+md5,LocateBy.id));
+			SAssert.merge(PlayerControls.verifyVideoPlayPage(driver, videos[0], "Trv602951c"));
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.imgLikeIcon));
+
+			Home.goToHomePage(driver);
+			VideoWatchLater.goToWatchLater(driver);
+			likeCount = Browser.getElements().element(driver, ".//*[@id='watchLaterDiv_"+md5+"\']/div[2]/div[2]/form/span[5]/span/span[2]", LocateBy.xpath);
+			SAssert.assertEquals(Integer.parseInt(likeCount.getText()),1,"FAILED |TIMS ID : Trv602955c |like count is not 1.");
+
+			//..click on video title and verify play page
+			Browser.getActions().click(Browser.getElements().element(driver, "title_"+md5, LocateBy.id));
+			SAssert.merge(PlayerControls.verifyVideoPlayPage(driver, videos[0], "Trv602951c"));
+
+			Home.goToHomePage(driver);
+		}else
+			SAssert.assertTrue(false,"FAILED | TIMS ID: Trv602951c | Video does not exist on watch later page");
+		SAssert.showResults();
+
+		TestStatus.pass("PASSED | TIMS ID: Trv602951c, Trv602955c | Click on Video title and thumbnail verified with proper like counts");
+	}
+
+
+
+	@Test(description="Trv603775c", enabled=true, priority=4)
+	public void verifyAuthorListing(){
+		Home.goToHomePage(driver);
+		
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+		
+		VideoWatchLater.goToWatchLater(driver);
+
+		if(Browser.getElements().isElementPresent(driver, "video_author_link_"+md5,LocateBy.id)){
+
+			WebElement authorName = Browser.getElements().element(driver,"video_author_link_"+md5,LocateBy.id);
+			String author = authorName.getText();
+			Browser.getActions().click(authorName);
+
+			String expectedSearchCount = Browser.getElements().element(driver, ElementTags.labelSerachVideoCount).getText();
+			String countOfVideos = expectedSearchCount.substring(1, expectedSearchCount.length()-1);
+
+			SAssert.merge(VideoWatchLater.verifySearchAuthorListing(driver, author, Integer.parseInt(countOfVideos), md5, "Trv603775c"));
+		}else{
+			SAssert.assertTrue(false,"FAILED | TIMS ID: Trv603775c | Video does not exist on watch later page");
+		}
+		SAssert.showResults();
+
+		TestStatus.pass("PASSED | TIMS ID: Trv603775c | Verified Author name listing successfully");
+	}
+
+	@Test(description="TIMS ID: Trv602952c", enabled=true, priority=5)
+	public void verifyPageAccessibility(){
+
+		Home.goToHomePage(driver);
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+
+		String user[][]={{"Ethan Tao", "Viewer"}};
+
+		// edit video 
+		VideoIUploaded.goToVideosIUploaded(driver);
+		VideoIUploaded.getVideoEditPage(driver, videos[0]);
+
+		//and set permission for single user
+		VideoProcessing.setPrivacyAndPermission(driver, false, user);
+		Browser.getElements().element(driver, "editVideoDetailButton", LocateBy.id).click();
+		Browser.getWaits().wait(2);
+
+		Home.goToHomePage(driver);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, "etao", "cisco_123", true);
+
+		VideoWatchLater.goToWatchLater(driver);
+		if(Browser.getElements().isElementPresent(driver, ElementTags.labelSerachResult))
+			SAssert.assertFalse(Browser.getElements().isElementPresent(driver, "thumbnailImage_"+md5,LocateBy.id), "FAILED | TIMSID : Trv602952c | video marked by another user for watch later is visible");
+		if(Browser.getElements().isElementPresent(driver, ElementTags.labelSearchNoResult))
+			SAssert.assertTrue(true,"FAILED | TIMSID : Trv602952c | No search result header not displayed");
+
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, "anisinha", "cisco_123", true);
+
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMSID: Trv602952c | Page accessibilty test executed successfully");
+	}
+
+
+	@Test(description="Trv602950c, Trv579285c", enabled=true, priority=6)
+	public void verifyRemove(){
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+		Home.goToHomePage(driver);
+		VideoWatchLater.goToWatchLater(driver);
+
+		SAssert.assertTrue(Browser.getElements().isElementPresent(driver,"removeWatchLater_"+md5,LocateBy.id),"FAILED | TIMS ID: Trv579285c| Remove button not visible");
+
+		//Trv602950c : Verify remove from watch later
+		Actions builder = new Actions(driver);
+		WebElement removebttn = Browser.getElements().element(driver,"removeWatchLater_"+md5,LocateBy.id);
+		builder.clickAndHold(removebttn).build().perform();
+		//String Tooltip = removebttn.getAttribute("title");
+
+		String msg=VideoWatchLater.removeVideoFromWatchLater(driver, md5);
+		SAssert.assertEquals(msg,"Video removed from watch later list","FAILED | TIMS ID: Trv602950c| Failed to remove video from watch later list.");
+		VideoWatchLater.goToWatchLater(driver);
+
+		SAssert.assertFalse(Browser.getElements().isElementPresent(driver, "title_" + md5, LocateBy.id),"FAILED | TIMS ID : Trv602950c | Failed to remove video from watch later list.");
+
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMSID: Trv602950c, Trv579285c| Failed to remove video from watch later list");
+
+	}
+
+	/*@Test(description="TIMS ID: ", enabled=true)
+	public void verifyShowMore(){
+		Home.goToHomePage(driver);
+
+		List<String> videos_md5 = Home.extractVideosHomePage(driver);
+		for(String md5 : videos_md5)
+			VideoWatchLater.clickOnWatchLater(driver, md5);
+
+		VideoWatchLater.goToWatchLater(driver);
+
+
+
+	}*/
+
+
+	@AfterClass
+	public void teardown(){
+		//..delete video
+		VideoProcessing.deletePublishedVideo(driver, videos);
+		Fixtures.tearDownFixture(driver);
+	}
+
+
+}

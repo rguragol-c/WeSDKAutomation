@@ -1,0 +1,703 @@
+package com.pismo.lib.generic;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Properties;
+import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.testng.ITestResult;
+
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpATTRS;
+import com.pismo.lib.generic.ConfigProperties;
+
+
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
+
+
+public class GenericUtils{
+
+	static SoftAssert softassert=new SoftAssert();
+	public static long getRandomNumber()
+	{
+		long random = System.nanoTime();
+		return random;
+	}
+	
+	
+	@Deprecated
+		public static void browseFileFromDisk(String pathToFile) 
+	{
+		 Log.info("Executing browser file from disk Autoit script.");
+		 try{
+			Process process = Runtime.getRuntime().exec("./utilities/UploadFile.exe "+pathToFile);
+			Log.info("Browsing file "+ pathToFile + " from windows...");
+			process.waitFor();
+			if(process.exitValue()==0)
+			{
+				Log.info("Successfully selected file from disk.");
+			}
+			else
+			{
+				Log.error("Error occured while selecting file from disk");
+			}
+		 }catch (Exception e)
+		 {
+			 Log.error(e.toString());
+		 }
+	}
+	
+	@Deprecated
+	public static void writeFooter(ITestResult result)
+	{
+		int status = result.getStatus();
+		String testName = result.getName();
+		if(status==1)
+		 Log.info("****** TEST CASE NAME : "+testName+" | TEST RESULT : PASSED ******\n");
+		else if(status==2)
+			Log.info("****** TEST CASE NAME : "+testName+" | TEST RESULT : FAILED ******\n");
+		else if(status==3 )
+			Log.info("****** TEST CASE NAME : "+testName+" | TEST RESULT : SKIPPED ******\n");
+		else
+			Log.info("****** TEST CASE NAME : "+testName+" | TEST RESULT :  "+status+" ******\n");
+	}
+	
+	public static boolean checkIfFileExistsOnVm() 
+	{
+		String command = "/utilities/CheckFile.sh 10.194.82.72 /new/share/temp";
+		try {
+		Process process = Runtime.getRuntime().exec(command);
+		process.waitFor();
+		} catch (Exception e) {
+			
+			Log.error(e.toString());
+		}
+		return true;
+	}
+	public static int extractNumber(String pattern)
+	{
+        String digitStr = "";
+        int number=0;
+
+        for (int i = 0; i < pattern.length(); i++) {
+            if (Character.isDigit(pattern.charAt(i))) {
+                digitStr += pattern.charAt(i);
+            } else {
+                if (!digitStr.isEmpty()) {
+                    number=Integer.parseInt(digitStr);
+                }
+            }
+        }
+        
+        return number;
+		
+	}
+	
+	public static void trial() throws JSchException, IOException
+	{
+		//StringBuffer result = new StringBuffer();
+		Properties prop = new Properties();
+		prop.put("StrictHostKeyChecking","no");
+		JSch jsch = new JSch();
+		Session session = jsch.getSession("root", "10.194.82.72");
+		session.setPassword("cisco230");
+		session.setConfig(prop);
+		session.connect();
+		ChannelExec channel = (ChannelExec) session.openChannel("exec");
+		//File f = new File("/utilities/CheckFile.sh");
+		channel.setCommand("/PismoAutomation/utilities/CheckFile.sh");
+		//channel.setCommand("rmdir rushika");
+		channel.setOutputStream(System.out) ;
+		channel.connect();
+		
+		 try {
+             
+             InputStream is = channel.getInputStream();
+             BufferedReader in = new BufferedReader(new InputStreamReader(is));
+             String line = in.readLine();
+             Log.info(line);
+            byte[] buffer = new byte[1024]; 
+            int bytes;
+            do {
+                while (is.available() > 0) {
+                    bytes = in.read();
+                    Log.info(new String(buffer, 0, bytes));
+                }
+            } while (!channel.isClosed());
+		 }
+            finally{
+            	Log.info(Integer.toString(channel.getExitStatus()));
+		channel.disconnect();
+		session.disconnect();
+            }
+	}
+
+	
+	public static SoftAssert CheckBackuptarexistsonFTP(String dirpath)
+	{
+		 //Check tar file is copied at FTP in the specified backup location
+		  String hostname = Browser.getPropertyFromConfigFile(ConfigProperties.ftphost);	      
+	      String username = Browser.getPropertyFromConfigFile(ConfigProperties.ftpusername);
+	      String password = Browser.getPropertyFromConfigFile(ConfigProperties.ftppassword);
+	      int port = 21;	      
+	      
+	      FTPClient ftpApp=new FTPClient();
+
+	      try {
+	    	  ftpApp.connect(hostname, port);
+	          ftpApp.login(username, password);
+	       
+	          ftpApp.changeWorkingDirectory(dirpath);
+	          FTPFile[] filenames= ftpApp.listFiles();ftpApp.listFiles();
+	          Log.info(Integer.toString(filenames.length));
+	          
+	          if(filenames.length==2)
+	          {
+	        	  boolean bool=String.valueOf(filenames[0]).contains(".log")&&String.valueOf(filenames[0]).contains("Backup_SnS_MAN_6.0.0_22");
+	        	  
+	        	  softassert.assertTrue(bool);
+	        	  softassert.merge(softassert);
+	        	  
+	        	  bool=String.valueOf(filenames[1]).contains(".tar.gz")&&String.valueOf(filenames[1]).contains("Backup_SnS_MAN_6.0.0_22");
+	        	  softassert.assertTrue(bool);	        	  
+	        	  softassert.merge(softassert);
+	        	  
+	          }
+	          else
+	          {
+	        	  Log.info("Required number of files are not created in ftp");
+	          }
+	         	          
+
+	      } catch (IOException ex) {
+	          ex.printStackTrace();
+	         
+	      } finally {
+	          try {
+	              ftpApp.logout();
+	          } catch (IOException ex) {
+	              ex.printStackTrace();
+	          }
+	      }
+	     return softassert;	    		 
+         
+	}	
+
+	public static boolean CheckBackuptarexistsonSFTP(String RemoteTargetFolder,int portno) throws Exception
+    {
+     
+        String host =Browser.getPropertyFromConfigFile(ConfigProperties.sftphost);         
+        String username = Browser.getPropertyFromConfigFile(ConfigProperties.sftpusername);
+        String password = Browser.getPropertyFromConfigFile(ConfigProperties.sftppassword);
+     
+          
+		JSch jsch=new JSch();
+		Session session=null;
+		Channel channel=null;
+		ChannelSftp c=null;
+		
+		Hashtable hashtable = new Hashtable();
+		
+		hashtable.put("StrictHostKeyChecking","no");
+		
+		//SFTP default port is 22
+		
+		try {
+			session=jsch.getSession(username, host, portno);
+		} catch (JSchException ex) {
+		throw new Exception("getSession Exception: " + ex.getMessage());
+		}
+		 	session.setConfig(hashtable);
+		 	session.setPassword(password);
+		try {
+			session.connect();
+		} catch (JSchException ex) {
+		throw new Exception("session.connect Exception: " + ex.getMessage());
+		}
+		try {
+			channel=session.openChannel("sftp");
+		} catch (JSchException ex) {
+		throw new Exception("session.openChannel Exception: " + ex.getMessage());
+		}
+		try {
+		channel.connect();
+		} catch (JSchException ex) {
+			throw new Exception("channel.connect Exception: " + ex.getMessage());
+		}
+		
+		try {
+			c=(ChannelSftp)channel;
+		} catch (Exception ex) {
+			throw new Exception("(ChannelSftp)channel Exception: " + ex.getMessage());
+		}
+		//check if file exists
+		SftpATTRS sftpATTRS = null;
+		Boolean fileExists = false;
+		Boolean LogFileExists=false;
+		Boolean tarFileExists=false;
+		try {
+		    c.cd(RemoteTargetFolder);
+		    Vector<ChannelSftp.LsEntry> list = c.ls("*");
+		    for(ChannelSftp.LsEntry entry : list) {
+		        Log.info(entry.getFilename());
+		        if(entry.getFilename().contains(".log")&&entry.getFilename().contains("Backup_SnS_MAN_6.0.0_22"))
+		        {
+		          Log.info("Log file is created");
+		          LogFileExists=true;
+		        }
+		        if(entry.getFilename().contains(".tar.gz")&&entry.getFilename().contains("Backup_SnS_MAN_6.0.0_22"))
+		        {
+		        	Log.info("tar file is created");
+		        	tarFileExists=true;
+		        }
+		    }
+		//sftpATTRS = c.lstat(RemoteTargetFolder + Filename);                      
+		          
+		//Log.info("sftpATTRS"+sftpATTRS);
+		fileExists=tarFileExists&&LogFileExists;
+		} catch (Exception ex) {
+		        fileExists = false;
+		}  
+		
+		c.quit();
+		session.disconnect();
+		
+		 return fileExists;              
+		
+		}	
+	
+	
+	public static boolean checkBackuptarexistsonNFSorLocal(String backupfilepath)	{
+		
+		boolean bool=false;
+		
+		StringBuilder outputBuffer = new StringBuilder();
+		Session sesConnection = null; 
+		JSch jsch = new JSch();
+
+		String hostname=Browser.getPropertyFromConfigFile(ConfigProperties.sshhost);
+		String password=Browser.getPropertyFromConfigFile(ConfigProperties.sshpassword);
+		String command="ls "+  backupfilepath +";echo $?";
+		
+		
+		Log.info("hostname"+ hostname);
+		Log.info("sshpassword"+ password);
+		
+		Properties prop = new Properties();
+		prop.put("StrictHostKeyChecking","no");
+		
+		
+		try {
+			sesConnection = jsch.getSession("root",hostname);
+		
+		sesConnection.setPassword(password);
+		sesConnection.setConfig(prop);
+		sesConnection.connect();
+		
+	    
+	        Channel channel = sesConnection.openChannel("exec");
+	        ((ChannelExec)channel).setCommand(command);
+	        channel.setInputStream(null);        
+	        
+	        ((ChannelExec)channel).setErrStream(System.err);
+	   
+	        InputStream in=channel.getInputStream();
+	   
+	        channel.connect();
+	   
+	        byte[] tmp=new byte[1024];
+	        while(true){
+	          while(in.available()>0){
+	            int i=in.read(tmp, 0, 1024);
+	            if(i<0)break;
+	            Log.info(new String(tmp, 0, i));
+	            
+	            bool=true;
+	            channel.disconnect();
+	            break;
+	          }
+	          if(channel.isClosed()){
+	            if(in.available()>0) continue; 
+	            Log.info("exit-status: "+channel.getExitStatus());
+	            channel.disconnect();
+	            break;
+	          }
+	          try{Thread.sleep(1000);}catch(Exception ee){}
+	        }
+	       
+		}catch (JSchException e) {
+			// TODO Auto-generated catch block
+			
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 				
+		return bool;		
+	   } 
+	    
+    
+	
+	public static String singlePatternMatcher (String pattern, String matchString) {
+		String searchPattern="";
+		Pattern regex = Pattern.compile(pattern);
+		Matcher m = regex.matcher(matchString);
+		if (m.find()) {
+			// return the first group matching 
+		    searchPattern = m.group(1);
+		}
+		return searchPattern;
+	}
+	
+	public static String RuntimeDatetime(){		
+				
+		java.util.Date date= new java.util.Date();
+		Log.info(new Timestamp(date.getTime()).toString());
+		  
+		Timestamp tmp=new Timestamp(date.getTime());
+		  
+		String dt1=tmp.toString().replace(" ", "");
+		dt1=dt1.toString().replace("-", "");
+		dt1=dt1.toString().replace(":", "");
+		dt1=dt1.toString().replace(".", "");
+		return dt1;
+		  
+	}
+	
+
+public static String splitString(String splitby,String text,int index){
+		
+		String arr[]=text.split(splitby);
+		return arr[index];
+		
+	}
+	public static String getCurrentDateformat(int days ,String time){
+		Date date = new Date();
+		Calendar cal = Calendar.getInstance();  
+		cal.setTime(date);  
+		if(days>0)
+		{
+		 cal.add(Calendar.DAY_OF_YEAR, days);   
+		 date = cal.getTime(); 
+		 if(days==0)
+		 {
+		   int hours=date.getHours();
+		   String times[]=time.split(":");
+		   if(Integer.valueOf(times[0])>=hours)
+		   {
+			   Log.info("Inside if");
+			   cal.add(Calendar.DAY_OF_YEAR, 1);    
+				 date = cal.getTime();
+		   }
+		 }
+		 
+		 Log.info(date.toString());  
+		}
+		
+		String modifiedDate= new SimpleDateFormat("dd/MM/yyyy").format(date);
+		//Date date= new Date();
+		 Log.info(date.toString() +"mod date" + modifiedDate);
+		return modifiedDate;
+	}
+	public static String getDayvalue(int addDays)
+	{
+		int num=0;
+		Date date = new Date();
+		Calendar cal = Calendar.getInstance();  
+		cal.setTime(date); 
+		cal.add(Calendar.DAY_OF_YEAR, addDays);  
+		SimpleDateFormat formatter = new SimpleDateFormat("EEE");
+		
+		String text = formatter.format(cal.getTime());
+		Log.info("text :" + text);
+		num=Calendar.DAY_OF_WEEK;
+		
+	Log.info(Integer.toString(num));
+    return WeekDays.getWeekDayValue(text);
+	}
+	
+public static String GetServerDate() throws JSchException, IOException	{
+		
+		boolean bool=false;
+		
+		StringBuilder outputBuffer = new StringBuilder();
+		Session sesConnection = null; 
+		JSch jsch = new JSch();
+
+		String hostname=Browser.getPropertyFromConfigFile(ConfigProperties.sshhost);
+		String password=Browser.getPropertyFromConfigFile(ConfigProperties.sshpassword);
+		String command="date;echo $?";		
+		String serverdate = null;
+		
+		Properties prop = new Properties();
+		prop.put("StrictHostKeyChecking","no");
+		sesConnection = jsch.getSession("root",hostname); 
+		sesConnection.setPassword(password);
+		sesConnection.setConfig(prop);
+		sesConnection.connect();
+		
+	    
+	        Channel channel = sesConnection.openChannel("exec");
+	        ((ChannelExec)channel).setCommand(command);
+	        channel.setInputStream(null);
+	        
+	        //channel.setOutputStream(System.out);
+	   
+	        //FileOutputStream fos=new FileOutputStream("/tmp/stderr");
+	        //((ChannelExec)channel).setErrStream(fos);
+	        ((ChannelExec)channel).setErrStream(System.err);
+	   
+	        InputStream in=channel.getInputStream();
+	   
+	        channel.connect();
+	   
+	        byte[] tmp=new byte[1024];
+	        while(true){
+	          while(in.available()>0){
+	            int i=in.read(tmp, 0, 1024);
+	            if(i<0)break;
+	            Log.info(new String(tmp, 0, i));
+	            serverdate=new String(tmp, 0, i);
+	            bool=true;
+	          }
+	          if(channel.isClosed()){
+	            if(in.available()>0) continue; 
+	            Log.info("exit-status: "+channel.getExitStatus());
+	            break;
+	          }
+	          try{Thread.sleep(1000);}catch(Exception ee){}
+	        }
+	        channel.disconnect();
+			return serverdate;
+	       
+	      }
+	      
+public static String GetServerTime() throws JSchException, IOException	{
+	
+	boolean bool=false;
+	
+	StringBuilder outputBuffer = new StringBuilder();
+	Session sesConnection = null; 
+	JSch jsch = new JSch();
+
+	String hostname=Browser.getPropertyFromConfigFile(ConfigProperties.sshhost);
+	String password=Browser.getPropertyFromConfigFile(ConfigProperties.sshpassword);
+	String command="date +%T;echo $?";		
+	String serverdate = null;
+	
+	Properties prop = new Properties();
+	prop.put("StrictHostKeyChecking","no");
+	sesConnection = jsch.getSession("root",hostname); 
+	sesConnection.setPassword(password);
+	sesConnection.setConfig(prop);
+	sesConnection.connect();
+	
+    
+        Channel channel = sesConnection.openChannel("exec");
+        ((ChannelExec)channel).setCommand(command);
+        channel.setInputStream(null);
+        
+        //channel.setOutputStream(System.out);
+   
+        //FileOutputStream fos=new FileOutputStream("/tmp/stderr");
+        //((ChannelExec)channel).setErrStream(fos);
+        ((ChannelExec)channel).setErrStream(System.err);
+   
+        InputStream in=channel.getInputStream();
+   
+        channel.connect();
+   
+        byte[] tmp=new byte[1024];
+        while(true){
+          while(in.available()>0){
+            int i=in.read(tmp, 0, 1024);
+            if(i<0)break;
+            Log.info(new String(tmp, 0, i));
+            serverdate=new String(tmp, 0, i);
+            bool=true;
+          }
+          if(channel.isClosed()){
+            if(in.available()>0) continue; 
+            Log.info("exit-status: "+channel.getExitStatus());
+            break;
+          }
+          try{Thread.sleep(1000);}catch(Exception ee){}
+        }
+        channel.disconnect();
+		return serverdate;
+      }
+
+public static String getBackupTarFilename (String devicetype,String backupfolderpath,String host,String username,String password)
+{
+	String backupfilename=null;
+	String command="";
+	
+	switch(devicetype)
+	{
+	    case "nfs":
+	    	command="ls " + backupfolderpath + "*.tar.gz";
+	    	
+	    	backupfilename=getBackupFileNameForNFSandLocal(backupfolderpath,command);
+	    	break;
+		case "local": backupfilename=getBackupFileNameForNFSandLocal(backupfolderpath,command);
+			break;
+		case "ftp" : backupfilename=getBackupFileNameForFTP(backupfolderpath,host,21,username,password);
+			break;
+		case "sftp" : backupfilename=getBackupFileNameForSFTP(backupfolderpath,host,22,username,password);
+			break;
+		default: Log.error("Invalid device type.");
+	}
+	  
+	    return backupfilename;
+}
+	
+public static String getBackupFileNameForNFSandLocal(String folderpath,String command)
+{
+	String backuptarfilename=null;	
+	SSHConnect.connectToServer(Browser.getPropertyFromConfigFile(ConfigProperties.sshhost), Browser.getPropertyFromConfigFile(ConfigProperties.sshuser),Browser.getPropertyFromConfigFile(ConfigProperties.sshpassword));
+	
+	backuptarfilename=SSHConnect.GetTarfilename(command);
+	
+	String NFSmountpath = Browser.getPropertyFromConfigFile(ConfigProperties.NFS_MountPath);
+	
+	backuptarfilename=backuptarfilename.replace("/cxs/nfs_shared", NFSmountpath);
+	
+    return backuptarfilename;
+    
+}
+
+public static String getBackupFileNameForFTP(String folderpath,String hostname,int port, String username,String password )
+{
+	String backupfilename=null;
+
+     FTPClient ftpApp=new FTPClient();
+
+     try {
+   	  ftpApp.connect(hostname, port);
+         ftpApp.login(username, password);
+      
+         ftpApp.changeWorkingDirectory(folderpath);
+         FTPFile[] filenames= ftpApp.listFiles();ftpApp.listFiles();
+         Log.info(Integer.toString(filenames.length));
+         
+     	for (int i=0;i<filenames.length;i++)
+     	{
+     		if(filenames[i].getName().contains(".tar.gz") && filenames[i].getName().contains("Backup_SnS_MAN_6.0.0_22"))
+     		{
+     			backupfilename=filenames[i].getName();
+     		}
+     	}
+     }catch(Exception e)
+     {
+    	 Log.error(e.getMessage());
+     }
+        return backupfilename;
+}
+
+public static String getBackupFileNameForSFTP(String folderpath,String hostname,int port, String username,String password )
+{
+
+	String backupfilename=null;
+	JSch jsch=new JSch();
+	Session session=null;
+	Channel channel=null;
+	ChannelSftp c=null;
+
+	Hashtable hashtable = new Hashtable();
+
+	hashtable.put("StrictHostKeyChecking","no");
+
+	//SFTP default port is 22
+
+	try {
+		session=jsch.getSession(username, hostname, port);
+	} catch (JSchException ex) {
+		Log.error("getSession Exception: " + ex.getMessage());
+	}
+	session.setConfig(hashtable);
+	session.setPassword(password);
+	try {
+		session.connect();
+	} catch (JSchException ex) {
+		Log.error("session.connect Exception: " + ex.getMessage());
+	}
+	try {
+	channel=session.openChannel("sftp");
+	} catch (JSchException ex) {
+		Log.error("session.openChannel Exception: " + ex.getMessage());
+	}
+	try {
+	channel.connect();
+	} catch (JSchException ex) {
+		Log.error("channel.connect Exception: " + ex.getMessage());
+	}
+	
+	try {
+	c=(ChannelSftp)channel;
+	} catch (Exception ex) {
+		Log.error("(ChannelSftp)channel Exception: " + ex.getMessage());
+	}
+	//check if file exists
+	try {
+	    c.cd(folderpath);
+	    Vector<ChannelSftp.LsEntry> list = c.ls("*");
+	    for(ChannelSftp.LsEntry entry : list) {
+        Log.info(entry.getFilename());
+       
+        if(entry.getFilename().contains(".tar.gz")&&entry.getFilename().contains("Backup_SnS_MAN_6.0.0_22"))
+        {
+        	backupfilename=entry.getFilename();
+        }
+    }
+  c.quit();
+  session.disconnect();
+}catch(Exception e)
+{
+	Log.error(e.getStackTrace().toString());
+}
+	return backupfilename;   
+}
+
+public static void writeToFile(String filepath,String data)
+{
+	BufferedWriter writer;     
+	File file=new File(filepath);
+	
+		try
+		{
+			file.createNewFile();
+		    writer = new BufferedWriter(new FileWriter(file,false));
+		    
+	           writer.write(data);
+		        
+		    writer.close();
+	}
+		catch(IOException e)
+		{
+		    System.out.println("There was a problem: " + e);
+		}
+}
+public static void deleteFile(String filepath)
+{
+	File file=new File(filepath);
+	file.deleteOnExit();
+}
+}

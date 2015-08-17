@@ -1,0 +1,143 @@
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/mxabu/mxabu-auto-svn/!svn/ver/3729/PismoAutomation/src/test/java/com/pismo/lib/generic
+END
+PismoListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/mxabu/mxabu-auto-svn/!svn/ver/3546/PismoAutomation/src/test/java/com/pismo/lib/generic/PismoListener.java
+END
+SoftAssert.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/mxabu/mxabu-auto-svn/!svn/ver/3723/PismoAutomation/src/test/java/com/pismo/lib/generic/SoftAssert.java
+END
+SwitchTo.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/mxabu/mxabu-auto-svn/!svn/ver/3563/PismoAutomation/src/test/java/com/pismo/lib/generic/SwitchTo.java
+END
+WeekDays.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/mxabu/mxabu-auto-svn/!svn/ver/3053/PismoAutomation/src/test/java/com/pismo/lib/generic/WeekDays.java
+END
+Fixtures.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/mxabu/mxabu-auto-svn/!svn/ver/3120/PismoAutomation/src/test/java/com/pismo/lib/generic/Fixtures.java
+END
+LocateBy.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/mxabu/mxabu-auto-svn/!svn/ver/3109/PismoAutomation/src/test/java/com/pismo/lib/generic/LocateBy.java
+END
+Browser.java
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/mxabu/mxabu-auto-svn/!svn/ver/3715/PismoAutomation/src/test/java/com/pismo/lib/generic/Browser.java
+END
+Log.java
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/mxabu/mxabu-auto-svn/!svn/ver/3517/PismoAutomation/src/test/java/com/pismo/lib/generic/Log.java
+END
+TestStatus.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/mxabu/mxabu-auto-svn/!svn/ver/3723/PismoAutomation/src/test/java/com/pismo/lib/generic/TestStatus.java
+END
+ExpectedCondition.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/mxabu/mxabu-auto-svn/!svn/ver/3106/PismoAutomation/src/test/java/com/pismo/lib/generic/ExpectedCondition.java
+END
+SSHConnect.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/mxabu/mxabu-auto-svn/!svn/ver/3623/PismoAutomation/src/test/java/com/pismo/lib/generic/SSHConnect.java
+END
+Actions.java
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/mxabu/mxabu-auto-svn/!svn/ver/3541/PismoAutomation/src/test/java/com/pismo/lib/generic/Actions.java
+END
+DriverWait.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/mxabu/mxabu-auto-svn/!svn/ver/3331/PismoAutomation/src/test/java/com/pismo/lib/generic/DriverWait.java
+END
+PortalMessage.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/mxabu/mxabu-auto-svn/!svn/ver/3638/PismoAutomation/src/test/java/com/pismo/lib/generic/PortalMessage.java
+END
+ReadSRTFile.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/mxabu/mxabu-auto-svn/!svn/ver/3729/PismoAutomation/src/test/java/com/pismo/lib/generic/ReadSRTFile.java
+END
+GlobalSetup.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/mxabu/mxabu-auto-svn/!svn/ver/3617/PismoAutomation/src/test/java/com/pismo/lib/generic/GlobalSetup.java
+END
+XMLReader.java
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/mxabu/mxabu-auto-svn/!svn/ver/3612/PismoAutomation/src/test/java/com/pismo/lib/generic/XMLReader.java
+END
+GenericUtils.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/mxabu/mxabu-auto-svn/!svn/ver/3622/PismoAutomation/src/test/java/com/pismo/lib/generic/GenericUtils.java
+END
+TestAssert.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/mxabu/mxabu-auto-svn/!svn/ver/3511/PismoAutomation/src/test/java/com/pismo/lib/generic/TestAssert.java
+END
+Elements.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/mxabu/mxabu-auto-svn/!svn/ver/3331/PismoAutomation/src/test/java/com/pismo/lib/generic/Elements.java
+END
+ElementTags.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/mxabu/mxabu-auto-svn/!svn/ver/3725/PismoAutomation/src/test/java/com/pismo/lib/generic/ElementTags.java
+END
+ConfigProperties.java
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/mxabu/mxabu-auto-svn/!svn/ver/3701/PismoAutomation/src/test/java/com/pismo/lib/generic/ConfigProperties.java
+END
+Months.java
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/mxabu/mxabu-auto-svn/!svn/ver/2922/PismoAutomation/src/test/java/com/pismo/lib/generic/Months.java
+END

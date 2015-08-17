@@ -1,0 +1,161 @@
+package com.pismo.lib.appSpecific;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+
+public class Home 
+{
+
+	private static WebElement categoryLink;
+	
+	public static void navigatetoCategory(WebDriver driver, String category){
+		categoryLink = Browser.getElements().element(driver, ElementTags.linkCategory);
+		categoryLink.click();
+				
+		WebElement ele= Browser.getElements().element(driver, category, LocateBy.linktext );
+		ele.click();
+	}
+
+	public static void playFeatureVideo(WebDriver driver)
+	{
+		Browser.getWaits().wait(2);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconFeatureVideoPlay));
+	}
+	
+	public static void goToHomePage(WebDriver driver)
+	{
+		if(Browser.getElements().isElementPresent(driver, ElementTags.linkHomePage_old))
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomePage_old));
+		}else
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomePage));
+		}
+	}
+	
+	public static boolean playVideoFromCarousel(WebDriver driver,int Videoindex)
+	{
+		int total_video =totalFeatureVideos(driver);
+		if(total_video>=Videoindex)
+		{
+			if(Videoindex>2)
+			{
+				for(int i=1;i<=Videoindex-1;i++)
+				{
+					Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkNextArraow));
+					Browser.getWaits().wait(1);
+				}
+			}
+			Browser.getActions().click(Browser.getElements().element(driver, 
+					"//div[@class='verticaljcarousel']/ul/li[" + Videoindex + "]/div/a/img[2]", LocateBy.xpath));
+			Browser.getWaits().wait(2);
+			return true;
+		}else
+		{
+			Log.error("Index value is more than the feature video present on portal");
+		}
+		return false;
+	}
+	
+	public static boolean activeVideoFromCarousel(WebDriver driver)
+	{
+		WebElement element=Browser.getElements().element(driver, ElementTags.sectionVerticalCarousel);
+		List<WebElement> videoList = Browser.getElements().elements(element, ElementTags.listVeriticalCarousel);
+		 for(int i=0;i<videoList.size();i++)
+		   {
+			  if( videoList.get(i).getAttribute("class").contains("active-vid"))
+				  return true;
+		   }
+		return false;
+	}
+	
+	public static int totalFeatureVideos(WebDriver driver)
+	{
+		WebElement element=Browser.getElements().element(driver, ElementTags.sectionVerticalCarousel);
+		List<WebElement> videoList = Browser.getElements().elements(element, ElementTags.listVeriticalCarousel);
+		Log.info("Total Feature video"+ videoList.size());
+		return videoList.size();
+	}
+	
+	public static int totalVideosDisplayedOnHomePage(WebDriver driver)
+	{
+		int count = Browser.getElements().elements(driver, ElementTags.listHomeLatestVideo).size();
+		Log.info("Total Latest videos on Home Page :" + count);
+		return count;
+	}
+	
+	public static boolean isFeatureVideoPresent(WebDriver driver)
+	{
+		//verify feature video and vertical carousal is displayed
+		if(Browser.getElements().isElementPresent(driver,ElementTags.divFeatureVideo) 
+				&& Browser.getElements().isElementPresent(driver,ElementTags.divFeatureVideoCarousal) )
+		{
+			if(Browser.getElements().isElementPresent(driver,ElementTags.iconFeatureVideoPlay))
+			  return true;
+		}
+		return false;
+	}
+	
+	public static List<String> extractVideosHomePage(WebDriver driver){
+		//..extract video id's from home page to set category
+		List<WebElement> l= driver.findElements(By.xpath("//div[starts-with(@id,'video_item_')]"));
+		
+		String id[] = new String[l.size()-1];
+		List<String> md5 = new ArrayList<String>();
+		int i=0;
+		for(WebElement s: l){
+			id[i] = s.getAttribute("id");
+			md5.add(id[i].substring(11));
+		}
+		return md5;
+	}
+	
+	public static void editVideosSetCategory(WebDriver driver, int noOfVideos, List<String> Videomd5, String[] Category, boolean flagCategory1){
+		int cnt=0;
+		Iterator<String> it=Videomd5.iterator();
+		while(it.hasNext()){
+			//select video from home page
+			Browser.getActions().click(Browser.getElements().element(driver,"thumbnail_link_" + Videomd5.get(cnt) , LocateBy.id));
+			// click on edit video icon
+			Browser.getActions().click(Browser.getElements().element(driver, "edit_video_" + Videomd5.get(cnt), LocateBy.id));
+			//associate with each category
+			if(flagCategory1==true)
+				VideoProcessing.setCategory(driver, Category[0]);
+			else
+				VideoProcessing.setCategory(driver, Category[cnt]);
+			//..click on save button
+			Browser.getElements().element(driver, "editVideoDetailButton", LocateBy.id).click();
+			Home.goToHomePage(driver);
+			cnt++;
+			if(cnt==noOfVideos)
+				break;
+			it.next();
+		}
+	}
+	
+	public static boolean verifyAllElements(WebDriver driver, List<WebElement> actual, String category){
+		boolean flag=false;
+		for(WebElement e : actual){
+			
+			if(e.getText().equals(category)){
+					flag=true;
+					break;
+			}
+		}
+		return flag;
+		
+	}
+
+}
+
+

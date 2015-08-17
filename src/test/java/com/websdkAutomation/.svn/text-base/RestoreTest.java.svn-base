@@ -1,0 +1,247 @@
+package com.pismo.PismoAutomation;
+
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.Restore;
+import com.pismo.lib.appSpecific.SystemAdministration;
+import com.pismo.lib.appSpecific.VideoIUploaded;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+
+public class RestoreTest {
+	
+	private WebDriver driver =null;
+	private SoftAssert softassert= new SoftAssert();
+	public static String videoname1=String.valueOf(GenericUtils.getRandomNumber());	
+	public static String videoname2=String.valueOf(GenericUtils.getRandomNumber());	
+	
+	
+	  
+	@BeforeClass
+	public void setUp() 
+	{
+		driver = Fixtures.setupFixture("Restore test initialize");
+		Log.info("Test video is uploaded");
+		 
+		VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), videoname1, "VideoDescription", true, null, null, null,null,null,null, false);
+		VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), videoname2, "VideoDescription2", true, null, null, null,null,null,null, false);
+		
+		Authentication.logOut(driver);	  
+	}
+	
+	/**
+	 * @author naznshai
+	 * Tims id: Trv588569c,Trv590466c: This testcases is to test restore through NFS by changing the video meta bata
+	 */
+	
+  @Test(description="Trv588569c,Trv590466c")
+  public void NFSRestore(){ 
+	  
+	    
+	  //***********Login with Sysadmin and take backup*******************************************//
+	 
+	  Authentication.doLogin(driver,Browser.getPropertyFromConfigFile(ConfigProperties.SYSADMIN_USERNAME),Browser.getPropertyFromConfigFile(ConfigProperties.SYSADMIN_PASSWORD),false);
+	  
+	  String backupdt = GenericUtils.RuntimeDatetime();
+	  String backupfolder = "temp" + backupdt;				
+		
+	  String bxuptarfilepath= Restore.backupbundleforRestore(driver, "NFS", backupfolder);	  
+		
+	  Authentication.logOutSysadmin(driver);
+	  
+	//******************** Now login using anisinha and edit the video meta data**************************************//
+		
+	    Authentication.doLogin(driver);
+	    
+	    Home.goToHomePage(driver);
+	    VideoIUploaded.goToVideosIUploaded(driver);
+	    VideoIUploaded.getVideoEditPage(driver, videoname1);
+	    VideoProcessing.setBasicVideo(driver, "Testvideo1", "test description 1");
+	    VideoProcessing.revertToDraft(driver);
+	    VideoProcessing.publishVideo(driver);	    	    
+	   
+	    Authentication.logOut(driver);
+	    
+	   //******************Restore the backup bundle***********************************************************************//
+	    
+	    softassert.assertTrue(Restore.portalRestore("nfs", Browser.getPropertyFromConfigFile(ConfigProperties.NFS_Host), null, null, null, bxuptarfilepath),"Failed | Tims Id: Trv588569c,Trv590466c | Restore failed.");
+	    softassert.merge(softassert);
+	    
+	    Browser.getWaits().wait(30);
+	    
+	  //*******************************Check that backup bundle data is restored correctly*************************//  
+	    Authentication.doLogin(driver);
+	    
+	    Home.goToHomePage(driver);
+	    VideoIUploaded.goToVideosIUploaded(driver);
+	    VideoIUploaded.getVideoEditPage(driver, videoname1);
+	    softassert.assertEquals(Browser.getElements().element(driver, ElementTags.txtVideoDescription).getText(), "VideoDescription","Failed | Tims Id: Trv588569c,Trv590466c | video description is not restored.");
+	    softassert.merge(softassert);
+	    
+	    softassert.assertEquals(Browser.getElements().element(driver, ElementTags.txtVideoTitle).getText(), videoname1,"Failed | Tims Id: Trv588569c,Trv590466c | video title is not restored.");
+	    softassert.merge(softassert);
+	    
+	    VideoProcessing.setBasicVideo(driver, "Testvideo1", "test decription 1");
+	    	    
+	    softassert.showResults(); 	    
+	    TestStatus.pass("Passed | Tims Id: Trv588569c,Trv590466c");	     
+  }  
+  
+  /**
+	 * @author naznshai
+	 *  Tims id: Trv588792c,Trv590455c: This testcases is to test restore through FTp by clearing feature video
+	 */
+  
+
+@Test(description=" Trv588792c,Trv590455c", priority=1)
+public void FTPRestore() {
+	
+	   //***************** add feature video to portal******************************************
+	    Authentication.doLogin(driver);
+	 
+		String[] Videonames={"270628037599247","270628037561136"};
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		
+		Home.goToHomePage(driver);		
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.goToFeatureVideoPage(driver);
+		
+		PortalSettings.clearAllFeatureVideo(driver);
+		PortalSettings.setFeatureVideo(driver, Videonames);		 
+		
+	   //***************** take ftp back-up********************************************************
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt;		
+		
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		
+		SystemAdministration.goToSysadminPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"LDAP");		
+	
+		String bxuptarfilepath= Restore.backupbundleforRestore(driver, "ftp", backupfolder);		
+		
+		//****************Now login using anisinha and clear all feature video**********************		
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		
+		Home.goToHomePage(driver);		
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		
+		PortalSettings.goToFeatureVideoPage(driver);
+		PortalSettings.clearAllFeatureVideo(driver);
+		
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		
+		Home.goToHomePage(driver);	
+		Authentication.logOut(driver);
+		
+		//*************************restore using back-up bundle************************************* 
+			
+		softassert.assertTrue(Restore.portalRestore("ftp", Browser.getPropertyFromConfigFile(ConfigProperties.ftphost),Browser.getPropertyFromConfigFile(ConfigProperties.ftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.ftppassword),Browser.getPropertyFromConfigFile(ConfigProperties.ftpport), bxuptarfilepath),"Failed | Trv588792c,Trv590455c | Restore failed through FTP.");
+		softassert.merge(softassert);
+		
+		Browser.getWaits().wait(30);
+		
+		//***************************check that all feature video are restored.**************************** 
+		    
+		Authentication.doLogin(driver);
+		
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.goToFeatureVideoPage(driver);
+		
+		softassert.assertTrue(Home.isFeatureVideoPresent(driver),"Failed | Trv588792c,Trv590455c |Feature video are not present");
+		softassert.merge(softassert);
+		
+		softassert.assertEquals(Home.totalFeatureVideos(driver), 2,"Failed | Trv588792c,Trv590455c | Expected number of feature video are not restored. ");
+		softassert.merge(softassert);		
+		
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		
+		softassert.showResults();		
+		
+		TestStatus.pass("Passed | Tims Id: Trv588792c,Trv590455c");     
+}
+
+/**
+	 * @author naznshai
+	 *  Tims id: Trv589302c,Trv590465c: This testcases is to test restore through SFTP by clearing categories
+	 */
+
+@Test(description="Trv589302c,Trv590465c", priority=1)
+public void SFTPRestore() {
+	
+	//************ add categories to portal************************************************
+	Home.goToHomePage(driver);	
+	
+	String[] Categories={"Category 1","Category 2","Category 3"};
+	
+	String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		
+	PortalSettings.gotoPortalManagementPage(driver);
+	Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+	
+	PortalSettings.gotoCategoryPage(driver);
+	PortalSettings.addCategories(driver, Categories);	
+	
+	Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+	
+	//******************* take sftp back-up***********************************************************
+	String backupdt=GenericUtils.RuntimeDatetime();
+	String backupfolder="temp"+backupdt;
+	
+	SystemAdministration.goToSysadminPage(driver);
+	Browser.getSwitchto().switchToPopupWindow(driver,"LDAP");	
+	
+	String bxuptarfilepath= Restore.backupbundleforRestore(driver, "FTP", backupfolder);	
+	
+	Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);	
+	
+	//****************************** delete all categories*****************************************************
+	
+	PortalSettings.gotoPortalManagementPage(driver);
+	Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+	
+	PortalSettings.gotoCategoryPage(driver);
+	PortalSettings.deleteCategories(driver, Categories);
+	PortalSettings.gotoSiteSettingsPage(driver);	
+	
+	Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+	
+   //******************** restore using back-up bundle****************************************************************
+		
+	softassert.assertTrue(Restore.portalRestore("sftp", Browser.getPropertyFromConfigFile(ConfigProperties.sftphost),Browser.getPropertyFromConfigFile(ConfigProperties.sftpusername),Browser.getPropertyFromConfigFile(ConfigProperties.sftppassword),Browser.getPropertyFromConfigFile(ConfigProperties.sftpport), bxuptarfilepath),"Failed | Tims Id : Trv589302c,Trv590465c |Restore failed through SFTP.");
+	softassert.merge(softassert);
+	
+	Browser.getWaits().wait(30);
+	
+   //******************** check that all categories are restored************************************************************************
+	Authentication.doLogin(driver);
+	
+	PortalSettings.gotoPortalManagementPage(driver);
+	Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+	
+	PortalSettings.gotoCategoryPage(driver);
+	softassert.assertEquals(PortalSettings.getCategoriesNames(driver), Categories, "Failed | Tims Id : Trv589302c,Trv590465c | Restore failed through sftp");
+	softassert.merge(softassert);
+	
+	Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+	
+	softassert.showResults();
+	TestStatus.pass("Passed | Tims Id: Trv589302c,Trv590465c");
+	
+}
+}

@@ -1,0 +1,300 @@
+package com.pismo.PismoAutomation;
+
+
+import java.io.IOException;
+
+
+import org.openqa.selenium.WebDriver;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+
+public class PlayerControlsPlayPauseSeekTest  {
+	
+	private WebDriver driver =  null;
+	private SoftAssert SAssert= new SoftAssert();
+	public static String videoname=String.valueOf(GenericUtils.getRandomNumber());	
+	//public static String videoname="testvideo2";
+	
+     @DataProvider(name= "UserType")
+     public static Object[][] data() {
+    	Object[][] data = new Object[][] { {Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_1) }, {"Guest" }};
+    	 return (data);
+     }
+     
+     @BeforeClass
+ 	public void setUp() throws IOException, InterruptedException 
+ 	{
+ 	 
+ 	  driver=Fixtures.setupFixture("Player control play pause seek initialization");
+ 	  VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname6), videoname, "VideoDescription", true, null, null, null,null,null,null, false);
+ 	  Log.info("Test video is uploaded");
+ 	}
+ 	
+	/**
+	 * playPauseWithCarriageReturn
+	 * @author - nazneen
+	 * TIMS ID:  Trv618064c
+	 * 
+	 */
+
+	@Test( description=" TIMS ID:  Trv618064c",enabled=true, dataProvider="UserType" )
+	
+	public void playPauseWithCarriageReturntest(String userType) {
+		 
+		 SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname), "Failed | TIMS ID :  Trv618064c | Player is not initialized");
+		 SAssert.assertTrue(PlayerControls.playPauseVideo(driver,"EnterKey"),"Failed | TIMS ID :  Trv618064c | Player play pause doesn't work with Enter key");
+		 Authentication.logOut(driver);
+		 SAssert.showResults();
+		 TestStatus.pass("PASSED | TIMS ID :  Trv618064c " );
+	}
+	
+	/**
+	 * playPauseWithSpacebar
+	 * @author - nazneen
+	 * TIMS ID: Trv618048c
+	 * @throws InterruptedException
+	 */
+	
+	@Test(description="TIMS ID: Trv618048c", enabled=true ,dataProvider="UserType")
+	public void playPauseWithSpacebarTest(String userType)  {
+	
+		 SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname), "Failed | Tims id : Trv618048c | Player is not initialized");
+		 SAssert.assertTrue(PlayerControls.playPauseVideo(driver,"SpaceBar"),"Failed | Tims id : Trv618048c | Player ");
+		 Authentication.logOut(driver);
+		 SAssert.showResults();
+		 TestStatus.pass("PASSED | TIMS ID : Trv618048c " );
+	
+		
+	}
+	
+	/**
+	 * playPauseWithMouseClick 
+	 * @author - nazneen
+	 * TIMS ID: Trv618060c,
+	 * @throws InterruptedException
+	 */
+	
+	@Test( description="TIMS ID: Trv618060c",enabled=true ,dataProvider="UserType")
+	public void playPauseWithMouseClickTest(String userType) {
+		
+		 SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname), "Failed | Tims id :Trv618060c | Player is not initialized");
+		 SAssert.assertTrue(PlayerControls.playPauseVideo(driver,"MouseClick"),"Failed | Tims id :Trv618060c |Player play pause doesn't work with mouse click");
+		 Authentication.logOut(driver);
+		 SAssert.showResults();
+		 TestStatus.pass("PASSED | TIMS ID :  Trv618060c " );
+		
+	}
+
+	/**
+	 * verifyTimelineIndicator
+	 *
+	 * TIMS ID: Trv618070c,Trv618055c,Trv618080c
+	 * @throws InterruptedException
+	 */
+
+	@Test(description="TIMS ID: Trv618070c", enabled=true ,dataProvider="UserType")
+	public void verifyTimelineIndicatorInPlayTest(String userType) {
+		long playTime_1, playTime_2;
+		SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname), "Failed | TIMS ID :  Trv618070c | Player is not initialized");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		playTime_1 = PlayerControls.getPlayPostion(driver);
+		SAssert.assertTrue(PlayerControls.isVideoPlaying(driver,5),"Failed | TIMS ID : Trv618070c | Video is not in play mode");
+		Browser.getWaits().wait(5);
+		playTime_2 = PlayerControls.getPlayPostion(driver);
+		SAssert.assertTrue(playTime_2 > playTime_1, "Failed | TIMS ID : Trv618070c | Player time index is not incremented during play.");
+		SAssert.assertTrue(playTime_2<=PlayerControls.getVideoDuration(driver), "Failed | Tims id :  Trv618055c,Trv618080c | Player time line position is greater than total video duration");
+	    Authentication.logOut(driver);
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID :  Trv618070c,Trv618055c " );
+		
+	}
+
+	/**
+	 * verify Time line Indicator In Pause state- test cases id is not available in tims
+	 * @param userType
+	 * @throws InterruptedException
+	 */
+	@Test( description="TIMS ID: Trv618070c ", enabled=true ,dataProvider="UserType")
+	
+	public void verifyTimelineIndicatorInPauseTest(String userType) {
+		
+		long playTime_1, playTime_2;
+		SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname), "Failed | TIMS ID :  Trv618070c | Player is not initialized");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		Browser.getWaits().wait(5);
+		// pause the video
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		playTime_1 = PlayerControls.getPlayPostion(driver);
+		SAssert.assertFalse(PlayerControls.isVideoPlaying(driver,5),"Failed | TIMS ID :  Trv618070c | Video is not in pause mode");
+		Browser.getWaits().wait(5);
+		playTime_2 = PlayerControls.getPlayPostion(driver);
+		SAssert.assertTrue(playTime_2 == playTime_1, "Failed | TIMS ID :  Trv618070c | Player time index is incremented during pause.");
+	    Authentication.logOut(driver);
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv618070c " );
+	
+	}
+	
+	/**
+	 * seekByDragAtPlay
+	 * 
+	 * Tims id : Trv618079c : Verify seek along time line by dragging when video is playing
+	 * 
+	 */
+	@Test(  description=" TIMS ID: Trv618079c", enabled=true ,dataProvider = "UserType")
+	
+	public void seekByDragAtPlayTest(String userType)  {
+		long playTime_1 , playTime_2 , playTime_3;
+		SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname), "Failed | Tims id : Trv618079c |Player is not initialized");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		
+		playTime_1 = PlayerControls.getPlayPostion(driver);
+		
+		//Seek ahead of Current playTime_1
+		PlayerControls.seekByDragDrop(driver,200);
+		
+		playTime_2 = PlayerControls.getPlayPostion(driver);
+		SAssert.assertTrue(playTime_2 > playTime_1,  "Failed | Tims id : Trv618079c | Seek ahead by drag/drop failed");
+		
+		//Seek backwards of Current playTime_2
+		PlayerControls.seekByDragDrop(driver,-200);
+		playTime_3 = PlayerControls.getPlayPostion(driver);
+		SAssert.assertTrue(playTime_3 <= playTime_2, "Failed | Tims id : Trv618079c | Seek backwards by drag/drop failed");
+		Authentication.logOut(driver);
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID: Trv618079c " );
+	}
+	
+	
+	/**
+	 * seekByDragAtPause
+	 * TIMS ID: Trv618049c
+	 * 
+	 */
+	
+	@Test( description="TIMS ID: Trv618049c", enabled=true ,dataProvider = "UserType")
+	public void seekByDragAtPauseTest(String userType) {
+	
+		long playTime_1 , playTime_2 , playTime_3;
+		SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname), "Failed | Tims id : Trv618049c | Player is not initialized");
+		
+		playTime_1 = PlayerControls.getPlayPostion(driver);
+				
+		//Seek ahead of Current playTime_1
+		PlayerControls.seekByDragDrop(driver,200);
+	
+		playTime_2 = PlayerControls.getPlayPostion(driver);
+		
+		SAssert.assertTrue(playTime_2 > playTime_1, "Failed | Tims id : Trv618049c | Seek ahead by drag/drop failed");
+					
+		//Seek backwards of Current playTime_2
+		PlayerControls.seekByDragDrop(driver,-100);
+		
+		playTime_3 = PlayerControls.getPlayPostion(driver);
+		SAssert.assertTrue(playTime_3<playTime_2, "Failed | Tims id : Trv618049c | Seek backwards by drag/drop failed");
+		Authentication.logOut(driver);
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID: Trv618049c " );
+	}
+	
+	/**
+	 * seekByClickAtPlay
+	 *
+	 * TIMS ID: Trv618075c
+	 * 
+	 */
+	
+	@Test( description="TIMS ID: Trv618075c", enabled=true ,dataProvider = "UserType")
+	public void seekByClickAtPlayTest(String userType) {
+		
+		long playTime_1, playTime_2 , playTime_3, playTime_4;
+						
+		
+		 SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname), "Failed | Tims id : Trv618075c | Player is not initialized");
+		 Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		SAssert.assertTrue(PlayerControls.isVideoPlaying(driver,5),"Failed | Tims id : Trv618075c | Video is not in play mode");
+		
+		playTime_1 = PlayerControls.getPlayPostion(driver);
+		
+		//Seek ahead of Current playTime_1
+		PlayerControls.clickOnPlayerSeekBar(driver,"after");
+		playTime_2 = PlayerControls.getPlayPostion(driver);
+		SAssert.assertTrue(playTime_2 > playTime_1,"Failed | Tims id : Trv618075c | Seek ahead by click failed");
+			
+		//Seek backwards of Current playTime_2
+		PlayerControls.seekByDragDrop(driver,300);
+		playTime_3 = PlayerControls.getPlayPostion(driver);
+		PlayerControls.clickOnPlayerSeekBar(driver,"before");
+		playTime_4 = PlayerControls.getPlayPostion(driver);
+		Assert.assertTrue(playTime_4 <= playTime_3, "Failed | Tims id : Trv618075c | Seek backwards by click failed");
+		Authentication.logOut(driver);
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID: Trv618075c " );
+	
+	}
+	
+		
+	/**
+	 * seekByClickAtPause
+	 *
+	 * TIMS ID: Trv618050c
+	 * 
+	 */
+	
+	@Test( description="TIMS ID: Trv618050c", enabled=true ,dataProvider = "UserType")
+	public void seekByClickAtPauseTest(String userType){
+		
+		long playTime_1, playTime_2 , playTime_3, playTime_4;
+		
+		SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname), "Failed | Tims id : Trv618050c | Player is not initialized");
+		playTime_1 = PlayerControls.getPlayPostion(driver);
+		
+		//Seek ahead of Current playTime_1
+		PlayerControls.clickOnPlayerSeekBar(driver,"after");
+		//Thread.sleep(10000);
+		playTime_2 = PlayerControls.getPlayPostion(driver);
+		SAssert.assertTrue(playTime_2> playTime_1,  "Failed | Tims id : Trv618050c | Seek ahead by click failed");
+				
+		//Seek backwards of Current playTime_2
+		PlayerControls.seekByDragDrop(driver,300);
+		//Thread.sleep(15000);
+		playTime_3 = PlayerControls.getPlayPostion(driver);
+		PlayerControls.clickOnPlayerSeekBar(driver,"before");
+		//	Thread.sleep(10000);
+		playTime_4 = PlayerControls.getPlayPostion(driver);
+		SAssert.assertTrue(playTime_4< playTime_3, "Failed | Tims id : Trv618050c | Seek backwards by Click failed");
+		
+		Authentication.logOut(driver);
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID: Trv618050c " );
+		
+	}
+	
+	 @AfterClass
+		public void tearDown()
+		{
+		    String [] videos= {videoname};
+			Log.info("Clearing test data videos");
+			Authentication.doLogin(driver);
+			VideoProcessing.deletePublishedVideo(driver,videos);
+			Fixtures.tearDownFixture(driver);
+			Log.info("Test data is deleted.");
+		}
+
+}

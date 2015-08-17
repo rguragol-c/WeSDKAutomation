@@ -1,0 +1,159 @@
+package com.pismo.lib.appSpecific;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.ExpectedCondition;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+
+
+public class VideoICanEdit {
+	static SoftAssert softassert=new SoftAssert();
+	public static void goToVideosICanEdit(WebDriver driver)
+	{
+		Log.info("Navigate to Videos I can edit page");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeVideo));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeEditVideo));
+	}
+	
+	public static void selectVideoFromListMD5(WebDriver driver,String VideoMD5)
+	{
+		Browser.getActions().scrollPageIntoView(driver, "thumbnail_link_" + VideoMD5 , LocateBy.id, 10);
+		Browser.getActions().click(Browser.getElements().element(driver,"thumbnail_link_" + VideoMD5 , LocateBy.id));
+	}
+	
+	public static void selectVideoFomList(WebDriver driver,String videoName)
+	{
+		selectVideoFromListMD5(driver, SolrQueryUtils.getVideoMD5FromSolr(videoName));
+	}
+	
+	public static boolean isVideoPresentMD5(WebDriver driver,String VideoMD5)
+	{
+		if (Browser.getElements().isElementPresent(driver, "thumbnail_link_" + VideoMD5, LocateBy.id))
+			return true;
+		else
+			return false;
+	}
+	
+	public static boolean isVideoPresent(WebDriver driver,String videoName)
+	{
+		return isVideoPresentMD5(driver, SolrQueryUtils.getVideoMD5FromSolr(videoName));
+	}
+	
+	public static void clickEditVideoMD5(WebDriver driver,String videoMD5)
+	{
+		Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-" + videoMD5, LocateBy.id));
+		Browser.getActions().click(Browser.getElements().element(driver, "editVideo_" + videoMD5, LocateBy.id));
+	}
+	
+	public static void clickEditVideo(WebDriver driver,String videoName)
+	{
+		clickEditVideoMD5(driver, SolrQueryUtils.getVideoMD5FromSolr(videoName));
+	}
+	
+	public static void editVideoMetadata(WebDriver driver,String videoTitle){
+		Log.info("Edit video metadat.");
+		VideoProcessing.setBasicVideo(driver, videoTitle, null);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSaveEdit));
+		Browser.getWaits().wait(2);
+	}
+	
+	public static String clickOnWatchLater(WebDriver driver,String md5){
+		Log.info("Add To Watch Later");
+		Browser.getActions().click(Browser.getElements().element(driver,"hr-slider-"+ md5, LocateBy.id));
+		Browser.getActions().click(Browser.getElements().element(driver,"watch-later-"+ md5, LocateBy.id));
+		String msg = ((WebElement)Browser.getWaits().wait(driver, ElementTags.FlashMsg, ExpectedCondition.visibilityOfElementLocated, 5, null)).getText();
+		Log.info(msg);
+		return msg;
+	}
+	
+	public static void deleteVideo(WebDriver driver,String md5){
+		Log.info("Delete video");
+		if (Browser.getElements().isElementPresent(driver, "hr-slider-" + md5  , LocateBy.id))
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-" + md5  , LocateBy.id));
+			Browser.getActions().click(Browser.getElements().element(driver,"delete_video_" + md5  , LocateBy.id));
+			Browser.getActions().click(Browser.getElements().element(driver, "deleteVideoBtn", LocateBy.id));
+		}else
+		{
+			Log.warn("Video  doesn't exisits, Can not delete video");
+		}
+		Browser.getWaits().wait(3);
+	}	
+	
+	public static boolean isActionsliderPresentForVideo(WebDriver driver,String md5){
+		boolean flag=true;
+		if (Browser.getElements().isElementPresent(driver, "hr-slider-" + md5  , LocateBy.id))
+		   {
+			   if(!Browser.getElements().isElementPresent(driver,"delete_video_" + md5  , LocateBy.id))
+			   {
+				   Log.error("Horizontal action slider doesn't have delete option");
+			      flag=false;
+			   }
+			   if(!Browser.getElements().isElementPresent(driver, "editVideo_" + md5, LocateBy.id))
+			   {
+				   Log.error("Horizontal action slider doesn't have edit option");
+				      flag=false;
+			   }
+			  
+			   if(!Browser.getElements().isElementPresent(driver,"watch-later-"+ md5, LocateBy.id))
+			   {
+				   Log.error("Horizontal action slider doesn't have watch later option");
+				      flag=false;
+			   }
+			   
+		   }else
+		   {
+			   Log.warn("Horizontal action slider doesn't exist for video ");
+			   flag=false;
+		   }
+		  return flag;
+	}
+	
+	public static SoftAssert verifyVideoDetails(WebDriver driver, String videoName, String duration, 
+		 String author, String likes, String views, String description,  String TimsID,String TimID1,String TimId2)
+	{
+		String md5 = SolrQueryUtils.getVideoMD5FromSolr(videoName);
+		
+		String pageTitle=driver.getTitle();
+		softassert.assertTrue(Browser.getElements().element(driver,"thumbnailImage_"+md5,LocateBy.id).isDisplayed()
+				 ,"FAILED | TIMS ID:" + TimsID + " | Video thumbnail is missing on video i uploaded page");
+				
+		softassert.assertTrue(Browser.getElements().element(driver, ".//*[@id='thumbnail_link_"+md5+"']/div/p",LocateBy.xpath).getText().contains(videoName)
+				, "FAILED | TIMS ID:" + TimsID + ","+TimID1+ " | Video name is not correct or missing on video "+pageTitle+" page");
+								
+		softassert.assertEquals(Browser.getElements().element(driver, ".//*[@id='thumbnail_link_"+md5+"']/div/p/span" ,LocateBy.xpath).getText(),
+				duration,"FAILED | TIMS ID:" + TimsID + " | Duration: lable is not correct or missing on video "+pageTitle+"page");
+						
+		softassert.assertEquals(Browser.getElements().element(driver, ".//*[@id='video_author_link_"+md5+"']" ,LocateBy.xpath).getText(),
+				author ,"FAILED | TIMS ID:" + TimsID + " | Video Author name is not correct or missing on video "+pageTitle+"page" );
+						
+		WebElement VideouploadTtime=Browser.getElements().element(driver,".//*[@id='gridVideo_"+md5+"']/p/span",LocateBy.xpath);
+		softassert.assertTrue((VideouploadTtime.getText().contains("mins ago") || VideouploadTtime.getText().contains("minute ago") 
+				||VideouploadTtime.getText().contains("min ago")),"FAILED | TIMS ID:" + TimsID + " | Video last updated is not correct or missing on video "+pageTitle+" page");
+				
+		softassert.assertEquals(driver.findElement(By.xpath(".//*[@id='video_item_"+md5+"']/div/div[4]/div[1]/div[1]/span[2]")).getText(),
+				likes ,"FAILED | TIMS ID:" + TimsID + " | Likes count is not correct or missing on video "+pageTitle+" page" );
+		
+		
+		softassert.assertEquals(Browser.getElements().element(driver, ".//*[@id='video_item_"+md5+"']/div/div[4]/div[1]/div[1]/span[4]" ,LocateBy.xpath).getText(),
+				views ,"FAILED | TIMS ID:" + TimsID + " | View count is not correct or missing on video "+pageTitle+"page" );
+				
+		softassert.assertEquals(Browser.getElements().element(driver,"video_description_container_"+md5, LocateBy.id).getText(), 
+				description ,"FAILED | TIMS ID:" + TimsID + " | Description is not correct or missing for search result");
+				
+		Browser.getActions().click(Browser.getElements().element(driver, "thumbnailImage_"+md5,LocateBy.id));
+		
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelVideoTitle).getText(),videoName,
+				"FAILED | TIMS ID: "+TimId2+" |Falied to navigate on play page  by clicking on video thumbnail .");
+				
+		return softassert;
+	}
+	
+	
+}

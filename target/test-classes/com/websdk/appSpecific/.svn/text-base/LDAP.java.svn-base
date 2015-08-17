@@ -1,0 +1,211 @@
+package com.pismo.lib.appSpecific;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.ExpectedCondition;
+import com.pismo.lib.generic.Log;
+
+public class LDAP 
+{
+	public static void goToLDAPPage(WebDriver driver)
+	{
+		Log.info("Navigate to LDAP Settings page.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSystemConfiguration));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkLDAP));
+		Browser.getWaits().wait(driver, ElementTags.labelLDAPStatus, ExpectedCondition.visibilityOfElementLocated, 5, null);
+	}
+	
+	public static void fillLDAPDetails(WebDriver driver,String LDAPServer,String LDAPPort,String LDAPUsername,String LDAPPassword,String Userpath,String GroupPath
+			,String ObjectFilter,String UserId,String GivenName,String LastName,String Email,String DisplayName,String Group)
+	{
+		WebElement element =null;
+		if (LDAPServer!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPSever);
+			element.clear();
+			Browser.getActions().sendKeys(element, LDAPServer);
+		}
+		if (LDAPPort!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPPort);
+			element.clear();
+			Browser.getActions().sendKeys(element, LDAPPort);
+		}
+		if (LDAPUsername!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPUserName);
+			element.clear();
+			Browser.getActions().sendKeys(element, LDAPUsername);
+		}
+		if (LDAPPassword!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPPassword);
+			element.clear();
+			Browser.getActions().sendKeys(element, LDAPPassword);
+		}
+		if (Userpath!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPUserpath);
+			element.clear();
+			Browser.getActions().sendKeys(element, Userpath);
+		}
+		if (GroupPath!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPGrouppath);
+			element.clear();
+			Browser.getActions().sendKeys(element, GroupPath);
+		}
+		if (ObjectFilter!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPObjectFilter);
+			element.clear();
+			Browser.getActions().sendKeys(element, ObjectFilter);
+		}
+		if (UserId!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPUserID);
+			element.clear();
+			Browser.getActions().sendKeys(element, UserId);
+		}
+		if (GivenName!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPGivenName);
+			element.clear();
+			Browser.getActions().sendKeys(element, GivenName);
+		}
+		if (LastName!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPLastName);
+			element.clear();
+			Browser.getActions().sendKeys(element, LastName);
+		}
+		if (Email!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPEmail);
+			element.clear();
+			Browser.getActions().sendKeys(element, Email);
+		}
+		if (DisplayName!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPDisplayName);
+			element.clear();
+			Browser.getActions().sendKeys(element, DisplayName);
+		}
+		if (Group!=null)
+		{
+			element=Browser.getElements().element(driver, ElementTags.txtLDAPDisplayName);
+			element.clear();
+			Browser.getActions().sendKeys(element, Group);
+		}
+	}
+	
+	public static void setLDAPSSL(WebDriver driver, boolean enablessl,String SSLPort)
+	{
+		if(enablessl==true)
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.optLDAPSSLEnable));
+			if (SSLPort!=null)
+			{
+				Browser.getElements().element(driver, ElementTags.txtLDAPSSLPort).clear();
+				Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtLDAPSSLPort), SSLPort);
+			}
+		}else
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.optLDAPSSLDisable));
+		}
+	}
+	
+	public static boolean isLDAPConfigured(WebDriver driver)
+	{
+		if (Browser.getElements().element(driver, ElementTags.labelLDAPStatus).getText().contains("Usersync is complete at"))
+		{
+			return true;
+		}else
+		{
+			return false;
+		}
+	}
+	
+	public static void configureLDAP(WebDriver driver,String LDAPServer,String LDAPPort,String LDAPUsername,String LDAPPassword,String Userpath,String GroupPath
+			,String ObjectFilter,String UserId,String GivenName,String LastName,String Email,String DisplayName,String Group,boolean enablessl,String SSLPort)
+	{
+		Log.info("Configuring LDAP");
+		fillLDAPDetails(driver, LDAPServer, LDAPPort, LDAPUsername, LDAPPassword, Userpath, GroupPath, ObjectFilter, UserId, GivenName, LastName, Email, DisplayName, Group);
+		if (enablessl==true)
+		{
+			setLDAPSSL(driver, enablessl,SSLPort);
+		}
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnLDAPSave));
+	}
+	
+	public static void configureLDAPAndSynch(WebDriver driver,String LDAPServer,String LDAPPort,String LDAPUsername,String LDAPPassword,String Userpath,String GroupPath
+			,String ObjectFilter,String UserId,String GivenName,String LastName,String Email,String DisplayName,String Group,boolean enablessl,String SSLPort)
+	{
+		Log.info("Configuring LDAP and synch");
+		fillLDAPDetails(driver, LDAPServer, LDAPPort, LDAPUsername, LDAPPassword, Userpath, GroupPath, ObjectFilter, UserId, GivenName, LastName, Email, DisplayName, Group);
+		if (enablessl==true)
+		{
+			setLDAPSSL(driver, enablessl,SSLPort);
+		}
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnLDAPSaveSynch));
+	}
+	
+	public static void setLDAPSchedule(WebDriver driver)
+	{
+		//TODO: Need to add code for LDAP Schedule with elements in object repository
+	}
+	
+	public static boolean verifyLDAPSynchCompleted(WebDriver driver)
+	{
+		Log.info("Wait till user synch is complete");
+		int i=0;
+		while (!Browser.getElements().element(driver, ElementTags.labelLDAPStatus).getText().contains("Usersync is complete at"))
+		{
+			Browser.getWaits().wait(5);
+			i++;
+			if(Browser.getElements().element(driver, ElementTags.labelLDAPStatus).getText().contains(
+					"Usersync failed to start,Error while creating ldap context. Please check ldap admin username/password"))
+			{
+				Log.error("LDAP synch is not completed successfully");
+				return false;
+			}
+			if (i==10)
+			{
+				Log.error("LDAP synch is not completed successfully,Time Out");
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public static void configureLDAPFromPropertiesFileValues(WebDriver driver)
+	{
+		boolean ssl = false;
+		if (Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_SSL_Enable).equals("Yes"))
+		{
+			ssl=true;
+		}
+		configureLDAPAndSynch(driver,
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_Server_IP),
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_Server_Port), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_Username), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_passowrd), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_User_Path), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_Group_Path), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_Mapping_Object_Filer), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_Mapping_User_ID), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_Mapping_Given_Name), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_Mapping_Given_LastName), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_Mapping_Email), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_Mapping_DisplayName), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_Mapping_Group), 
+				ssl, 
+				Browser.getPropertyFromConfigFile(ConfigProperties.LDAP_SSL_Port));
+	
+	}
+	
+}

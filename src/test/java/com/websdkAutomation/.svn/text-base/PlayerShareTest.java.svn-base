@@ -1,0 +1,335 @@
+package com.pismo.PismoAutomation;
+
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.SolrQueryUtils;
+import com.pismo.lib.appSpecific.VideoICanEdit;
+import com.pismo.lib.appSpecific.VideoICanView;
+import com.pismo.lib.appSpecific.VideoIUploaded;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.appSpecific.VideoSharedWithMe;
+import com.pismo.lib.appSpecific.VideoWatchLater;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.PortalMessage;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+
+public class PlayerShareTest {
+	
+	private WebDriver driver =  null;
+	private SoftAssert SAssert= new SoftAssert();
+	public static String videoname1=String.valueOf(GenericUtils.getRandomNumber());
+	public static String videoname2=String.valueOf(GenericUtils.getRandomNumber());
+	public static String videoname3=String.valueOf(GenericUtils.getRandomNumber());
+	//public static String videoname="1538731551895812";
+	//public static String videoname2="709554522039694";
+	
+    @DataProvider(name = "Usertype")  
+
+     public Object[][] createData1() {  
+
+     return new Object[][] {  
+
+          { Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_1) },
+          { "guest" }
+
+      };  
+
+}	
+	
+@BeforeClass
+public void setUp() 
+{
+	String arr[][]={{Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_2),"Editor"},{Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_3),"Viewer"}};
+	driver=Fixtures.setupFixture("Player share initialization");
+	VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), videoname1, "VideoDescription", true, arr, null, null,null,null,null, false);
+	VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), videoname3, "VideoDescription", true, arr, null, null,null,null,null, false);
+	VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), videoname2, "VideoDescription", false, arr, null, null,null,null,null, false);
+	Log.info("Test video is uploaded");
+}
+
+
+  @Test(enabled=true, description= "TIMS ID: Trv588987c ",priority=1)
+  public void playerShareLinkAuthorTest() {
+	  Authentication.doLogin(driver);
+	  VideoIUploaded.goToVideosIUploaded(driver);
+	  VideoIUploaded.selectVideoFomList(driver, videoname1);
+	  Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+	  String videoUrl=PlayerControls.getshareLinkURL(driver);
+	  SAssert.assertEquals(videoUrl,PlayerControls.computeVideoShareURL(videoname1),"FAILED | TIMS ID : Trv588987c | Shared URl is not matching with Database URL");
+	  driver.navigate().to(videoUrl);
+	  SAssert.merge(PlayerControls.verifyVideoPlayPage(driver, videoname1,"Trv588987c"));
+	  // this is just a work around for Sign In
+	  Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSignIn));
+	  Authentication.logOut(driver);
+	  SAssert.showResults();
+	  TestStatus.pass("PASSED | TIMS ID : Trv588987c | playerShareLinkAuthorTest" );
+	  
+	}
+  
+  /**
+	 * TIMS ID: Trv588988c :Shorten URL for share videos link for Editor
+	 * @throws InterruptedException
+	 */
+  
+  
+  @Test(enabled=true, description= "TIMS ID: Trv588988c ",priority=2)
+  public void playerShareLinkEditorTest()   {
+	  Authentication.logOut(driver);
+	  Authentication.doLogin(driver,Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_2),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_2),true);
+	  VideoICanEdit.goToVideosICanEdit(driver);
+	  VideoIUploaded.selectVideoFomList(driver, videoname1);
+	  Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+	  String videoUrl=PlayerControls.getshareLinkURL(driver);
+	  SAssert.assertEquals(videoUrl,PlayerControls.computeVideoShareURL(videoname1),"FAILED | TIMS ID : Trv588988c | Shared URl is not matching with Database URL for edior");
+	  driver.get(videoUrl);
+	  SAssert.merge(PlayerControls.verifyVideoPlayPage(driver, videoname1,"Trv588988c"));
+	  // this is just a work around for Sign In
+		  Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSignIn));
+	  Authentication.logOut(driver);
+	  SAssert.showResults();
+	  TestStatus.pass("PASSED | TIMS ID : Trv588988c | playerShareLinkEditorTest" );
+	  
+	}
+  
+  
+  /**
+	 * TIMS ID: Trv588989c :Shorten URL for share videos link for Viewer
+	 * @throws InterruptedException
+	 */
+  
+  
+  @Test(enabled=true, description= "TIMS ID: Trv588989c ",priority=4)
+  public void playerShareLinkViewerTest()   {
+	  Authentication.logOut(driver);
+	  Authentication.doLogin(driver,Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_3),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_3),true);
+	  VideoICanView.goToVideosICanView(driver);
+	  VideoIUploaded.selectVideoFomList(driver, videoname1);
+	  Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+	  String videoUrl=PlayerControls.getshareLinkURL(driver);
+	  SAssert.assertEquals(videoUrl,PlayerControls.computeVideoShareURL(videoname1),"FAILED | TIMS ID : Trv588989c | Shared URl is not matching with Database URL for viewer");
+	  driver.get(videoUrl);
+	  SAssert.merge(PlayerControls.verifyVideoPlayPage(driver, videoname1,"Trv588989c"));
+	// this is just a work around for Sign In
+		  Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSignIn));
+	  Authentication.logOut(driver);
+	  SAssert.showResults();
+	  TestStatus.pass("PASSED | TIMS ID : Trv588989c | playerShareLinkViewerTest" );
+	}
+  
+  /**
+ 	 * TIMS ID: Trv588990c : Shorten URL for share videos link with whome the video has shared
+ 	 * Trv618138c: Verify the shared video shows up in the ' Videos shared with me' tab for users in the To field
+ 	 * Trv618144c : Verify users can share a public video by email	
+ 	 * @throws InterruptedException
+ 	 */
+   
+   
+   @Test(enabled=true, description= "TIMS ID: Trv588990c ",priority=3)
+   public void playerShareLinkFromSharedToMeTest()   {
+	  String RecepientName[]={Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_3)};
+	  Authentication.doLogin(driver);
+	  VideoIUploaded.goToVideosIUploaded(driver);
+	  VideoIUploaded.selectVideoFomList(driver, videoname1);
+ 	  SAssert.assertTrue(PlayerControls.shareVideo(driver,RecepientName),"FAILED | TIMS ID : Trv618144c | Video(public) shared is not sucessfully");
+ 	  Authentication.logOut(driver);
+ 	  // Login with user with whom video is shared.
+ 	  Authentication.doLogin(driver,Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_3),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_3),true);
+ 	  VideoSharedWithMe.goToVideoSharedWithMe(driver);
+ 	  SAssert.assertTrue(Browser.getElements().element(driver, "thumbnailImage_"+SolrQueryUtils.getVideoMD5FromSolr(videoname1),LocateBy.id).isDisplayed(), "FAILED | TIMS ID : Trv618138c | Shared video is listed in video shared with me page. ");
+ 	  VideoIUploaded.selectVideoFomList(driver, videoname1);
+ 	 Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+ 	  String videoUrl=PlayerControls.getshareLinkURL(driver);
+ 	  SAssert.assertEquals(videoUrl,PlayerControls.computeVideoShareURL(videoname1),"FAILED | TIMS ID :Trv588990c | Shared URl is not matching with Database URL for shared user");
+ 	  driver.get(videoUrl);
+ 	  SAssert.merge(PlayerControls.verifyVideoPlayPage(driver, videoname1,"Trv588990c"));
+ 	  // this is just a work around for Sign In
+ 	  Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSignIn));
+ 	  Authentication.logOut(driver);
+ 	  SAssert.showResults();
+ 	  TestStatus.pass("PASSED | TIMS ID : Trv588990c | playerShareLinkFromSharedToMeTest" );
+ 	}
+
+   /**
+	 * TIMS ID: Trv588991c: Shorten URL for share videos link for video from WatchLater section
+	 * 
+	 */
+  
+  
+  @Test(enabled=true, description= "TIMS ID: Trv588991c ",priority=5)
+  public void playerShareLinkFromWatchLaterTest()   {
+	  // Login with user with whom video is shared.
+	  Authentication.logOut(driver);
+	  Authentication.doLogin(driver,Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_3),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_3),true);
+	  VideoICanView.goToVideosICanView(driver);
+	  SAssert.assertEquals(VideoICanView.addToWatchLater(driver,videoname1), PortalMessage.videoAddToWatchLaterSuccessMEssage,"FAILED | TIMS ID : Trv588991c | video is not added in watch later");
+	  Browser.getWaits().wait(2);// some time video added to watch later doesn't list immediately in watch later page.
+	  VideoWatchLater.goToWatchLater(driver);
+	  VideoWatchLater.selectVideo(driver, videoname1);
+	  Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+	  String videoUrl=PlayerControls.getshareLinkURL(driver);
+	  SAssert.assertEquals(videoUrl,PlayerControls.computeVideoShareURL(videoname1),"FAILED | TIMS ID :  Trv588991c : Shared URl is not matching with Database URL for shared user");
+	  driver.get(videoUrl);
+	  SAssert.merge(PlayerControls.verifyVideoPlayPage(driver, videoname1,"Trv588991c"));
+	// this is just a work around for Sign In
+		  Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSignIn));
+	  Authentication.logOut(driver);
+	  SAssert.showResults();
+	  TestStatus.pass("PASSED | TIMS ID : Trv588991c | playerShareLinkFromWatchLaterTest" );
+	}
+  
+	
+	
+	/**
+	 * playerShareEmail
+	 * @author - tiyee
+	 * TIMS ID: Trv618150c : Verify only logged in users can use the share by email feature	
+	 * @throws InterruptedException
+	 */
+	 
+	 @Test( enabled=true, dataProvider="Usertype", priority=6)
+	public void playerShareEmailMessageBodyTest(String userType) {
+		
+		 SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname3),"FAILED | TIMS ID : Trv618150c | Player is not initialized");
+		    if(userType.equalsIgnoreCase("guest"))
+		    {
+		    	SAssert.assertTrue(PlayerControls.checkLoginRequired(driver),"FAILED | TIMS ID : Trv618150c | Sign In option is not given for guest user on player share pop-up ");
+		    }
+		    else
+		    {
+		    	//SAssert.assertTrue(PlayerControls.checkEmailMessage(driver,videoname3,PlayerControls.computeShareEmailMessage(videoname3)),"FAILED | TIMS ID : ");
+		    	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+		    	SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.txtVideoShareEmailMessage).getAttribute("value").equalsIgnoreCase(PlayerControls.computeShareEmailMessage(videoname3)), " FAILED | TIMS ID : | The share email message is not formatted correctly");
+		    	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShareClose));
+		    }
+		    SAssert.showResults();
+		 Authentication.logOut(driver);
+	}
+
+	
+
+	/**
+	 * playerShareEmailMultipleRecipient
+	 * @author - tiyee
+	 * Trv618156c
+	 * TIMS ID: Trv618140c :Verify users can share a private video by email	
+	 * TIMS ID:  Trv618155c : Verify that player controls are intact when viewing the video via the shared player from the email
+	 * @throws InterruptedException
+	 */
+
+	 //ToDo: need to add code for checking mails after share.
+	 @Test( enabled=true,priority=7)
+	public void playerShareEmailMultipleRecipientTest()  {
+		
+		 String RecepientName[]={Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_3),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_4)};
+		
+		   		Authentication.doLogin(driver);
+		   		VideoIUploaded.goToVideosIUploaded(driver);
+		   		VideoIUploaded.selectVideoFomList(driver, videoname2);
+		    	SAssert.assertTrue(PlayerControls.shareVideo(driver,RecepientName),"FAILED | TIMSID : Trv618140c,Trv618156c | Video(private) is not shared sucessfully to multiple recipient.");
+		    	Authentication.logOut(driver);
+		    	Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_3),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_3), true);
+		    	VideoSharedWithMe.goToVideoSharedWithMe(driver);
+		    	VideoSharedWithMe.selectVideoFomList(driver, videoname2);
+		    	SAssert.merge(PlayerControls.verifyVideoPlayPage(driver, videoname2, "Trv618155c"));
+		    	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		    	SAssert.assertTrue(PlayerControls.isVideoPlaying(driver, 3), "FAILED | TIMSID : Trv618155c | Shared video is not playing properly. ");
+		    	PlayerControls.mute(driver, true);
+		    	SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.iconVideoMute).getAttribute("src").contains("Mute_on.png"), "FAILED | TIMSID : Trv618155c | Player mute is not working properly on shared video.");
+		    	Authentication.logOut(driver);
+		    	Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_4),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_4), true);
+		    	VideoSharedWithMe.goToVideoSharedWithMe(driver);
+		    	VideoSharedWithMe.selectVideoFomList(driver, videoname2);
+		    	SAssert.assertEquals(Browser.getElements().element(driver, ElementTags.labelAccessDenied).getText(), "Access Denied","FAILED | TIMSID : Trv618155c ");
+		    	Authentication.logOut(driver);
+		    	SAssert.showResults();
+		    	Authentication.logOut(driver);
+	}
+
+	 /**
+		 * playerShareEmailMultipleRecipient
+		 * @author - tiyee
+		 * TIMS ID: Trv
+		 * @throws InterruptedException
+		 */
+
+		 @Test( enabled=true,priority=8)
+		public void playerShareInvalidEmailRecipientTest() {
+			
+			 String RecepientName[]={Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_2),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_3),"abc121212"};
+			 
+			 Authentication.doLogin(driver);
+			 VideoIUploaded.goToVideosIUploaded(driver);
+			 VideoIUploaded.selectVideoFomList(driver, videoname3);
+			 SAssert.assertFalse(PlayerControls.shareVideo(driver,RecepientName));
+			 SAssert.showResults();
+			 Authentication.logOut(driver);
+		} 
+		
+	/**
+	 * playerShareEmailChangeMessage
+	 * @author - 
+	 * TIMS ID: Trv618149c
+	 * 
+	 */
+		 
+		 @Test( enabled=true,description="TIMS ID: Trv618149c",priority=9) 
+		 		
+	public void playerShareEmailChangeMessageTest()  {
+		
+		 String newMessage="This is my new email messsage";
+		
+		 Authentication.doLogin(driver);
+		 VideoIUploaded.goToVideosIUploaded(driver);
+		 VideoIUploaded.selectVideoFomList(driver, videoname3);
+		 PlayerControls.changeEmailMessage(driver,newMessage);
+		 Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+	     SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.txtVideoShareEmailMessage).getAttribute("value").equalsIgnoreCase(PlayerControls.computeShareEmailMessage(videoname3)), " FAILED | TIMS ID : | The share email message is not formatted correctly");
+	     Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShareClose));
+	     SAssert.showResults();
+		 Authentication.logOut(driver);
+		 }
+		
+	/**
+	 * playerShareEmailCancel
+	 * @author - 
+	 * TIMS ID: Trv618146c
+	 * 
+	 */
+		 
+		 @Test( enabled=true, description="TIMS ID: Trv618146c", dataProvider="Usertype",priority=10)	 
+	     public void playerShareCancelTest(String userType) {
+				SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname3), "FAILED | TIMS ID : Trv618146c |Player is not initialized");
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+				SAssert.assertTrue(PlayerControls.verifyCancelPlayerShare(driver),"FAILED | TIMS ID : Trv618146c | Player share pop-up is not dismissed on clicking cancel");
+			    SAssert.showResults();
+			    Authentication.logOut(driver);
+		 }
+		 
+		 
+		 
+
+	 @AfterClass(alwaysRun=true)
+			public void tearDown()
+			{
+			    String videnames[]={videoname1,videoname2,videoname3};
+				Log.info("Clearing test data videos");
+				Authentication.doLogin(driver);
+				VideoProcessing.deletePublishedVideo(driver,videnames);
+				Log.info("Test data is deleted.");
+			}
+	
+}
+

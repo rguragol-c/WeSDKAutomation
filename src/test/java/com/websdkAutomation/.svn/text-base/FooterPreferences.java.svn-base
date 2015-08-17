@@ -1,0 +1,135 @@
+package com.pismo.PismoAutomation;
+
+
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class FooterPreferences {
+
+	private WebDriver driver =  null;
+	private SoftAssert softassert=new SoftAssert();		
+	private String BaseWindowHandle= null;
+	
+	
+	@BeforeClass
+	public void setup()
+	{
+		driver=Fixtures.setupFixture("Footer test class setup initiated.");		
+	}
+
+
+	@Test(description="TIMS ID: Trv579160c, Trv579164c,Trv579156c", enabled=true, priority=1)
+	public void VerifyCustomizedFooteronallpages(){
+		
+		BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+		
+		String msg=PortalSettings.setSiteSettings(driver, null, "Off", null, null, null,"SNS","SNS Rev 6.0","http://www.sns.com" );
+				
+		softassert.assertEquals(msg, "Site Settings Saved Successfully.","FAILED | TIMS ID :Trv579164c,Trv579156c  | Footer preference settings were not save succesfully.");
+								
+		softassert.merge(PortalSettings.VerifyFooteronAllpages(driver,"SNS","SNS Rev 6.0","http://www.sns.com/",BaseWindowHandle,"Trv579164c,Trv579156c"));
+		
+		softassert.showResults();
+				
+		TestStatus.pass("PASSED | TIMS ID :Trv579160c, Trv579164c,Trv579156c| Portal Manager is able to Customize footer and customized footer text is displayed on all pages");
+		
+	}
+	
+	@Test(description="TIMS ID: Trv579162c,Trv579161c", enabled=true, priority=2)
+	public void VerifyChangefootertext(){
+				
+		String msg = null;
+		
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+		
+		msg=PortalSettings.setSiteSettings(driver, null, "Off", null, null, null,"SNS modified","SNS Rev 6.0.1","http://www.snsrevshare.com" );
+				
+		softassert.assertEquals(msg, "Site Settings Saved Successfully.","FAILED | TIMS ID :Trv579162c,Trv579161c  | Footer preference settings were not save succesfully.");
+		
+		//softassert.assertNotEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomtext).getText(),"SNS");		
+		softassert.assertNotEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomLinkURL).getText(),"SNS Rev 6.0","FAILED | TIMS ID :ID:Trv579161c,Trv579162c ");	
+		softassert.assertNotEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomLinkURL).getAttribute("href"),"http://www.sns.com","FAILED | TIMS ID :ID:Trv579161c,Trv579162c ");
+			
+		//***********************Verify changed footer label is displayed on footer page********************
+			
+		softassert.merge(PortalSettings.VerifyFooteronAllpages(driver,"SNS modified","SNS Rev 6.0.1","http://www.snsrevshare.com/",BaseWindowHandle,"Trv579162c"));
+		softassert.showResults();
+		
+		TestStatus.pass("PASSED | TIMS ID : Trv579162c,Trv579161c| Customized footer text is displayed on all pages");
+	}
+	
+	
+	@Test(description="TIMS ID: Trv579159c", enabled=true, priority=2)
+	public void VerifyFootertextforGuestuser(){
+		
+		Home.goToHomePage(driver);
+		Authentication.logOut(driver);
+		
+		//***********************Verify footer is displayed on guest page********************
+		
+		softassert.merge(PortalSettings.VerifyFooter(driver,"SNS modified","SNS Rev 6.0.1","http://www.snsrevshare.com/","guest page","Trv579159c"));
+		softassert.showResults();
+		
+		TestStatus.pass("PASSED | TIMS ID :Trv579159c| Customized footer text is displayed on all pages");
+	}	
+			
+	@AfterClass()
+	public void tearDown()
+	{		
+		Authentication.doLogin(driver);
+		BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+				
+		String msg=PortalSettings.setSiteSettings(driver, null, "Off", null, null, null,null,null,null );
+		
+		if(msg=="Site Settings Saved Successfully.")
+		{			
+			Log.info("Site settings get cleared properly");
+		}
+		else
+		{
+			Log.info("Site settings NOT get cleared");
+		}
+		
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Home.goToHomePage(driver);
+		Fixtures.tearDownFixture(driver);
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+}

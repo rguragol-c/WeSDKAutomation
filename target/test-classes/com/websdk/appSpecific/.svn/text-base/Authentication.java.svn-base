@@ -1,0 +1,113 @@
+package com.pismo.lib.appSpecific;
+
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.TestStatus;
+
+public class Authentication{
+
+	public static String getLoginUrl()
+	{
+		return "http://" + Browser.getPropertyFromConfigFile(ConfigProperties.IP) + "/account/login";
+	}
+	
+	private static String getUserName()
+	{
+		return Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_1);
+	}
+	
+	private static String getPassword()
+	{
+		return Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_1);
+	}
+	
+	public static void doLogin(WebDriver driver)
+	{
+		doLogin(driver,getUserName(), getPassword(),true);
+	}
+	
+	public static void doLogin(WebDriver driver, String username, String password,boolean FailTest) 
+	{
+		driver.manage().window().maximize();
+		driver.get(getLoginUrl());
+		if (isUserloggedIn(driver)==false)
+		{
+			if (Browser.getElements().isElementPresent(driver, ElementTags.txtUserName))
+			{
+				Browser.getElements().element(driver, ElementTags.txtUserName).clear();
+				Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtUserName), username); 
+				Browser.getElements().element(driver, ElementTags.txtPassword).clear();
+				Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtPassword), password); 
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnLogin)); 
+				if (isUserloggedIn(driver)==true)
+				{
+					Log.info("Logged in with Username '" + username + "' & Password '" + password + "'" );
+				}else 
+				{
+					if (FailTest == true)
+					{
+						TestStatus.fail("User '" + username + "' not logged in successfully" );
+					}else
+					{
+						if (!username.equalsIgnoreCase("Sysadmin"))
+						Log.warn("User '" + username + "' not logged in successfully");
+					}
+				}
+			}else
+			{
+				TestStatus.fail("Unable to load login page,Login page elements are not present.");
+			}
+		}else
+		{
+			Log.warn("User already logged in");
+		}
+	}
+	
+	public static boolean isUserloggedIn(WebDriver driver)
+	{
+		if (Browser.getElements().isElementPresent(driver, ElementTags.linkHomeLoginMenu))
+		{
+			return true;
+		}else
+		{
+			return false;
+		}
+	}
+	
+	public static boolean isUserloggedIn(WebDriver driver, String UserName)
+	{
+		if (Browser.getElements().element(driver, ElementTags.linkHomeLoginMenu).getText().equals(UserName))
+		{
+			return true;
+		}else
+		{
+			return false;
+		}
+	}
+
+	public static void logOut(WebDriver driver)
+	{
+		Home.goToHomePage(driver);
+		if (isUserloggedIn(driver)==true)
+		{
+			Log.info("Logout user");
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeLoginMenu));
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSignOut));
+		}else
+		{
+			Log.warn("User already logged out");
+		}
+	}
+	
+	public static void logOutSysadmin(WebDriver driver)
+	{
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkAdminMenu));
+		//Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkAdminSignOut));
+		Browser.getElements().element(driver, ElementTags.linkAdminSignOut).sendKeys(Keys.ENTER);
+	}
+}

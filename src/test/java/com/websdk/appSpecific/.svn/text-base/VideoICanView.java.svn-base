@@ -1,0 +1,78 @@
+package com.pismo.lib.appSpecific;
+
+import org.openqa.selenium.WebDriver;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+
+public class VideoICanView {
+	public static SoftAssert softassert=new SoftAssert();
+	public static void goToVideosICanView(WebDriver driver)
+	{
+		Log.info("Navigate to Videos I can view page");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeVideo));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeViewVideo));
+	}
+
+	public static boolean isVideoPresentMD5(WebDriver driver,String VideoMD5)
+	{
+		if (Browser.getElements().isElementPresent(driver, "thumbnail_link_" + VideoMD5, LocateBy.id))
+			return true;
+		else
+			return false;
+	}
+	
+	public static boolean isVideoPresent(WebDriver driver,String videoName)
+	{
+		return isVideoPresentMD5(driver, SolrQueryUtils.getVideoMD5FromSolr(videoName));
+	}
+	
+	public static void selectVideoFromListMD5(WebDriver driver,String VideoMD5)
+	{
+		Browser.getActions().scrollPageIntoView(driver, "thumbnail_link_" + VideoMD5 , LocateBy.id, 10);
+		Browser.getActions().click(Browser.getElements().element(driver,"thumbnail_link_" + VideoMD5 , LocateBy.id));
+	}
+	
+	public static void selectVideoFomList(WebDriver driver,String videoName)
+	{
+		selectVideoFromListMD5(driver, SolrQueryUtils.getVideoMD5FromSolr(videoName));
+	}
+	
+	public static String addToWatchLater(WebDriver driver,String videoName)
+	{
+		String md5=SolrQueryUtils.getVideoMD5FromSolr(videoName);
+		Browser.getWaits().wait(1);
+		Browser.getActions().click(Browser.getElements().element(driver, ".//*[@id='video_item_"+md5+"']/div/div[4]/div[1]/div[2]", LocateBy.xpath));
+		Browser.getWaits().wait(1); // adding wait to avoid error in watch later error.
+		Browser.getActions().click(Browser.getElements().element(driver, "watch-later-"+md5,LocateBy.id));
+		return Browser.getElements().element(driver, ElementTags.FlashMsg).getText();
+	}
+	
+	public static boolean isActionsliderPresentForVideo(WebDriver driver,String md5){
+		boolean flag=true;
+		if (Browser.getElements().isElementPresent(driver,ElementTags.bttnActionMenuSlider))
+		   {
+			  if(!Browser.getElements().isElementPresent(driver,"watch-later-"+ md5, LocateBy.id))
+			   {
+				   Log.error("Horizontal action slider doesn't have watch later option");
+				      flag=false;
+			   }
+			   
+		   }else
+		   {
+			   Log.warn("Horizontal action slider doesn't exist for video ");
+			   flag=false;
+		   }
+		  return flag;
+	}
+	
+	public static void changeViewrpermission(WebDriver driver){
+		Log.info("Change user Viewer permission");
+		VideoProcessing.setPrivacyAndPermission(driver, false, null);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSaveEdit));
+		Browser.getWaits().wait(4);
+	}
+}

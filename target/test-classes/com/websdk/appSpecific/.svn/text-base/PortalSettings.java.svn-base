@@ -1,0 +1,540 @@
+package com.pismo.lib.appSpecific;
+
+
+import java.util.List;
+
+import org.openqa.selenium.Alert;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.ExpectedCondition;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+import com.pismo.lib.appSpecific.VideoIUploaded;
+import com.pismo.lib.appSpecific.VideoPendingApproval;
+
+
+public class PortalSettings{
+	private static SoftAssert softassert=new SoftAssert();
+	
+	
+	public static void gotoPortalManagementPage(WebDriver driver)
+	{
+		Log.info("Navigate to portal management page.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeLoginMenu));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomePortalMenu));
+	}
+	
+	public static void gotoSiteSettingsPage(WebDriver driver)
+	{
+		Log.info("Navigate to site settings page.");
+		Browser.getElements().element(driver, ElementTags.linkPortalSetUpMenu).sendKeys(Keys.ARROW_DOWN);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkPortalSiteSetting));
+	}
+	
+	public static String setSiteSettings(WebDriver driver, String approvalworkflowtoggel,String UrlProtectointoggle,
+			String SessionTimeout,String Portallanguage,String ContentWithoutlogin,String FooterText,String Footerlabel,String FooterURL)
+	{
+		if (approvalworkflowtoggel!=null)
+		{
+			Log.info("Setting approver workflow to " + approvalworkflowtoggel);
+			Browser.getElements().selectDropDownValueByVisibleText(
+					Browser.getElements().element(driver, ElementTags.dropdownApprovalWorkflow), approvalworkflowtoggel);
+		}
+		if (UrlProtectointoggle!=null)
+		{
+			Log.info("Setting URL Protection to " + UrlProtectointoggle);
+			Browser.getElements().selectDropDownValueByVisibleText(
+					Browser.getElements().element(driver, ElementTags.dropdownUrlProtection), UrlProtectointoggle);
+		}
+		if (SessionTimeout!=null)
+		{
+			Log.info("Setting Session TimeOut to " + SessionTimeout);
+			Browser.getElements().selectDropDownValueByVisibleText(
+					Browser.getElements().element(driver, ElementTags.dropdownSessionTimeOut), SessionTimeout);
+		}
+		if (Portallanguage!=null)
+		{
+			Log.info("Setting Portal Language to " + Portallanguage);
+			Browser.getElements().selectDropDownValueByVisibleText(
+					Browser.getElements().element(driver, ElementTags.dropdownPortalLanguage), Portallanguage);
+		}
+		
+		if (ContentWithoutlogin != null)
+		{
+			Log.info("Setting Allow users to access content without login to " + ContentWithoutlogin);
+			Browser.getElements().selectDropDownValueByVisibleText(
+					Browser.getElements().element(driver, ElementTags.dropdownContentWithoutLogin), ContentWithoutlogin);
+		}
+		
+		if (FooterText!=null)
+		{
+			WebElement element = Browser.getElements().element(driver, ElementTags.txtFooterCustomizeText);
+			element.clear();
+			Browser.getActions().sendKeys(element, FooterText);
+		}
+		
+		if (Footerlabel!=null)
+		{
+			WebElement element = Browser.getElements().element(driver, ElementTags.txtFooterCustomizeLinkLabel);
+			element.clear();
+			Browser.getActions().sendKeys(element, Footerlabel);
+		}
+		
+		if (FooterURL!=null)
+		{
+			WebElement element = Browser.getElements().element(driver, ElementTags.txtFooterCustomizeLinkURL);
+			element.clear();
+			Browser.getActions().sendKeys(element, FooterURL);
+		}
+		
+		//Return Site settings save message
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSaveSiteSettings));
+		String msg = null;
+		if((boolean) Browser.getWaits().wait(driver, ElementTags.labelSiteSettingsMsg, 
+				ExpectedCondition.textToBePresentInElementLocated, 4, "Site Settings Saved Successfully."))
+		{
+			msg = Browser.getElements().element(driver, ElementTags.labelSiteSettingsMsg).getText();
+		}
+		Log.info(msg);
+		return msg;
+	}
+	
+	public static void setAllLDAPuserPermissions(WebDriver driver, boolean UploadVideo,boolean ViewEdit,boolean Approver)
+	{
+		Log.info("Setting All LDAP permissions");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnEditUserPermission));
+		Browser.getWaits().wait(2);
+		WebElement checkbox  = Browser.getElements().element(driver, ElementTags.checkBoxVideoViewerUpload);
+		if (UploadVideo==false && checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}else if (UploadVideo==true && !checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}
+		checkbox  = Browser.getElements().element(driver, ElementTags.checkBoxVideoEditor);
+		if (ViewEdit==false && checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}else if(ViewEdit==true && !checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}
+		checkbox  = Browser.getElements().element(driver, ElementTags.checkBoxVideoApprover);
+		if (Approver==false && checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}else if(Approver==true && !checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}
+		//Delete last row first
+		List<WebElement> listRows =Browser.getElements().elements(
+				Browser.getElements().element(driver, ElementTags.tablePortalUserPermission), "tr", LocateBy.tagname);
+		List<WebElement> cols = Browser.getElements().elements(listRows.get(listRows.size()-1), "td", LocateBy.tagname);
+		Browser.getActions().click(Browser.getElements().element(cols.get(5), "a", LocateBy.tagname));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSaveUserPermissions));	
+		Alert A = Browser.getSwitchto().alert(driver);
+		String AlertMessage = Browser.getSwitchto().getAlertMessage();
+		if (!AlertMessage.equals("No Alert Present"))
+		{
+			A.accept();
+			TestStatus.fail(AlertMessage);
+		}
+	}
+	
+	public static void setUserPermissions(WebDriver driver,String UserName, String UserID, boolean UploadVideo,boolean ViewEdit,boolean Approver)
+	{
+		Log.info("Setting User permissions");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnEditUserPermission));
+		Browser.getWaits().wait(2);
+		Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtPermissionAddUser), UserID);
+		Browser.getActions().click(Browser.getElements().element(driver, UserName,LocateBy.partiallinktext));
+		Alert A =Browser.getSwitchto().alert(driver);
+		String AlertMessage = Browser.getSwitchto().getAlertMessage();
+		if (AlertMessage.equals("The group or user \"" + UserID +"\" is added already."))
+		{
+			A.accept();
+			TestStatus.fail(AlertMessage);
+		}else
+		{
+			int row_number= getUserFromUserPermissionsTable(driver, UserID);
+			WebElement Usercheckbox  = Browser.getElements().element(driver, "permission_select_creator_" + row_number ,LocateBy.id);
+			if (UploadVideo==false && Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}else if (UploadVideo==true && !Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}
+			Usercheckbox  = Browser.getElements().element(driver, "permission_select_editor_" + row_number ,LocateBy.id);
+			if (ViewEdit==false && Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}else if(ViewEdit==true && !Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}
+			Usercheckbox  = Browser.getElements().element(driver, "permission_select_approver_" + row_number ,LocateBy.id);
+			if (Approver==false && Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}else if(Approver==true && !Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSaveUserPermissions));	
+			A = Browser.getSwitchto().alert(driver);
+			AlertMessage = Browser.getSwitchto().getAlertMessage();
+			if (AlertMessage.equals("Please enter username"))
+			{
+				A.accept();
+				TestStatus.fail(AlertMessage);
+			}
+		}
+	}
+	
+	public static void setALLLDAPUserPermissionsWithUser(WebDriver driver, boolean UploadVideo,boolean ViewEdit,boolean Approver,
+			String UserName, String UserID, boolean UserUploadVideo,boolean UserViewEdit,boolean UserApprover)
+	{
+		Log.info("Setting All LDAP permissions With user permission");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnEditUserPermission));
+		Browser.getWaits().wait(2);
+		WebElement checkbox  = Browser.getElements().element(driver, ElementTags.checkBoxVideoViewerUpload);
+		if (UploadVideo==false && checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}else if (UploadVideo==true && !checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}
+		checkbox  = Browser.getElements().element(driver, ElementTags.checkBoxVideoEditor);
+		if (ViewEdit==false && checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}else if(ViewEdit==true && !checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}
+		checkbox  = Browser.getElements().element(driver, ElementTags.checkBoxVideoApprover);
+		if (Approver==false && checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}else if(Approver==true && !checkbox.isSelected())
+		{
+			Browser.getActions().click(checkbox);
+		}
+		Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtPermissionAddUser), UserID);
+		Browser.getActions().click(Browser.getElements().element(driver, UserName,LocateBy.partiallinktext));
+		Alert A =Browser.getSwitchto().alert(driver);
+		String AlertMessage = Browser.getSwitchto().getAlertMessage();
+		if (AlertMessage.equals("The group or user \"" + UserID +"\" is added already."))
+		{
+			A.accept();
+			TestStatus.fail(AlertMessage);
+		}else
+		{
+			int row_number= getUserFromUserPermissionsTable(driver, UserID);
+			WebElement Usercheckbox  = Browser.getElements().element(driver, "permission_select_creator_" + row_number ,LocateBy.id);
+			if (UserUploadVideo==false && Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}else if (UserUploadVideo==true && !Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}
+			Usercheckbox  = Browser.getElements().element(driver, "permission_select_editor_" + row_number ,LocateBy.id);
+			if (UserViewEdit==false && Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}else if(UserViewEdit==true && !Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}
+			Usercheckbox  = Browser.getElements().element(driver, "permission_select_approver_" + row_number ,LocateBy.id);
+			if (UserApprover==false && Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}else if(UserApprover==true && !Usercheckbox.isSelected())
+			{
+				Browser.getActions().click(Usercheckbox);
+			}
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSaveUserPermissions));	
+			A = Browser.getSwitchto().alert(driver);
+			AlertMessage = Browser.getSwitchto().getAlertMessage();
+			if (!AlertMessage.equals("No Alert Present"))
+			{
+				A.accept();
+				TestStatus.fail(AlertMessage);
+			}
+		}
+	}
+	
+	public static int getUserFromUserPermissionsTable(WebDriver driver,String UserOrGroupName)
+	{
+		List<WebElement> listRows =Browser.getElements().elements(
+				Browser.getElements().element(driver, ElementTags.tablePortalUserPermission), "tr", LocateBy.tagname);
+		int i=1;
+		for (WebElement row : listRows) {
+			List<WebElement> cols = Browser.getElements().elements(row, "td", LocateBy.tagname);
+			if (cols.get(0).getText().equals(UserOrGroupName))
+			{
+				return i;
+			}
+			i++;
+		}
+		return 0;
+	}
+	
+
+	public static void removeUserPermission(WebDriver driver,String UserOrGroupID)
+	{
+		Log.info("removing User permissions");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnEditUserPermission));
+		Browser.getWaits().wait(2);
+		//Delete last row first
+		List<WebElement> listRows =Browser.getElements().elements(
+				Browser.getElements().element(driver, ElementTags.tablePortalUserPermission), "tr", LocateBy.tagname);
+		List<WebElement> cols = Browser.getElements().elements(listRows.get(listRows.size()-1), "td", LocateBy.tagname);
+		
+		Browser.getActions().click(Browser.getElements().element(cols.get(5), "a", LocateBy.tagname));
+		
+		//Delete particular user row
+		int row_number= getUserFromUserPermissionsTable(driver, UserOrGroupID);
+		Browser.getActions().click(Browser.getElements().element(driver, 
+				"//*[@id='listOfGroupPermission']/tbody/tr["+ row_number +"]/td[6]/a/img",LocateBy.xpath));
+
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSaveUserPermissions));	
+	}
+	
+	public static void gotoCategoryPage(WebDriver driver)
+	{
+		Log.info("Navigate to category settings page.");
+		Browser.getElements().element(driver, ElementTags.linkPortalSetUpMenu).sendKeys(Keys.ARROW_DOWN);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkPortalCategory));
+	}
+	
+
+	public static boolean addCategories(WebDriver driver, String [] Categories)
+	{
+		boolean result = false;
+		Log.info("Adding categories.");
+		for (String category : Categories) {
+			WebElement element =  (WebElement) Browser.getWaits().wait(driver, ElementTags.bttnPortalAddCategory,
+					ExpectedCondition.elementToBeClickable, 2, null);
+			Browser.getActions().click(element);
+			Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtPortalCategoryName),category);
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnPortalSaveCategory));
+			if (Browser.getElements().element(driver, ElementTags.labelPortalCategoryMsg).getText().equals("Successfully added the category.")){
+			result=true;
+			}else  {result=false;}
+
+		}
+		return result;
+	}
+	
+
+	public static void selectCategoryFromTable(WebDriver driver,String CategoryName)
+	{
+		Log.info("Inside select category");
+		
+		int CategoryCount = Browser.getElements().elements(driver, ElementTags.listPortalSettingsCategory).size();
+		for(int i=1;i<=CategoryCount;i++)
+		{
+			if (Browser.getElements().element(driver, "//*[@id='categories']/table/tbody/tr["+ i +"]/td[2]/a",LocateBy.xpath)
+					.getText().equals(CategoryName))
+			{
+				Browser.getActions().click(Browser.getElements().element(driver, "//*[@id='categories']/table/tbody/tr["+ i +"]/td[1]/input",LocateBy.xpath));
+			}
+		}
+		
+	}
+	
+	public static String[] getCategoriesNames(WebDriver driver)
+	{
+		int CategoryCount = Browser.getElements().elements(driver, ElementTags.listPortalSettingsCategory).size();
+		String[] Categories= new String[CategoryCount];
+	
+		int j=0;
+		for(int i=1;i<=CategoryCount;i++,j++)
+		{
+			Categories[j]=Browser.getElements().element(driver, "//*[@id='categories']/table/tbody/tr["+ i +"]/td[2]/a",LocateBy.xpath).getText();	
+		}
+		return Categories;
+	}
+	
+	public static boolean deleteCategories(WebDriver driver,String [] Categories)
+	{
+		boolean result = false;
+		Log.info("Deleting categories.");
+			for (String category : Categories) {
+				selectCategoryFromTable(driver,category);
+			}
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnPortalDeleteCategory));
+			if (Categories.length == 1)
+			{
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnPortalConfirmDeleteCategorySingle));
+			}else
+			{
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnPortalConfirmDeleteCategoryMulti));
+			}
+			//TODO: Check message and return true/false
+			return result;
+		
+	}
+		
+	public static void clearFeatureVideo(WebDriver driver,int totalfeatureVideoDeleteCount)
+	{ 
+		WebElement element=Browser.getElements().element(driver, ElementTags.labelFeaturedVideosCountRight);
+		int totalFeaturedVideos=Integer.parseInt(element.getText());
+		if(totalfeatureVideoDeleteCount>totalFeaturedVideos)
+		{
+			Log.error("Portal doesn't have "+totalfeatureVideoDeleteCount+" feature videos");
+		  }	
+		else
+		{
+			for(int i=0;i<totalfeatureVideoDeleteCount;i++){
+				Browser.getWaits().wait(2);
+		        Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkClearFeatureVideo));
+		  }
+		}	
+	}
+	public static void clearAllFeatureVideo(WebDriver driver)
+	{
+		WebElement element=Browser.getElements().element(driver, ElementTags.labelFeaturedVideosCountRight);
+		int totalFeaturedVideos=Integer.parseInt(element.getText());
+		for(int i=0;i<totalFeaturedVideos;i++){
+			Browser.getWaits().wait(2);
+	        Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkClearFeatureVideo));
+		}
+	}
+
+	public static void goToFeatureVideoPage(WebDriver driver)
+	{
+		Log.info("Navigate to Feature video page.");
+		Browser.getElements().element(driver, ElementTags.linkPortalSetUpMenu).sendKeys(Keys.ARROW_DOWN);
+		Browser.getElements().element(driver, ElementTags.linkPortalFeatureVideo).click();
+	}
+	
+	public static void setFeatureVideo(WebDriver driver,String videoName[])
+	{
+		if(videoName.length<=10)
+		{
+			for(int i=0;i<videoName.length;i++)	
+			{
+				Browser.getWaits().wait(4);
+				while(!Browser.getElements().isElementPresent(driver,ElementTags.linkPortalChooseVideo))
+				{
+					Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkRightScroll));
+				}
+				Browser.getElements().element(driver, ElementTags.linkPortalChooseVideo).click();
+				Browser.getWaits().wait(1);
+				Browser.getElements().element(driver, ElementTags.labelSearchText).clear();
+				Browser.getElements().element(driver, ElementTags.labelSearchText).sendKeys(videoName[i]);
+				WebElement element2 =(WebElement)Browser.getWaits().wait(driver, videoName[i], LocateBy.linktext, 
+						ExpectedCondition.visibilityOfElementLocated, 3, null);
+			
+				if(element2.getText().equalsIgnoreCase("No match found"))
+				{
+					Log.error("Given video name is invalid.");
+				}
+				else
+				{
+					element2.click();
+				}
+				Browser.getWaits().wait(1);
+				// select the video
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSeleceVideo));
+				Browser.getWaits().wait(1);
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSaveFaeuredVideo));
+			}
+		}else
+		{
+			Log.error("At max 10 videos can be marked as feature video ");
+		}
+	}
+	
+	
+	public static SoftAssert VerifyFooteronAllpages(WebDriver driver,String FooterCustomtext,String FooterCustomlinklabel,String FooerCustomURL,String BaseWindowHandle,String TIMSid){
+		
+				
+		//******************Verify footer on Site Settings page****************		
+			
+		//softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomtext).getText(),FooterCustomtext);		
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomLinkURL).getText(),FooterCustomlinklabel);
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomLinkURL).getAttribute("href"),FooerCustomURL);
+		
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		
+		//*****************Verify footer Home page*****************
+		Authentication.logOut(driver);
+		
+		Authentication.doLogin(driver);
+		
+		Home.goToHomePage(driver);
+				
+		softassert.merge(VerifyFooter(driver,FooterCustomtext,FooterCustomlinklabel,FooerCustomURL,"Home page",TIMSid));
+				
+		//**************Verify footer on Videos i uploaded page*********************		
+		VideoIUploaded.goToVideosIUploaded(driver);
+		
+		softassert.merge(VerifyFooter(driver,FooterCustomtext,FooterCustomlinklabel,FooerCustomURL,"Videos I Uploaded page",TIMSid));
+				
+		//**************Verify footer on Videos i can view page*********************
+		
+		VideoICanView.goToVideosICanView(driver);
+		
+		softassert.merge(VerifyFooter(driver,FooterCustomtext,FooterCustomlinklabel,FooerCustomURL,"Videos I Can View page",TIMSid));
+		
+		//***************************Verify footer on Videos i can edit page ******************
+		
+		VideoICanEdit.goToVideosICanEdit(driver);
+		
+		softassert.merge(VerifyFooter(driver,FooterCustomtext,FooterCustomlinklabel,FooerCustomURL,"Videos I Can Edit page",TIMSid));
+		
+		//********************Videos shared with me page******************************
+		
+		VideoSharedWithMe.goToVideoSharedWithMe(driver);
+		
+		softassert.merge(VerifyFooter(driver,FooterCustomtext,FooterCustomlinklabel,FooerCustomURL,"Videos Shared with me page",TIMSid));
+		
+		//***************Videos pending for approval page********************************
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		
+		softassert.merge(VerifyFooter(driver,FooterCustomtext,FooterCustomlinklabel,FooerCustomURL,"Videos pending for approval page",TIMSid));
+		
+		//********************Videos Watch Later page**********************************************
+		
+		VideoWatchLater.goToWatchLater(driver);
+		softassert.merge(VerifyFooter(driver,FooterCustomtext,FooterCustomlinklabel,FooerCustomURL,"Videos Wwatch Later page",TIMSid));
+		
+		//**************************Navigate to LDAP User permissions page*************************
+		
+		SystemAdministration.goToSysadminPage(driver);		
+		Browser.getSwitchto().switchToPopupWindow(driver,"LDAP");
+		
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomtext).getText(),FooterCustomtext,"Customized footer text is NOT displayed on 'LDAP Configurations' page");		
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomLinkURL).getText(),FooterCustomlinklabel,"Customized footer link label is NOT displayed on 'LDAP Configurations' page");
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomLinkURL).getAttribute("href"),FooerCustomURL,"Customized footer link URL is NOT displayed on 'LDAP Configurations' page");
+				
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		
+		return softassert;		
+		
+	}
+	public static SoftAssert VerifyFooter(WebDriver driver,String FooterCustomtext,String FooterCustomlinklabel,String FooterCustomURL,String Pagename,String TIMSid){
+		
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomtext1).getText(),FooterCustomtext,"Customized footer text is NOT displayed on "+ Pagename +"|FAILED | TIMS ID :"+ TIMSid +"");
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomLinkURL1).getText(),FooterCustomlinklabel,"Customized footer link label is NOT displayed on "+ Pagename +"|FAILED | TIMS ID :"+TIMSid+"");
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelfooterCustomLinkURL1).getAttribute("href"),FooterCustomURL,"Customized footer link URL is NOT displayed on "+ Pagename +"|FAILED | TIMS ID :"+TIMSid+"");
+		return softassert;	
+				
+	}
+	
+}

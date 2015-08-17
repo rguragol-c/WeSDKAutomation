@@ -1,0 +1,603 @@
+package com.pismo.lib.appSpecific;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.Log;
+
+
+public class SolrQueryUtils {
+	public static final String VIDEO_QUERY = "/video/select?q=*%3A*&rows=3000&wt=xml";
+	public static final String URL = "http://"+Browser.getPropertyFromConfigFile(ConfigProperties.IP)+":"+Browser.getPropertyFromConfigFile(ConfigProperties.Solr_Port)+"/apache-solr" + VIDEO_QUERY;
+	public static final String SORTED_QUERY = "/video/select?q=*%3A*&rows=3000&wt=xml&sort=creation_date%20desc&qt=system";
+	public static final String SORTED_QUERY_URL = "http://"+Browser.getPropertyFromConfigFile(ConfigProperties.IP)+":"+Browser.getPropertyFromConfigFile(ConfigProperties.Solr_Port)+"/apache-solr" + SORTED_QUERY;
+	
+	/**
+	 * getSolrSpeakerCount
+	 * @param video_title_string
+	 * @return speakerCount
+	 * @author npodila
+	 * USAGE example: Utils.SolrQueryUtils.getSolrSpeakerCount("ETG_Sales_Q2_1.mp4");
+	 */
+	public static int getSolrSpeakerCount (final String title){
+		boolean videoUnderTest = false;
+		
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			
+			final Document document =builder.parse(SORTED_QUERY_URL);		
+			document.getDocumentElement().normalize();
+	
+			org.w3c.dom.NodeList nodes = document.getElementsByTagName("doc");
+			//System.out.println("INFO : Solr - Number of videos found: "+nodes.getLength());
+			
+			//For all 'doc' entries in Solr
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Node node = nodes.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element element = (Element) node;
+					NodeList childNodes = element.getChildNodes();
+					for (int j = 0; j < childNodes.getLength(); j++) {
+						Node childNodeList = childNodes.item(j);
+						Element childElement = (Element) childNodeList;
+						//We are only interested in doc entry that contains the title passed in
+						if (childElement.getAttribute("name").equals("title")) {
+							if (childElement.getTextContent().equals(title)) {
+								Log.info("Gathering meta data for the video under test: "+childElement.getTextContent());
+								videoUnderTest = true;
+							} else {
+								videoUnderTest = false;
+							} //if video under test
+						} //if for title check
+						if (videoUnderTest && childElement.getAttribute("name").equals("speakers_data_json")){
+							String[] speakerEntries;
+							speakerEntries = childElement.getTextContent().split("},");
+							Log.info("Number of Speakers identified for this video:  " + speakerEntries.length);
+							return (speakerEntries.length);
+						} //if speakers_data_json TODO: Need to add in rejected speaker logic
+					} //for j
+				}//end of if
+			} //for i
+		} //try
+		catch (Exception e) {e.printStackTrace();}
+			return 0;
+		}
+	
+	
+	/**
+	 * getSolrKeywordCount
+	 * @param video_title_string
+	 * @return keywordCount
+	 * @author npodila
+	 * USAGE example: Utils.SolrQueryUtils.getSolrKeywordCount("ETG_Sales_Q2_1.mp4");
+	 */
+	public static int getSolrKeywordCount (final String title){
+		boolean videoUnderTest = false;
+		
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			
+			final Document document =builder.parse(SORTED_QUERY_URL);		
+			document.getDocumentElement().normalize();
+	
+			org.w3c.dom.NodeList nodes = document.getElementsByTagName("doc");
+			
+			//For all 'doc' entries in Solr
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Node node = nodes.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element element = (Element) node;
+					NodeList childNodes = element.getChildNodes();
+					for (int j = 0; j < childNodes.getLength(); j++) {
+						Node childNodeList = childNodes.item(j);
+						Element childElement = (Element) childNodeList;
+						//We are only interested in doc entry that contains the title passed in
+						if (childElement.getAttribute("name").equals("title")) {
+							if (childElement.getTextContent().equals(title)) {
+								videoUnderTest = true;
+								Log.info("Gathering meta data for the video under test: "+childElement.getTextContent());
+							} else {
+								videoUnderTest = false;
+							} //if video under test
+						} //if for title check
+						if (videoUnderTest && childElement.getAttribute("name").equals("spoken_tags_src_json")){
+							String[] tagEntries;
+							tagEntries = childElement.getTextContent().split("tag");
+							Log.info("Number of keywords identified for this video:  " + (tagEntries.length-1));
+							return (tagEntries.length-1);
+						} //TODO: Need to add in rejected keyword logic
+					} //for j
+				}//end of if
+			} //for i
+		} //try
+		catch (Exception e) {e.printStackTrace();}
+			return 0;
+		}
+	
+	/**
+	 * getVideoStatusFromSolr
+	 * @param video_title_string
+	 * @return status_string for the latest 'doc' entry for that video
+	 * @author npodila
+	 * USAGE example: Utils.SolrQueryUtils.getVideoStatusFromSolr("ETG_Sales_Q2_1.mp4");
+	 */
+	public static String getVideoStatusFromSolr (final String title){
+		boolean videoUnderTest = false;
+		
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			
+			final Document document =builder.parse(SORTED_QUERY_URL);		
+			document.getDocumentElement().normalize();
+	
+			org.w3c.dom.NodeList nodes = document.getElementsByTagName("doc");
+			
+			//For all 'doc' entries in Solr
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Node node = nodes.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element element = (Element) node;
+					NodeList childNodes = element.getChildNodes();
+					for (int j = 0; j < childNodes.getLength(); j++) {
+						Node childNodeList = childNodes.item(j);
+						Element childElement = (Element) childNodeList;
+						//We are only interested in doc entry that contains the title passed in
+						if (childElement.getAttribute("name").equals("title")) {
+							if (childElement.getTextContent().equals(title)) {
+								Log.info("Gathering meta data for the video under test: "+childElement.getTextContent());
+								videoUnderTest = true;
+							} else {
+								videoUnderTest = false;
+							} //if video under test
+						} //if for title check
+						if (videoUnderTest && childElement.getAttribute("name").equals("status")){
+							Log.info("Processing status for this video:  " + childElement.getTextContent());
+							return(childElement.getTextContent());
+						}
+					} //for j
+				}//end of if
+			} //for i
+		} //try
+		catch (Exception e) {e.printStackTrace();}
+			return null;
+		}
+	
+	/**
+	 * isSolrSpeakerAGuest
+	 * @param video_title_string, speaker_name_string
+	 * @return true if the given speaker name is marked IsGuest in Solr, else false
+	 * @author npodila
+	 * USAGE example: Utils.SolrQueryUtils.isSolrSpeakerAGuest("ETG_Sales_Q2_1.mp4", "John Chambers");
+	 */
+	public static boolean isSolrSpeakerAGuest (final String title, final String spkrName){
+		boolean videoUnderTest = false;
+		
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			
+			final Document document =builder.parse(SORTED_QUERY_URL);		
+			document.getDocumentElement().normalize();
+	
+			org.w3c.dom.NodeList nodes = document.getElementsByTagName("doc");
+			//System.out.println("INFO : Solr - Number of videos found: "+nodes.getLength());
+			
+			//For all 'doc' entries in Solr
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Node node = nodes.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element element = (Element) node;
+					NodeList childNodes = element.getChildNodes();
+					for (int j = 0; j < childNodes.getLength(); j++) {
+						Node childNodeList = childNodes.item(j);
+						Element childElement = (Element) childNodeList;
+						//We are only interested in doc entry that contains the title passed in
+						if (childElement.getAttribute("name").equals("title")) {
+							if (childElement.getTextContent().equals(title)) {
+								Log.info("Gathering meta data for the video under test: "+childElement.getTextContent());
+								videoUnderTest = true;
+							} else {
+								videoUnderTest = false;
+							} //if video under test
+						} //if for title check
+						if (videoUnderTest && childElement.getAttribute("name").equals("speakers_data_json")){
+							String[] speakerEntries;
+							speakerEntries = childElement.getTextContent().split("},");
+							for (int k=0; k < speakerEntries.length; k++) {
+								//System.out.println(speakerEntries[k]);
+								if (speakerEntries[k].contains(spkrName)) {
+									if (speakerEntries[k].contains("\"isGuest\":true")) {
+										Log.info("Solr - This speaker is labelled as a guest: "+speakerEntries[k]);
+										return(true);
+									} else {
+										Log.info("This is not a guest speaker: "+speakerEntries[k]);
+										return (false);
+									}
+								}
+							} // for k
+						} //if speakers_data_json TODO: Need to add in rejected speaker logic
+					} //for j
+				}//end of if
+			} //for i
+		} //try
+		catch (Exception e) {e.printStackTrace();}
+			return (false);
+		}
+	
+	/**
+	 * isSolrSpeakerInLDAP
+	 * @param video_title_string, speaker_name_string
+	 * @return true if the given speaker name has a name and is not marked as a Guest in Solr, else false
+	 * @author npodila
+	 * USAGE example: Utils.SolrQueryUtils.isSolrSpeakerInLDAP("ETG_Sales_Q2_1.mp4", "John Chambers");
+	 */
+	public static boolean isSolrSpeakerInLDAP (final String title, final String spkrName){
+		boolean videoUnderTest = false;
+		
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			
+			final Document document =builder.parse(SORTED_QUERY_URL);		
+			document.getDocumentElement().normalize();
+	
+			org.w3c.dom.NodeList nodes = document.getElementsByTagName("doc");
+			//System.out.println("INFO : Solr - Number of videos found: "+nodes.getLength());
+			
+			//For all 'doc' entries in Solr
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Node node = nodes.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element element = (Element) node;
+					NodeList childNodes = element.getChildNodes();
+					for (int j = 0; j < childNodes.getLength(); j++) {
+						Node childNodeList = childNodes.item(j);
+						Element childElement = (Element) childNodeList;
+						//We are only interested in doc entry that contains the title passed in
+						if (childElement.getAttribute("name").equals("title")) {
+							if (childElement.getTextContent().equals(title)) {
+								Log.info("Gathering meta data for the video under test: "+childElement.getTextContent());
+								videoUnderTest = true;
+							} else {
+								videoUnderTest = false;
+							} //if video under test
+						} //if for title check
+						if (videoUnderTest && childElement.getAttribute("name").equals("speakers_data_json")){
+							String[] speakerEntries;
+							speakerEntries = childElement.getTextContent().split("},");
+							for (int k=0; k < speakerEntries.length; k++) {
+								//System.out.println(speakerEntries[k]);
+								if (speakerEntries[k].contains(spkrName)) {
+									if (speakerEntries[k].contains("\"isGuest\":true")) {
+										Log.info("This speaker is labelled as a guest: "+speakerEntries[k]);
+										return(false);
+									} else {
+										if (speakerEntries[k].contains("\"label\":null")) {
+											Log.info("Speaker label is null");
+											return (false);
+										} else {
+											Log.info("This is an LDAP speaker: "+speakerEntries[k]);
+											return (true);
+										}
+									}
+								}
+							} // for k
+						} //if speakers_data_json TODO: Need to add in rejected speaker logic
+					} //for j
+				}//end of if
+			} //for i
+		} //try
+		catch (Exception e) {e.printStackTrace();}
+			return (false);
+		}
+	
+	/**
+	 * getVideoMD5FromSolr
+	 * @param video_title_string
+	 * @return md5_string for the latest 'doc' entry for that video
+	 * @author npodila
+	 * USAGE example: Utils.SolrQueryUtils.getVideoMD5FromSolr("ETG_Sales_Q2_1.mp4");
+	 */
+	public static String getVideoMD5FromSolr (final String title){
+		boolean videoUnderTest = false;
+		
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			
+			final Document document =builder.parse(SORTED_QUERY_URL);		
+			document.getDocumentElement().normalize();
+	
+			org.w3c.dom.NodeList nodes = document.getElementsByTagName("doc");
+			
+			//For all 'doc' entries in Solr
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Node node = nodes.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element element = (Element) node;
+					NodeList childNodes = element.getChildNodes();
+					for (int j = 0; j < childNodes.getLength(); j++) {
+						Node childNodeList = childNodes.item(j);
+						Element childElement = (Element) childNodeList;
+						//We are only interested in doc entry that contains the title passed in
+						if (childElement.getAttribute("name").equals("title")) {
+							if (childElement.getTextContent().equals(title)) {
+								Log.info("Gathering meta data for the video under test: "+childElement.getTextContent());
+								videoUnderTest = true;
+							} else {
+								videoUnderTest = false;
+							} //if video under test
+						} //if for title check
+						if (videoUnderTest && childElement.getAttribute("name").equals("md5")){
+							Log.info("Processing status for this video:  " + childElement.getTextContent());
+							return(childElement.getTextContent());
+						}
+					} //for j
+				}//end of if
+			} //for i
+		} //try
+		catch (Exception e) {e.printStackTrace();}
+			return null;
+		}
+	
+public static String getVideoTinyUrlFromSolr (final String title){
+   String videotinyurl = null;
+		
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			
+			final Document document =builder.parse(SORTED_QUERY_URL);		
+			document.getDocumentElement().normalize();
+	
+			org.w3c.dom.NodeList nodes = document.getElementsByTagName("doc");
+			
+			//For all 'doc' entries in Solr
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Node node = nodes.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element element = (Element) node;
+					NodeList childNodes = element.getChildNodes();
+					for (int j = 0; j < childNodes.getLength(); j++) {
+						Node childNodeList = childNodes.item(j);
+						Element childElement = (Element) childNodeList;
+						//We are only interested in doc entry that contains the title passed in
+						if (childElement.getAttribute("name").equals("title")) {
+							if (childElement.getTextContent().equals(title)) {
+								Log.info("Gathering meta data for the video under test: "+childElement.getTextContent());
+								Log.info("Processing video id :  " + videotinyurl);
+								return videotinyurl;
+								
+							}  //if video under test
+						} //if for title check
+						if (childElement.getAttribute("name").equals("tinyUrlId")){
+							//System.out.println("INFO : Solr - Processing video id :  " + childElement.getTextContent()+"Node value :"+childElement.getNodeValue());
+							videotinyurl=childElement.getTextContent();
+						}
+					} //for j
+				}//end of if
+			} //for i
+		} //try
+		catch (Exception e) {e.printStackTrace();}
+			return null;
+		}
+	
+	
+	
+			
+	/**
+	 * getVideoAnalyticJobState
+	 * @param video_title_string
+	 * @return true if analytic tasks are still in progress
+	 * @author npodila
+	 * USAGE example: Utils.SolrQueryUtils.getVideoAnalyticJobState("ETG_Sales_Q2_1.mp4");
+	 */
+	public static String getVideoAnalyticJobState (final String title){
+		
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			
+			String md5 = getVideoMD5FromSolr(title);
+			String pulseConnectURL = "http://"+Browser.getPropertyFromConfigFile(ConfigProperties.IP)+"/pulseconnect/portal/flows/processAnalytics/"+md5+"/status"; 
+			final Document document =builder.parse(pulseConnectURL);		
+			document.getDocumentElement().normalize();
+	
+			org.w3c.dom.NodeList nodes = document.getElementsByTagName("wfmFlowStatus");
+			
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Node node = nodes.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element element = (Element) node;
+					//System.out.println("Node contents: "+element.getTextContent());
+					if (element.getNodeName().equals("wfmFlowStatus")) {
+						NodeList childNodes = element.getChildNodes();
+						for (int j = 0; j < childNodes.getLength(); j++) {
+							Node childNodeList = childNodes.item(j);
+							if (childNodeList.getNodeName().equals("state")) {
+								System.out.println("WFM - processing state of video is now: "+childNodeList.getTextContent());
+								return(childNodeList.getTextContent());
+							} //end of if state
+						} // for j
+					} //end of if pulseConnectFlowStatus
+				}//end of if ELEMENT_NODE
+			} //for i
+			return (null);
+		} //try
+		catch (Exception e) {e.printStackTrace();}
+			return (null);
+		}
+	
+	/**
+	 * getSneakPeekThumbnailCount
+	 * @param video_title_string
+	 * @return the number of thumb nail images in the back end for the video
+	 * @author npodila
+	 * USAGE example: Utils.SolrQueryUtils.getSneakPeekThumbnailCount("ETG_Sales_Q2_1.mp4");
+	 */
+	public static int getSneakPeekThumbnailCount (final String title){
+		boolean videoUnderTest = false;
+		
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			
+			final Document document =builder.parse(SORTED_QUERY_URL);		
+			document.getDocumentElement().normalize();
+	
+			org.w3c.dom.NodeList nodes = document.getElementsByTagName("doc");
+			
+			//For all 'doc' entries in Solr
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Node node = nodes.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element element = (Element) node;
+					NodeList childNodes = element.getChildNodes();
+					for (int j = 0; j < childNodes.getLength(); j++) {
+						Node childNodeList = childNodes.item(j);
+						Element childElement = (Element) childNodeList;
+						//We are only interested in doc entry that contains the title passed in
+						if (childElement.getAttribute("name").equals("title")) {
+							if (childElement.getTextContent().equals(title)) {
+								//System.out.println("INFO : Solr - Gathering meta data for the video under test: "+childElement.getTextContent());
+								videoUnderTest = true;
+							} else {
+								videoUnderTest = false;
+							} //if video under test
+						} //if for title check
+						if (videoUnderTest && childElement.getAttribute("name").equals("scene_changes_src_json")){
+							String[] speakerEntries;
+							speakerEntries = childElement.getTextContent().split(".jpg");
+							//System.out.println("Number of thumbnails: "+speakerEntries.length);
+							return (speakerEntries.length);
+						} //if scene_changes_src_json
+					} //for j
+				}//end of if
+			} //for i
+		} //try
+		catch (Exception e) {e.printStackTrace();}
+			return (0);
+		}
+	
+	/**
+	 * getVideoDurationFromSolr
+	 * @param video_title_string
+	 * @return the video duration in milli secs
+	 * @author npodila
+	 * USAGE example: Utils.SolrQueryUtils.getVideoDurationFromSolr("ETG_Sales_Q2_1.mp4");
+	 */
+	public static int getVideoDurationFromSolr (final String title){
+		boolean videoUnderTest = false;
+		
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			
+			final Document document =builder.parse(SORTED_QUERY_URL);		
+			document.getDocumentElement().normalize();
+	
+			org.w3c.dom.NodeList nodes = document.getElementsByTagName("doc");
+			
+			//For all 'doc' entries in Solr
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Node node = nodes.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element element = (Element) node;
+					NodeList childNodes = element.getChildNodes();
+					for (int j = 0; j < childNodes.getLength(); j++) {
+						Node childNodeList = childNodes.item(j);
+						Element childElement = (Element) childNodeList;
+						//We are only interested in doc entry that contains the title passed in
+						if (childElement.getAttribute("name").equals("title")) {
+							if (childElement.getTextContent().equals(title)) {
+								//System.out.println("INFO : Solr - Gathering meta data for the video under test: "+childElement.getTextContent());
+								videoUnderTest = true;
+							} else {
+								videoUnderTest = false;
+							} //if video under test
+						} //if for title check
+						if (videoUnderTest && childElement.getAttribute("name").equals("duration")){
+							String durationInMilliSecs = childElement.getTextContent();
+							Float tmp = Float.parseFloat(durationInMilliSecs);
+							//System.out.println("Video Duration: "+tmp);
+							return (tmp.intValue());
+						}
+					} //for j
+				}//end of if
+			} //for i
+		} //try
+		catch (Exception e) {e.printStackTrace();}
+			return (0);
+		}
+	
+	/**
+	 * getVideoDescriptionFromSolr
+	 * @param video_title_string
+	 * @return the video duration in milli secs
+	 * @author npodila
+	 * USAGE example: Utils.SolrQueryUtils.getVideoDurationFromSolr("ETG_Sales_Q2_1.mp4");
+	 *//*
+	public static int getVideoDescriptionFromSolr (final String title){
+		boolean videoUnderTest = false;
+		
+		try {
+			final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			final DocumentBuilder builder = factory.newDocumentBuilder();
+			
+			final Document document =builder.parse(SORTED_QUERY_URL);		
+			document.getDocumentElement().normalize();
+	
+			org.w3c.dom.NodeList nodes = document.getElementsByTagName("doc");
+			
+			//For all 'doc' entries in Solr
+			for (int i = 0; i < nodes.getLength(); i++) {
+				Node node = nodes.item(i);
+				if (node.getNodeType() == Node.ELEMENT_NODE) {
+					Element element = (Element) node;
+					NodeList childNodes = element.getChildNodes();
+					for (int j = 0; j < childNodes.getLength(); j++) {
+						Node childNodeList = childNodes.item(j);
+						Element childElement = (Element) childNodeList;
+						//We are only interested in doc entry that contains the title passed in
+						if (childElement.getAttribute("name").equals("title")) {
+							if (childElement.getTextContent().equals(title)) {
+								//System.out.println("INFO : Solr - Gathering meta data for the video under test: "+childElement.getTextContent());
+								videoUnderTest = true;
+							} else {
+								videoUnderTest = false;
+							} //if video under test
+						} //if for title check
+						if (videoUnderTest && childElement.getAttribute("name").equals("duration")){
+							String durationInMilliSecs = childElement.getTextContent();
+							Float tmp = Float.parseFloat(durationInMilliSecs);
+							//System.out.println("Video Duration: "+tmp);
+							return (tmp.intValue());
+						}
+					} //for j
+				}//end of if
+			} //for i
+		} //try
+		catch (Exception e) {e.printStackTrace();}
+			return (0);
+		}*/
+	
+	/*public static void main (String args[])
+	{
+		SolrQueryUtils.getVideoTinyUrlFromSolr("space1.mp4");
+	}*/
+}
+
+	

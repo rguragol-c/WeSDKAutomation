@@ -1,0 +1,64 @@
+package com.pismo.lib.generic;
+
+import org.openqa.selenium.WebDriver;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Backup;
+import com.pismo.lib.appSpecific.LDAP;
+import com.pismo.lib.appSpecific.SystemAdministration;
+
+public class GlobalSetup 
+{
+	private boolean setup = false;
+	private WebDriver driver;
+	@SuppressWarnings("unused")
+	private Log log = new Log();
+	public void GlobalSetupMethod()
+	{
+		if(isSetup()==false)
+		{
+			Log.info("Framework logging Started...");
+			Log.info("Running GlobalSetup Method...");
+			
+			setDriver(Browser.intializeWebDriver());
+			
+			Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.SYSADMIN_USERNAME),
+							Browser.getPropertyFromConfigFile(ConfigProperties.SYSADMIN_PASSWORD), false);
+			LDAP.goToLDAPPage(driver);
+			if(LDAP.isLDAPConfigured(driver)==false)
+			{
+				LDAP.configureLDAPFromPropertiesFileValues(driver);
+			}			
+			
+			if(SystemAdministration.CheckNFSMountStatus(driver)==false){
+				SystemAdministration.mountNFS(driver,Browser.getPropertyFromConfigFile(ConfigProperties.NFS_Host), Browser.getPropertyFromConfigFile(ConfigProperties.NFS_MountPath),4);
+			}			
+			
+			Authentication.logOutSysadmin(driver);
+			
+			Log.info("Completed GlobalSetup Method...");
+			setSetup(true);
+		}else
+		{
+			setDriver(Browser.intializeWebDriver());
+		}
+	}
+	
+	public WebDriver getDriver() {
+		GlobalSetupMethod();
+		return driver;
+	}
+	
+	private void setDriver(WebDriver driver) {
+		this.driver = driver;
+	}
+
+	private boolean isSetup() {
+		return setup;
+	}
+
+	private void setSetup(boolean setup) {
+		this.setup = setup;
+	}
+
+}

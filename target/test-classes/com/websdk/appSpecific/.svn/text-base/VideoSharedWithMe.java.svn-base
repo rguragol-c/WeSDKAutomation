@@ -1,0 +1,37 @@
+package com.pismo.lib.appSpecific;
+
+import org.openqa.selenium.WebDriver;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+
+public class VideoSharedWithMe {
+	public static void goToVideoSharedWithMe(WebDriver driver)
+	{
+		Log.info("Navigate to Videos shared with me page");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeVideo));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeShareVideo));
+	}
+	public static void selectVideoFomList(WebDriver driver,String videoName)
+	{
+		Browser.getActions().click(Browser.getElements().element(driver,"thumbnail_link_" + SolrQueryUtils.getVideoMD5FromSolr(videoName) , LocateBy.id));
+		Browser.getWaits().wait(5);
+	}
+	public static boolean isActionSliderPresentForVideo(WebDriver driver,String videoName){
+		boolean flag=false;
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videoName);
+		
+			   if(Browser.getElements().element(driver, ".//*[@id='watch-later-"+md5+"']").isDisplayed()){
+				   Log.error("Horizontal action slider  have watch later option");
+				      flag=true;
+			   }
+			   
+		  else
+			Log.warn("Video" + videoName + "doesn't exisits");
+		
+		return flag;
+		}
+
+}

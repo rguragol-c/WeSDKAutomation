@@ -1,0 +1,448 @@
+package com.pismo.PismoAutomation;
+
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.SolrQueryUtils;
+import com.pismo.lib.appSpecific.VideoIUploaded;
+import com.pismo.lib.appSpecific.VideoPendingApproval;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.PortalMessage;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class VideoIUploadedTest {
+	
+	private WebDriver driver =  null;
+	private SoftAssert softassert= new SoftAssert();
+	private String[] publishVideos=new String[5];
+	private String[] draftVideos=new String[5];
+	private String[] pendingVideos=new String[6];
+	private String[] rejectVideos=new String[5];
+
+	//private String[] publishVideos={"Publish0","Publish1","Publish2","Publish3","Publish4"};
+	//private String[] draftVideos={"Draft0","Draft1","Draft2","Draft3","Draft4"};
+	//private String[] pendingVideos={"Pending0","Pending1","Pending2","Pending3","Pending4",""};
+    //private String[] rejectVideos={"Reject0","Reject1","Reject2","Reject3","Reject4"};
+	
+	@BeforeClass
+	public void setUp() 
+	{
+	  driver=Fixtures.setupFixture("Video I uploaded setup initialization");
+	  String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+	    Home.goToHomePage(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, true, true, true);
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, "No", null, null, null, null, null, null, null);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+	  // publish 5 videos
+	 for(int i=0;i<5;i++)
+	  {
+		  publishVideos[i]="Publish"+i;
+	      VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), publishVideos[i], "VideoDescription", false, null, null, null,null,null,null, false);
+	  }
+	  // keep 5 videos in draft
+	  for(int i=0;i<5;i++)
+	  {
+		  draftVideos[i]="Draft"+i;
+		  Home.goToHomePage(driver);
+		  VideoProcessing.uploadVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2));
+		  VideoProcessing.verifyUpload(driver);
+		  VideoProcessing.verifyVideoProcessStatus(driver);
+		  VideoProcessing.setBasicVideo(driver, draftVideos[i], "VideoDescription");
+		  VideoProcessing.saveVideo(driver);
+	  }
+	    Home.goToHomePage(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, "Yes", null, null, null, null, null, null, null);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+	  //Reject 5 videos
+		for(int i=0;i<5;i++)
+		  {
+			 rejectVideos[i]="Reject"+i;
+			  Home.goToHomePage(driver);
+			  VideoProcessing.uploadVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2));
+			  VideoProcessing.verifyUpload(driver);
+			  VideoProcessing.verifyVideoProcessStatus(driver);
+			  VideoProcessing.setBasicVideo(driver, rejectVideos[i], "Reject Video");
+			  VideoProcessing.saveVideo(driver);
+			  VideoProcessing.sendVideoForApproval(driver);
+			  Home.goToHomePage(driver);
+			  VideoPendingApproval.goToPendingApprovalPage(driver);
+			  VideoPendingApproval.selectVideoFomList(driver,rejectVideos[i]);
+			  VideoProcessing.approveRejectVideo(driver, "Reject", "Reject Video");
+		  }
+		//Keep 5 pending video
+		for(int i=0;i<5;i++)
+		  {
+			  pendingVideos[i]="Pending"+i;
+			  Home.goToHomePage(driver);
+			  VideoProcessing.uploadVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2));
+			  VideoProcessing.verifyUpload(driver);
+			  VideoProcessing.verifyVideoProcessStatus(driver);
+			  VideoProcessing.setBasicVideo(driver, pendingVideos[i], "Pending Video");
+			  VideoProcessing.saveVideo(driver);
+			  VideoProcessing.sendVideoForApproval(driver);
+		  } 
+	  Log.info("Test video is uploaded");
+	}
+	
+	/**
+	 * Verify access Videos I uploaded Page  as Guest user
+	 * author :
+	 * TIMS ID : Trv604481c
+	 *
+	 */
+
+	@Test(description="Trv604481c", priority=1)
+	public void CheckVideoIUploadedAcessThroughGuest() {
+		Authentication.logOut(driver);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		softassert.assertEquals(driver.getTitle(),"Cisco Portal","FAILED | TIMS ID : Trv604481c | Page is not redirected to Login page.");
+		Authentication.doLogin(driver);
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv604481c ");
+	}
+
+	
+	/**
+	 * Verify Videos I uploaded Page UI.
+	 * author :
+	 * TIMS ID : Trv604478c
+	 *
+	 */
+	
+  @Test(description="Trv604478c",priority=2)
+  public void verifyVideoIUploadedPage() {
+	 
+	  VideoIUploaded.goToVideosIUploaded(driver);
+	  // check each section is present on video i uploaded page
+	  softassert.assertTrue(Browser.getElements().element(driver, 
+			  ElementTags.blockDraftVideo).isDisplayed(), "FAILED | TIMS ID : Trv604478c | draft section is missing on video i uploaded page ");
+	  softassert.assertTrue(Browser.getElements().element(driver, 
+			  ElementTags.blockPendingVideo).isDisplayed(), "FAILED | TIMS ID : Trv604478c | Pending section is missing on video i uploaded page ");
+	  softassert.assertTrue(Browser.getElements().element(driver, 
+			  ElementTags.blockRejectVideo).isDisplayed(), "FAILED | TIMS ID : Trv604478c | Reject section is missing on video i uploaded page ");
+	  softassert.assertTrue(Browser.getElements().element(driver, 
+			  ElementTags.blockPublishedVideo).isDisplayed(), "FAILED | TIMS ID : Trv604478c | Published section is missing on video i uploaded page ");
+	  // check videos count in each section
+	  softassert.assertEquals(VideoIUploaded.getTotalDraftVideoCount(driver), 5,"FAILED | TIMS ID : Trv604478c |  Expected videos are not present in Draft section");
+	  softassert.assertEquals(VideoIUploaded.getTotalPendingVideoCount(driver), 5,"FAILED | TIMS ID : Trv604478c |  Expected videos are not present in Pending section");
+	  softassert.assertEquals(VideoIUploaded.getTotalRejectVideoCount(driver), 5,"FAILED | TIMS ID : Trv604478c |  Expected videos are not present in Reject section");
+	  softassert.assertEquals(VideoIUploaded.getTotalPublishVideoCount(driver), 5,"FAILED | TIMS ID : Trv604478c |  Expected videos are not present in Published section");
+	  //verify see all link in each section
+	  softassert.assertTrue(Browser.getElements().element(driver, ElementTags.draftVideoSeeAll).isDisplayed(), "FAILED | TIMS ID : Trv604478c |  See All is not present in Draft section");
+	  softassert.assertTrue(Browser.getElements().element(driver, ElementTags.publishVideoSeeAll).isDisplayed(), "FAILED | TIMS ID : Trv604478c |  See All is not present in Publish section");
+	  softassert.assertTrue(Browser.getElements().element(driver, ElementTags.rejectedVideoSeeAll).isDisplayed(), "FAILED | TIMS ID : Trv604478c |  See All is not present in Reject section");
+	  softassert.assertTrue(Browser.getElements().element(driver, ElementTags.pendingVideoSeeAll).isDisplayed(), "FAILED | TIMS ID : Trv604478c |  See All is not present in Pending section");
+	  // check for carousal in each section
+	  softassert.assertTrue(Browser.getElements().element(driver, ElementTags.iconDraftCarousalLeft).isDisplayed()&&Browser.getElements().element(driver, ElementTags.iconDraftCarousalRight).isDisplayed(), "FAILED | TIMS ID : Trv604478c |  Carousal is not present in Draft section");
+	  softassert.assertTrue(Browser.getElements().element(driver, ElementTags.iconPendingCarousalLeft).isDisplayed()&&Browser.getElements().element(driver, ElementTags.iconPendingCarousalRight).isDisplayed(), "FAILED | TIMS ID : Trv604478c |  Carousal is not present in Pending section");
+	  softassert.assertTrue(Browser.getElements().element(driver, ElementTags.iconPublishedCarousalLeft).isDisplayed()&&Browser.getElements().element(driver, ElementTags.iconPublishedCarousalRight).isDisplayed(), "FAILED | TIMS ID : Trv604478c |  Carousal is not present in Published section");
+	  softassert.assertTrue(Browser.getElements().element(driver, ElementTags.iconRejectedCarousalLeft).isDisplayed()&&Browser.getElements().element(driver, ElementTags.iconRejectedCarousalRight).isDisplayed(), "FAILED | TIMS ID : Trv604478c |  Carousal is not present in Rejected section");
+	  //verify action slider in each section
+	  
+	  String md5=SolrQueryUtils.getVideoMD5FromSolr(publishVideos[4]);
+	  softassert.assertTrue(Browser.getElements().element(driver, "hr-slider-" + md5 ,LocateBy.id).isDisplayed(), "FAILED | TIMS ID : Trv604478c | Action slider is missing for published video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "delete_video_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604478c | Delete icon is not enabled in action slider for published video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "editVideo_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604478c | Edit icon is not enabled in action slider for published video");
+	  
+	  md5=SolrQueryUtils.getVideoMD5FromSolr(draftVideos[4]);
+	  softassert.assertTrue(Browser.getElements().element(driver, "hr-slider-" + md5 ,LocateBy.id).isDisplayed(), "FAILED | TIMS ID : Trv604478c | Action slider is missing for draft video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "delete_video_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604478c | Delete icon is not enabled in action slider for draft video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "editVideo_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604478c | Edit icon is not enabled in action slider for draft video");
+	  
+	  md5=SolrQueryUtils.getVideoMD5FromSolr(pendingVideos[4]);
+	  softassert.assertFalse(Browser.getElements().isElementPresent(driver, "hr-slider-" + md5 ,LocateBy.id), "FAILED | TIMS ID : Trv604478c | Action slider is present for pending video");
+	 
+	  
+	  md5=SolrQueryUtils.getVideoMD5FromSolr(rejectVideos[4]);
+	  softassert.assertTrue(Browser.getElements().element(driver, "hr-slider-" + md5 ,LocateBy.id).isDisplayed(), "FAILED | TIMS ID : Trv604478c | Action slider is missing for reject video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "delete_video_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604478c | Delete icon is not enabled in action slider for reject video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "editVideo_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604478c | Edit icon is not enabled in action slider for reject video");
+	  
+	  // verify video details in each section.
+	 
+	  softassert.merge(VideoIUploaded.verifyVideoDetails(driver, draftVideos[4], "04 sec", "mins ago", Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_1), "0", "0", "VideoDescription", "Trv604478c"));
+	  softassert.merge(VideoIUploaded.verifyVideoDetails(driver, pendingVideos[4], "04 sec", "min ago", Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_1), "0", "0", "Pending Video", "Trv604478c"));
+	  Browser.getActions().scrollPageIntoView(driver, ElementTags.blockPublishedVideo,10);
+	  softassert.merge(VideoIUploaded.verifyVideoDetails(driver, publishVideos[4], "04 sec", "mins ago", Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_1), "0", "0", "VideoDescription", "Trv604478c"));
+	  softassert.merge(VideoIUploaded.verifyVideoDetails(driver, rejectVideos[2], "04 sec", "mins ago", Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_1), "0", "0", "Reject Video", "Trv604478c"));
+	  
+	  softassert.showResults();
+	  TestStatus.pass("PASSED | TIMS ID : Trv604478c ");
+  }
+  
+  /**
+   * Verify Clicking video thumbnail & Title
+   * author :
+   * TIMS ID : Trv604482c
+   *
+   */
+
+  @Test(description="Trv604482c" ,priority=3)
+  public void verifyVideoPlayOnThumbnailClick() {
+      VideoIUploaded.goToVideosIUploaded(driver);
+      Browser.getActions().click(VideoIUploaded.getPublishedVideoFromVideosIUploadedPage(driver, publishVideos[4]));
+      softassert.merge(PlayerControls.verifyVideoPlayPage(driver, publishVideos[4], "Trv604482c"));
+      driver.navigate().back();
+      Browser.getActions().click(VideoIUploaded.getDraftVideoFromVideosIUploadedPage(driver, draftVideos[4]));
+      softassert.merge(PlayerControls.verifyVideoPlayPage(driver, draftVideos[4], "Trv604482c"));
+      driver.navigate().back();
+      Browser.getActions().click(VideoIUploaded.getPendingApprovalVideoFromVideosIUploadedPage(driver, pendingVideos[4]));
+      softassert.merge(PlayerControls.verifyVideoPlayPage(driver, pendingVideos[4], "Trv604482c"));
+      driver.navigate().back();
+      Browser.getActions().click(VideoIUploaded.getRejectedVideoFromVideosIUploadedPage(driver, rejectVideos[4]));
+      softassert.merge(PlayerControls.verifyVideoPlayPage(driver, rejectVideos[4], "Trv604482c"));
+      Home.goToHomePage(driver);
+      TestStatus.pass("PASSED | TIMS ID : Trv604482c ");
+  }
+ 
+
+/**
+ * 
+ * author :
+ * TIMS ID : Trv604483c : Verify "See All" link on Videos I Uploaded page	
+ * TIMS ID : Trv604485c : Verify Action Slider on individual status "See all" pages
+ *
+ */
+  
+@Test(description="Trv604483c,Trv604485c",priority=4)
+public void checkSeeAllForEachSection() {
+	
+
+	VideoIUploaded.goToVideosIUploaded(driver);
+	VideoIUploaded.getSeeAllPublishVideoPage(driver);
+	softassert.assertTrue(Browser.getElements().element(driver, ElementTags.labelSeeAllPageHeader).getText().contains("Published Videos"),"FAILED | TIMS ID :  Trv604483c | Section Header is not matching for see all published page");
+	softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelVideoCountOnSeeAll).getText(), "5" ,"FAILED | TIMS ID : Trv604483c | Expected videos are not present for see all published page");
+	softassert.merge(VideoIUploaded.verifyVideoDetailsOnSeeAll(driver, publishVideos[1],  "04 sec", "mins ago", Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_1), "0", "0", "Trv604483c"));
+	
+	// action slider
+	  String md5=SolrQueryUtils.getVideoMD5FromSolr(publishVideos[1]);
+	  softassert.assertTrue(Browser.getElements().element(driver, "hr-slider-" + md5 ,LocateBy.id).isDisplayed(), "FAILED | TIMS ID : Trv604485c | Action slider is missing for published video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "delete_video_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604485c | Delete icon is not enabled in action slider for published video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "editVideo_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604485c | Edit icon is not enabled in action slider for published video");
+	 
+	driver.navigate().back();
+	VideoIUploaded.goToVideosIUploaded(driver);
+	VideoIUploaded.getSeeAllDraftVideoPage(driver);
+	softassert.assertTrue(Browser.getElements().element(driver, ElementTags.labelSeeAllPageHeader).getText().contains("Draft"),"FAILED | TIMS ID :  Trv604483c | Section Header is not matching for see all draft page");
+	softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelVideoCountOnSeeAll).getText(), "5" ,"FAILED | TIMS ID :  Trv604483c | Expected videos are not present for see all draft page");
+	softassert.merge(VideoIUploaded.verifyVideoDetailsOnSeeAll(driver, draftVideos[1],  "04 sec", "mins ago", Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_1), "0", "0", "Trv604483c"));	
+	
+	 // check action slider
+	  md5=SolrQueryUtils.getVideoMD5FromSolr(draftVideos[1]);
+	  softassert.assertTrue(Browser.getElements().element(driver, "hr-slider-" + md5 ,LocateBy.id).isDisplayed(), "FAILED | TIMS ID : Trv604485c | Action slider is missing for draft video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "delete_video_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604485c | Delete icon is not enabled in action slider for draft video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "editVideo_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604485c | Edit icon is not enabled in action slider for draft video");
+	  
+	driver.navigate().back();
+	VideoIUploaded.goToVideosIUploaded(driver);
+	VideoIUploaded.getSeeAllRejectVideoPage(driver);
+	softassert.assertTrue(Browser.getElements().element(driver, ElementTags.labelSeeAllPageHeader).getText().contains("Rejected Video"),"FAILED |TIMS ID : Trv604483c | Section Header is not matching for see all reject page");
+	softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelVideoCountOnSeeAll).getText(), "5" ,"FAILED |TIMS ID : Trv604483c | Expected videos are not present for see all rejected page");
+	softassert.merge(VideoIUploaded.verifyVideoDetailsOnSeeAll(driver, rejectVideos[1],  "04 sec", "mins ago", Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_1), "0", "0", "Trv604483c"));
+	
+	 // check action slider
+	  md5=SolrQueryUtils.getVideoMD5FromSolr(rejectVideos[1]);
+	  softassert.assertTrue(Browser.getElements().element(driver, "hr-slider-" + md5 ,LocateBy.id).isDisplayed(), "FAILED | TIMS ID : Trv604485c | Action slider is missing for reject video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "delete_video_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604485c | Delete icon is not enabled in action slider for reject video");
+	  softassert.assertTrue(Browser.getElements().element(driver, "editVideo_" + md5 ,LocateBy.id).isEnabled(), "FAILED | TIMS ID : Trv604485c | Edit icon is not enabled in action slider for reject video");
+	
+	
+	driver.navigate().back();
+	VideoIUploaded.goToVideosIUploaded(driver);
+	VideoIUploaded.getSeeAllPendingVideoPage(driver);
+	softassert.assertTrue(Browser.getElements().element(driver, ElementTags.labelSeeAllPageHeader).getText().contains("Videos pending for approval"),"FAILED |TIMS ID : Trv604483c | Section Header is not matching for see all reject page");
+	softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelVideoCountOnSeeAll).getText(), "5" ,"FAILED |TIMS ID : Trv604483c | Expected videos are not present for see all rejected page");
+	softassert.merge(VideoIUploaded.verifyVideoDetailsOnSeeAll(driver, pendingVideos[3],  "04 sec", "mins ago", Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_1), "0", "0","Trv604483c"));
+	
+	 // check action slider
+	md5=SolrQueryUtils.getVideoMD5FromSolr(pendingVideos[3]);
+	  softassert.assertFalse(Browser.getElements().isElementPresent(driver, "hr-slider-" + md5 ,LocateBy.id), "FAILED | TIMS ID : Trv604485c | Action slider is present for pending video");
+	 
+	softassert.showResults();
+	TestStatus.pass("PASSED | TIMS ID : Trv604483c,Trv604485c");
+}
+
+ 
+/**
+ *  Verify no videos for Pending Approval & Rejected	
+ * author :
+ * TIMS ID :  Trv604487c : Verify Edit option on "See All" pages
+ * TIMS ID :  Trv604488c : Verify delete option on "See All" pages
+ *
+ */
+
+@Test(description="Trv604487c,Trv604488c",priority=5)
+public void checkEditAndDeleteFromSeeAll() {
+	 VideoIUploaded.goToVideosIUploaded(driver);
+	 VideoIUploaded.getSeeAllPublishVideoPage(driver);
+	 VideoIUploaded.getVideoEditPage(driver, publishVideos[0]);
+	 softassert.assertEquals(driver.getTitle(), "Edit Video","FAILED |TIMS ID :  Trv604487c | Current page is not a video edit page");
+	 softassert.assertEquals(Browser.getElements().element(driver, ElementTags.txtVideoTitle).getAttribute("value"), publishVideos[0],"FAILED |TIMS ID : Trv604487c | video title is not matching on edit page");
+	 driver.navigate().back();
+	 int previousCount=Integer.valueOf(Browser.getElements().element(driver, ElementTags.labelVideoCountOnSeeAll).getText());
+	 VideoIUploaded.deleteVideo(driver, publishVideos[1]);
+	 Browser.getWaits().wait(2);
+	 int nextCount=Integer.valueOf(Browser.getElements().element(driver, ElementTags.labelVideoCountOnSeeAll).getText());
+	 softassert.assertEquals(nextCount, (previousCount-1),"FAILED |TIMS ID : Trv604488c | Expected number of video are not present in published section");
+	 
+	 VideoIUploaded.goToVideosIUploaded(driver);
+	 VideoIUploaded.getSeeAllDraftVideoPage(driver);
+	 VideoIUploaded.getVideoEditPage(driver, draftVideos[0]);
+	 softassert.assertEquals(driver.getTitle(), "Edit Video","FAILED |TIMS ID :  Trv604487c | Current page is not a video edit page");
+	 softassert.assertEquals(Browser.getElements().element(driver, ElementTags.txtVideoTitle).getAttribute("value"), draftVideos[0],"FAILED |TIMS ID : Trv604487c | video title is not matching on edit page");
+	 driver.navigate().back();
+	 previousCount=Integer.valueOf(Browser.getElements().element(driver, ElementTags.labelVideoCountOnSeeAll).getText());
+	 VideoIUploaded.deleteVideo(driver, draftVideos[1]);
+	 Browser.getWaits().wait(2);
+	 nextCount=Integer.valueOf(Browser.getElements().element(driver, ElementTags.labelVideoCountOnSeeAll).getText());
+	 softassert.assertEquals(nextCount, (previousCount-1),"FAILED |TIMS ID : Trv604488c | Expected number of video are not present in Draft section");
+	 
+	 VideoIUploaded.goToVideosIUploaded(driver);
+	 VideoIUploaded.getSeeAllRejectVideoPage(driver);
+	 VideoIUploaded.getVideoEditPage(driver, rejectVideos[1]);
+	 softassert.assertEquals(driver.getTitle(), "Edit Video","FAILED |TIMS ID :  Trv604487c | Current page is not a video edit page");
+	 softassert.assertEquals(Browser.getElements().element(driver, ElementTags.txtVideoTitle).getAttribute("value"), rejectVideos[1],"FAILED |TIMS ID : Trv604487c |video title is not matching on edit page");
+	 driver.navigate().back();
+	 previousCount=Integer.valueOf(Browser.getElements().element(driver, ElementTags.labelVideoCountOnSeeAll).getText());
+	 VideoIUploaded.deleteVideo(driver, rejectVideos[0]);
+	 Browser.getWaits().wait(2);
+	 nextCount=Integer.valueOf(Browser.getElements().element(driver, ElementTags.labelVideoCountOnSeeAll).getText());
+	 softassert.assertEquals(nextCount, (previousCount-1),"FAILED |TIMS ID : Trv604488c | Expected number of video are not present in published section");
+	 
+	 VideoIUploaded.goToVideosIUploaded(driver);
+	 VideoIUploaded.getSeeAllPendingVideoPage(driver);
+	 softassert.assertFalse(Browser.getElements().isElementPresent(driver, "hr-slider-" + SolrQueryUtils.getVideoMD5FromSolr(pendingVideos[1]) ,LocateBy.id), "FAILED |TIMS ID : Trv604488c | Action slider is present for pending video");
+	 softassert.showResults();
+	 TestStatus.pass("PASSED | TIMS ID : Trv604487c,Trv604488c ");
+	 
+}
+
+
+/**
+	 * Verify Edit option on Videos I uploaded Page
+	 * author :
+	 * TIMS ID : Trv604479c
+	 *
+	 */
+
+@Test(description="Trv604479c" ,priority=6)
+public void checkVideoEditOption() {
+	 VideoIUploaded.goToVideosIUploaded(driver);
+	 VideoIUploaded.getVideoEditPage(driver, draftVideos[3]);
+	 softassert.assertEquals(driver.getTitle(), "Edit Video","FAILED |TIMS ID : Trv604479c | Current page is not a video edit page");
+	 softassert.assertEquals(Browser.getElements().element(driver, ElementTags.txtVideoTitle).getAttribute("value"), draftVideos[3],"FAILED |TIMS ID : Trv604479c |  video title is not matching on edit page");
+	 VideoProcessing.setBasicVideo(driver, null, "New description");
+	 softassert.assertEquals(VideoProcessing.saveVideo(driver),PortalMessage.videoSaveSuccessMessage,"FAILED |TIMS ID : Trv604479c | video Meta data is not saved sucessfully.");
+	 driver.navigate().back();
+	 softassert.assertFalse(Browser.getElements().isElementPresent(driver, "hr-slider-" + SolrQueryUtils.getVideoMD5FromSolr(pendingVideos[3]) ,LocateBy.id), "FAILED |TIMS ID : Trv604487c,Trv604488c | Action slider is present for pending video");
+	 VideoIUploaded.getVideoEditPage(driver, publishVideos[3]);
+	 softassert.assertEquals(driver.getTitle(), "Edit Video","FAILED |TIMS ID : Trv604479c |Current page is not a video edit page");
+	 softassert.assertEquals(Browser.getElements().element(driver, ElementTags.txtVideoTitle).getAttribute("value"), publishVideos[3],"FAILED |TIMS ID : Trv604479c |  video title is not matching on edit page");
+	 VideoProcessing.setBasicVideo(driver, null, "New description");
+	 softassert.assertEquals(VideoProcessing.sendVideoForApproval(driver),PortalMessage.videoSendForApprovalSuccessMessage,"FAILED |TIMS ID : Trv604479c | video is not send for approval");
+	 driver.navigate().back();
+	 VideoIUploaded.getVideoEditPage(driver, rejectVideos[3]);
+	 softassert.assertEquals(driver.getTitle(), "Edit Video","FAILED |TIMS ID : Trv604479c | Current page is not a video edit page");
+	 softassert.assertEquals(Browser.getElements().element(driver, ElementTags.txtVideoTitle).getAttribute("value"), rejectVideos[3],"FAILED |TIMS ID : Trv604479c | video title is not matching on edit page");
+	 VideoProcessing.setBasicVideo(driver, null, "New description");
+	 softassert.assertEquals(VideoProcessing.saveVideo(driver),PortalMessage.videoSaveSuccessMessage,"FAILED |TIMS ID : Trv604479c | video Meta data is not saved sucessfully.");
+	 driver.navigate().back();
+	 softassert.showResults();
+	 TestStatus.pass("PASSED | TIMS ID : Trv604479c ");
+}
+
+/**
+ *
+ * author :
+ * TIMS ID : Trv604480c: Verify delete option on Videos I uploaded Page
+ *
+ */
+
+@Test(description="Trv604480c",priority=7)
+public void verifyDeleteVideoOnVideoIUploadedPage() {
+	VideoIUploaded.goToVideosIUploaded(driver);
+	 int count=VideoIUploaded.getTotalPublishVideoCount(driver);
+	 VideoIUploaded.deleteVideo(driver, publishVideos[2]);
+	 Browser.getWaits().wait(2);
+	 softassert.assertEquals(VideoIUploaded.getTotalPublishVideoCount(driver),(count-1),"FAILED |TIMS ID : Trv604480c |Expected number of video are not present in published section");
+	 
+	 count=VideoIUploaded.getTotalDraftVideoCount(driver);
+	 VideoIUploaded.deleteVideo(driver, draftVideos[2]);
+	 Browser.getWaits().wait(2);
+	 softassert.assertEquals(VideoIUploaded.getTotalDraftVideoCount(driver),(count-1),"FAILED |TIMS ID : Trv604480c |Expected number of video are not present in published section");
+	 
+	 count=VideoIUploaded.getTotalRejectVideoCount(driver);
+	 VideoIUploaded.deleteVideo(driver, rejectVideos[2]);
+	 Browser.getWaits().wait(2);
+	 softassert.assertEquals(VideoIUploaded.getTotalRejectVideoCount(driver),(count-1),"FAILED |TIMS ID : Trv604480c |Expected number of video are not present in published section");
+	 
+	 softassert.assertFalse(Browser.getElements().isElementPresent(driver, "hr-slider-" + SolrQueryUtils.getVideoMD5FromSolr(pendingVideos[1]) ,LocateBy.id), "FAILED |TIMS ID : Trv604480c| Action slider is present for pending video");
+	 softassert.showResults();
+	 TestStatus.pass("PASSED | TIMS ID : Trv604480c ");
+}
+
+/**
+ *  Verify no videos for Pending Approval & Rejected	
+ * author :
+ * TIMS ID : Trv604484c
+ *
+ */
+
+@Test(enabled=true, description="Trv604484c,Trv604478c" ,priority=8)
+public void checkPendingAndRejectSectionWithNoVideos() {
+	Home.goToHomePage(driver);
+	VideoProcessing.deleteRejectedVideos(driver, rejectVideos);
+	pendingVideos[5]=publishVideos[3];
+	VideoProcessing.deletePendingVideos(driver, pendingVideos);
+	VideoIUploaded.goToVideosIUploaded(driver);
+	softassert.assertFalse(Browser.getElements().isElementPresent(driver, ElementTags.blockPendingVideo), "FAILED |TIMS ID : Trv604484c,Trv604478c | Pending section should not be displayed");
+	softassert.assertFalse(Browser.getElements().isElementPresent(driver, ElementTags.blockRejectVideo), "FAILED |TIMS ID : Trv604484c,Trv604478c | Reject section should not be displayed");
+	softassert.showResults();
+	TestStatus.pass("PASSED | TIMS ID : Trv604484c,Trv604478c ");
+}
+
+@AfterClass(alwaysRun=true)
+public void tearDown()
+{
+	Log.info("Clearing test data videos");
+	VideoProcessing.deletePublishedVideo(driver,publishVideos);
+	VideoProcessing.deleteDraftVideos(driver, draftVideos);
+	String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+    Home.goToHomePage(driver);
+	PortalSettings.gotoPortalManagementPage(driver);
+	Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+	PortalSettings.setAllLDAPuserPermissions(driver, true, true, true);
+	PortalSettings.gotoSiteSettingsPage(driver);
+	PortalSettings.setSiteSettings(driver, "No", null, null, null, null, null, null, null);
+	Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+	Authentication.logOut(driver);
+	Fixtures.tearDownFixture(driver);
+	Log.info("Test data is deleted.");
+}	
+}
+
+
+	

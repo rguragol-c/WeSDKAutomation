@@ -1,0 +1,701 @@
+package com.pismo.lib.appSpecific;
+
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestAssert;
+
+
+public class PlayerControls {
+	
+	private static TestAssert testassert= new TestAssert();
+	private static SoftAssert softassert= new SoftAssert();
+	
+	
+	
+	public static String getEmbedPlayerWidth(WebDriver driver,int x) {
+		String embedPlayerWidth = null;
+		
+		String dimension = null;
+		dimension = Browser.getElements().element(driver, "//*[@id='shareEmbed']/div/select/option[" + x + "]",LocateBy.xpath).getAttribute("value");
+
+		embedPlayerWidth = GenericUtils.splitString("x", dimension,0);
+
+		Log.info("The selected embed code player width: " + embedPlayerWidth);
+
+		return (embedPlayerWidth);
+	}
+
+	public static String getEmbedPlayerHeight(WebDriver driver,int x) {
+		String embedPlayerHeight = null;
+		String dimension = null;
+
+		
+		dimension = Browser.getElements().element(driver, "//*[@id='shareEmbed']/div/select/option[" + x + "]",LocateBy.xpath).getAttribute("value");
+
+		embedPlayerHeight = GenericUtils.splitString("x", dimension,1);
+		Log.info(" The selected embed code player height: "
+				+ embedPlayerHeight);
+		return (embedPlayerHeight);
+	}
+
+	public static String computeEmbedCode(String playerWidth,
+			String playerHeight, String title) {
+		String embedCode = null;
+
+		// form the embeded link
+		embedCode = "<iframe style=\"width:" + playerWidth + "px;height:"
+				+ playerHeight + "px\" frameborder=\"0\" src=\""
+				+ "http://"+Browser.getPropertyFromConfigFile(ConfigProperties.IP) + "/guest/embed/"
+				+ SolrQueryUtils.getVideoMD5FromSolr(title)
+				+ "\" allowfullscreen></iframe>";
+
+		Log.info(" Computed embed code is: " + embedCode);
+
+		return (embedCode);
+	}
+	
+	
+	public static int getEmbedWindowSizeCount(WebDriver driver)
+	{
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkVideoShareEmbed));
+		 
+		int size= Browser.getElements().elements(driver,"//*[@id='shareEmbed']/div/select/option",LocateBy.xpath).size();
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShareClose));
+		
+		return size;
+	}
+	
+	public static boolean verifyEmbedCodeGenerartion(WebDriver driver,String videoFileName)
+	{
+		String copiedEmbedCode = null;
+		String processedEmbedCode = null;
+		String embedPlayerWidth=null,embedPlayerHeight=null;
+		String embedvalues[]={"Large: 1377 x 765","Medium: 945 x 525","Small: 689 x 383"};
+		int l=0;
+		try
+		{
+		
+		 int embedWindowSizeCount = getEmbedWindowSizeCount(driver);
+
+			for (int i=1; i <= embedWindowSizeCount; i++ ) {
+				
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+				//click on the embed window size drop down arrow
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkVideoShareEmbed));
+				
+				Browser.getElements().selectDropDownValueByVisibleText(Browser.getElements().element(driver, ElementTags.dropDownPlayerEmbedSelection), embedvalues[l]);
+				Browser.getWaits().wait(2);
+				
+				if (Browser.getElements().element(driver,"//*[@id='shareEmbed']/div/select/option[" + i + "]",LocateBy.xpath).isSelected()) {
+					Log.info("Selected window size: " + Browser.getElements().element(driver,"//*[@id='shareEmbed']/div/select/option[" + i + "]",LocateBy.xpath).getAttribute("value"));
+					//copy the embed code
+					copiedEmbedCode = Browser.getElements().element(driver,ElementTags.txtVideoEmbed).getText();
+				}
+				else
+				{
+					Log.info(" The window size was not selected");
+					return false;
+				}
+							
+				//get the embed player width of the selected item
+				embedPlayerWidth = PlayerControls.getEmbedPlayerWidth(driver,i);
+				//get the embed player height of the selected item
+				embedPlayerHeight = PlayerControls.getEmbedPlayerHeight(driver,i);
+				
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShareClose));
+				
+				processedEmbedCode = PlayerControls.computeEmbedCode(embedPlayerWidth, embedPlayerHeight,videoFileName );
+
+				//compare the copied embed code to computed embed code
+				if (copiedEmbedCode.equals(processedEmbedCode)) {
+			 		Log.info("PASS: The embed code is formatted correctly for embed window size: " + Browser.getElements().element(driver,"//*[@id='shareEmbed']/div/select/option[" + i + "]",LocateBy.xpath).getAttribute("value"));
+			 	}  
+			 	else {
+			 		Log.error("The embed code is not formatted correctly"+
+			 		"\n The copied embed code: "+copiedEmbedCode
+			 		+ "\nThe correct embed code should look like : " + processedEmbedCode );
+			 		return false;
+			 	}   
+			 	l++;
+			}
+	}catch (Exception e)
+	{
+		Log.error(e.toString());
+		return false;
+	}
+		return true;
+}
+	
+		// mute function will enable the mute depending on boolean value		
+	public static void mute(WebDriver driver, boolean status)  {
+		String imageSource = Browser.getElements().element(driver, ElementTags.iconVideoMute).getAttribute("src");
+		
+		
+		if (imageSource.contains("Mute_on.png") && status==true) {
+			Log.info("Player is already in mute mode");
+
+		} else if (imageSource.contains("Mute_off.png")
+				&& status==false) {
+			Log.info("Player is already in unmute mode");
+			
+
+		} else if (imageSource.contains("Mute_on.png")
+				&& status==false) {
+			
+			Browser.getActions().click(Browser.getElements().element(driver,ElementTags.iconVideoMute));
+			
+			Log.info("Player UnMute mode is enabled");
+		} else {
+             
+			Browser.getActions().click(Browser.getElements().element(driver,ElementTags.iconVideoMute));
+               Log.info("Player Mute mode is enabled");
+			
+		}
+	}
+	
+public static SoftAssert muteEnable(WebDriver driver,String TimsId) {
+			
+			softassert.assertTrue(Browser.getElements().element(driver, ElementTags.iconVideoMute).getAttribute("src").contains("Mute_on.png"), "Failed | Tims Id : "+TimsId+" | Failed to enable mute button");
+			softassert.assertEquals(PlayerControls.getVolumeValue(driver), 0,"Failed | Tims Id : "+TimsId+" | On mute volume is not to zero in volume bar ");
+			return softassert;
+}
+	
+
+	public static void setVolumeByDrag(WebDriver driver,int percentage)  {
+		WebElement slider = null;
+		Browser.getWaits().wait(5);
+		int audioBarWidth = Browser.getElements().element(driver, ElementTags.progressAudioBar)
+				.getSize().width - 6;
+
+		int displacement = ((percentage * audioBarWidth) / 100)
+				- Browser.getElements().element(driver, ElementTags.progressVolumeBar).getSize().width;
+		
+			slider = Browser.getElements().element(driver, ElementTags.iconVolumeSlider);
+		
+		Actions builder = new Actions(driver);
+
+		builder.dragAndDropBy(slider, displacement, 0).build().perform();
+	
+	}
+
+	public static void setVolumeByClickOnVolumeBar(WebDriver driver,int percentage) {
+		//TO DO: this function click only in middle of volume bar and not at specific location
+		
+		
+			WebElement volumeBar = Browser.getElements().element(driver, ElementTags.progressAudioBar);
+			int volumeBarWidth = volumeBar.getSize().width - 11;
+			
+			int displacement = ((percentage * volumeBarWidth) / 100)
+					- Browser.getElements().element(driver, ElementTags.progressVolumeBar)
+							.getSize().width;
+			
+			Actions builder = new Actions(driver);
+			builder.moveToElement(
+					Browser.getElements().element(driver, ElementTags.progressAudioBar),
+					displacement, 0).click().build().perform();
+			Log.info("Volume is set to " + percentage + " %");
+
+	}
+
+	public static int getVolumeValue(WebDriver driver) {
+		int volumeBarWidth = Browser.getElements().element(driver, ElementTags.progressAudioBar)
+				.getSize().width-6 ;
+		int currentSliderPosition = Browser.getElements().element(driver, ElementTags.progressVolumeBar).getSize().width-1;
+		Log.info(volumeBarWidth + "-"
+				+ currentSliderPosition);
+		int volumeValue = ((currentSliderPosition) * 100) / (volumeBarWidth);
+		Log.info("Current Volume is set to :" + volumeValue);
+		return volumeValue;
+	}
+
+public static boolean initializeVideoPlayer(WebDriver driver,String login_as,String videoFileName) {
+		
+		
+		String videoMD5 = SolrQueryUtils.getVideoMD5FromSolr(videoFileName);
+		
+		String testVideoURL = null;
+		Log.info("Login with " + login_as);
+		if (login_as.equalsIgnoreCase("guest")) {
+			testVideoURL = "http://"+Browser.getPropertyFromConfigFile(ConfigProperties.IP) + "/guest/play/"
+					+ videoMD5;
+		}
+		else {
+			testVideoURL = "http://"+Browser.getPropertyFromConfigFile(ConfigProperties.IP) + "/video/play/"
+					+ videoMD5;
+			Authentication.doLogin(driver);
+		} 
+		Log.info("Video play link " + testVideoURL);
+		driver.get(testVideoURL);
+		Browser.getWaits().wait(10);
+        return true;
+	}
+
+   public static SoftAssert verifyVideoPlayPage(WebDriver driver,String videoname,String timsid ){
+	    softassert.assertEquals(driver.getTitle(),"Play Video","FAILED | TIMS ID : "+timsid+" | video play page title is not matching");
+	    softassert.merge(verifyPlayerControls(driver,timsid));
+	    softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelVideoTitle).getText(),videoname,"FAILED | TIMS ID :  "+timsid+" video title is not matching");
+		return softassert;
+   }
+   
+   public static SoftAssert verifyPlayerControls(WebDriver driver,String timsid)
+   {
+	    softassert.assertTrue(Browser.getElements().isElementPresent(driver,ElementTags.iconVideoPlay),"FAILED | TIMS ID : "+timsid+" | Video play icon is not displayed on player");
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver,ElementTags.iconVideoFullScreen),"FAILED | TIMS ID :  "+timsid+" | full screen icon is not displayed on player");
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver,ElementTags.iconVideoResolution),"FAILED | TIMS ID : "+timsid+" | video resolution icon is not displayed on player");
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver,ElementTags.iconVideoMute),"FAILED | TIMS ID :  "+timsid+" | Mute icon is not displayed on player");
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver,ElementTags.iconVideoShare),"FAILED | TIMS ID :  "+timsid+" | Share icon is not displayed on player");
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver,ElementTags.progressVolumeBar),"FAILED | TIMS ID :  "+timsid+" | Volume bar is not displayed on player");
+		return softassert;
+   }
+   public static boolean selectVideoResolution(WebDriver driver,String resolution)
+	{
+		
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoResolution));
+		Log.info("Clicked on resolution icon.");
+		if(Browser.getElements().isElementPresent(driver,"//a[contains(text(),'"+resolution+"')]",LocateBy.xpath))
+		{
+			Browser.getWaits().wait(1);
+			Browser.getActions().click(Browser.getElements().element(driver, "//a[contains(text(),'"+resolution+"')]", LocateBy.xpath));
+			Log.info("Resolution "+resolution+" found.");
+			
+		}
+		else
+		{
+			Log.info("Resolution "+resolution+" not found.");
+			return false;
+		}
+		
+		return true;
+	}
+		
+		public static boolean verifySelectedResolution(WebDriver driver,String resolution)
+		{
+			boolean flag = false;
+				
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoResolution));
+				if(Browser.getElements().element(driver,"//a[contains(text(),'"+resolution+"')]/span",LocateBy.xpath).getAttribute("class").equals("qualityChoice qualitySelected"))
+				{
+					Log.info("Resolution "+resolution+" is correctly selected and verified.");
+					flag = true;
+				}
+				else
+				{
+					Log.info("Resolution "+resolution+" isn't correctly selected.");
+					flag = false;
+				}
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoResolution));
+			return flag;
+			
+		}
+		
+		public static  String getPlayTimeIndex(WebDriver driver)
+		{
+			String timeIndex = "";
+			if(Browser.getElements().isElementPresent(driver, ElementTags.labelTimeIndex))
+			{
+				timeIndex = Browser.getElements().element(driver, ElementTags.labelTimeIndex).getText();
+				timeIndex = GenericUtils.singlePatternMatcher("(.*) / .*", timeIndex);
+				Log.info("Time index :" + timeIndex);
+			}else
+			{
+				Log.error("Time Index is not displayed on player");
+				testassert.fail("Time Index is not displayed on player");
+			}
+			return timeIndex;
+		}
+		
+		
+		public static long getPlayPostion(WebDriver driver)
+		{
+			return convertTimeToSec(getPlayTimeIndex(driver));
+		}
+		
+		public static long getVideoDuration(WebDriver driver)
+		{
+			String timeIndex = "";
+			if(Browser.getElements().element(driver, ElementTags.labelTimeIndex).isDisplayed())
+			{
+				timeIndex = Browser.getElements().element(driver, ElementTags.labelTimeIndex).getText();
+				timeIndex = GenericUtils.splitString("/", timeIndex, 1);
+				Log.info("Total duration is  :" + timeIndex);
+				String arr[]=timeIndex.split(":");
+				if(arr.length==3)
+				{
+					Log.info("Video duration is :"+arr[0]+" hour "+arr[1]+" minutes "+arr[2]+ " seconds.");
+				}else if(arr.length==2)
+				{
+					Log.info("Video duration is :"+arr[0]+" minutes "+arr[1]+ " seconds.");
+				}
+				else
+				{
+					Log.error("Video duration is not in format.");
+					testassert.fail("Video duration is not in format.");
+				}
+				return convertTimeToSec(timeIndex);
+			}else
+			{
+				Log.error("Time Index is not displayed on player");
+				testassert.fail("Time Index is not displayed on player");
+			}
+			return 0;
+		}
+   
+		public static long convertTimeToSec(String timeline) {
+			long timeInSec = 0;
+			if(!timeline.equals(""))
+			{
+			String[] timeparts = timeline.split(":");
+			int multiplier = 1;
+			for (int index = timeparts.length; index > 0; index--) {
+				timeInSec = (Integer.parseInt(timeparts[index - 1].replace(" ", "")) * multiplier)
+						+ timeInSec;
+				multiplier = 60 * multiplier;
+			}
+			}
+			else
+			{
+				Log.error("Time index is blank");
+			}
+			
+			return timeInSec;
+		}
+   
+	
+	public static void playPauseTrigger(WebDriver driver,String eventTrigger) {
+		
+		Log.info("Control is under play pause trigger function" );
+		
+		switch (eventTrigger) {
+		case "EnterKey":
+			Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.iconVideoPlay),Keys.RETURN);
+			Log.info("Enter is pressed");
+			break;
+		case "SpaceBar":
+			Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.iconVideoPlay),Keys.SPACE);
+			Log.info("Space is pressed");
+			break;
+		case "MouseClick":
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+			Log.info("Mouse is clicked");
+			break;
+		default:
+			Log.error("No match for player event name -" +eventTrigger);
+			
+			break;
+		}
+		
+	}
+
+	
+	public static boolean playPauseVideo(WebDriver driver,String eventTrigger)  {
+		
+		boolean result = true;
+	
+		if (!isVideoPlaying(driver,3)) {
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));	
+		}
+	  // play the video than pass the event to pause.
+		playPauseTrigger(driver,eventTrigger);
+		if (!isVideoPlaying(driver,5)) {
+			
+			Log.info("Pass: Video is toggled to PAUSE state correctly");
+		} else {
+			
+			Log.error("Fail: Video is NOT toggled to pause state ");
+			return false;
+		}
+		//play the video and check
+			playPauseTrigger(driver,eventTrigger);
+			if (isVideoPlaying(driver,5)) {
+				
+				Log.info("Pass: Video is toggled to PLAY state correctly");
+			} else {
+				
+				Log.error("Fail: Video is NOT toggled to pause state ");
+				return false;
+			}
+			
+		return result;
+	}
+	
+
+	public static boolean isVideoPlaying(WebDriver driver, int waitTime)
+			 {
+		boolean result = true;
+		// Use Assert
+		long playTime_1 = getPlayPostion(driver);
+		Log.info("Player time value " + playTime_1);
+		// Seek ahead by few seconds instead of sleeping
+		Browser.getWaits().wait(waitTime);
+		// seekByDragDrop(10);
+		long playTime_2 = getPlayPostion(driver);
+
+		if (playTime_2 <= playTime_1) {
+			
+			Log.error("The progress bar play timeline is not increasing..");
+			result = false;
+		} else {
+			
+			Log.info("The progress bar play timeline is increasing..");
+		}
+		if (!Browser.getElements().element(driver, ElementTags.imgVideoPlayPause).getAttribute("src").contains("Pause.png"))
+		{
+			Log.error("Pause icon should be displayed when video is in play mode");
+			result=false;
+		}
+
+		return result;
+	}
+
+
+	public static void seekByDragDrop(WebDriver driver,int timeOffset) {
+		
+		
+		WebElement draggable = Browser.getElements().element(driver, ElementTags.iconPlayerSeekScrubber);
+		Log.info("Position before drag :" + draggable.getLocation());
+		Actions builder=new Actions(driver);
+		builder.dragAndDropBy(draggable, timeOffset, 1).build()
+				.perform();
+		
+	     Browser.getWaits().wait(10);
+	     Log.info("After Drag");
+	     Log.info("Position after :" + draggable.getLocation());
+	}
+
+//	public static void seekByClick(WebDriver driver,int timeOffset) throws InterruptedException {
+//		
+//		Log.info("Inside seek by click");
+//		WebElement draggable = driver.findElement(By.xpath(scrubberxpath));
+//
+//		// click and move scrubber to the specified playTime offset on
+//		// progressBar
+//	    
+//		Log.info("Position before :" + draggable.getLocation());
+//		Actions builder=new Actions(driver);
+//		builder.clickAndHold(draggable).moveByOffset(timeOffset, 2)
+//				.click().perform();
+//		builder.release(draggable).click().perform();
+//		Log.info("Position after click :" + draggable.getLocation());
+//	}
+	
+	public static boolean clickOnPlayerSeekBar(WebDriver driver,String position)  {
+		// TODO: currently it click only in middle of play seek bar.
+		boolean flag=false;
+		
+		Log.info("Inside seek by click");
+		if(position.equalsIgnoreCase("after"))
+		{
+			
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.progressPlayerSeekScrubber));
+			flag=true;
+		}
+		else
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.progressPlayerSeekScrubber));
+			flag=true;
+		}
+		Browser.getWaits().wait(5);
+		return flag;
+	}
+
+	
+	public static String computeVideoShareURL(String title) {
+		String shareVideoURL = null;
+
+		// form the share URL link
+		shareVideoURL = "http://"+Browser.getPropertyFromConfigFile(ConfigProperties.IP) + "/t"
+				+ SolrQueryUtils.getVideoTinyUrlFromSolr(title);
+		// shareVideoURL = driver.getCurrentUrl();
+		Log.info("Share video URL link should be : " + shareVideoURL);
+
+		return (shareVideoURL);
+	}
+	
+	public static String getshareLinkURL(WebDriver driver) {
+     
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkVideoShareLink));
+		String url=Browser.getElements().element(driver, ElementTags.txtVideoShareUrl).getAttribute("value");
+        Log.info("Share url from UI is :" + url);
+        return url;
+	}
+
+
+
+	public static String computeShareEmailMessage(String title) {
+		String shareEmailMessage = null;
+
+		// form the share email message
+		shareEmailMessage = "I would like to share this video with you:\n"
+				+ title; 
+		Log.info(" Share video email message is: "
+				+ shareEmailMessage);
+
+		return (shareEmailMessage);
+	}
+
+	
+	
+	
+public static boolean checkLoginRequired(WebDriver driver)
+	{
+	//Assert
+	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+		 String message= Browser.getElements().element(driver, ".//div[@id='shareEmail']/div/a",LocateBy.xpath).getText();
+		 Log.info("Message :"+message);
+		 if(message.equalsIgnoreCase("Sign in"))
+		 {
+				Log.info("User is not authorized to share by email for this video, Login is required");
+				return true;
+		 }
+		return false;
+	}
+/*public static boolean checkEmailMessage(WebDriver driver,String title,String expectedMessage)	
+{
+	//Assert
+	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+	String emailMessageBody=Browser.getElements().element(driver, ElementTags.txtVideoShareEmailMessage).getAttribute("value");
+	Log.info("Email Message is: "+emailMessageBody);
+	 if(emailMessageBody.equalsIgnoreCase(expectedMessage))
+	 {
+		 Log.info("PASS: The share email message is formatted correctly");
+	 return true;
+	 }
+		else {
+	 		Log.error(" The share email message is not formatted correctly"
+	 		 +"\tThe copied share email message is " + emailMessageBody +
+	 		"\t Should look like, " + expectedMessage);
+	 	}  
+	 Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShareClose));
+	 return false;
+}
+public static void checkEmailMessage2(WebDriver driver,String title,String expectedMessage)	
+{
+	//Assert
+	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+	softassert.assertTrue(Browser.getElements().element(driver, ElementTags.txtVideoShareEmailMessage).getAttribute("value").equalsIgnoreCase(expectedMessage), " The share email message is not formatted correctly");
+	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShareClose));
+	
+	
+}*/
+public static void changeEmailMessage(WebDriver driver,String newMessage)	
+{
+	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+	Browser.getActions().clear(Browser.getElements().element(driver, ElementTags.txtVideoShareEmailMessage));
+	Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtVideoShareEmailMessage),newMessage);
+	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShareClose));
+}
+public static boolean shareVideo(WebDriver driver,String[] recepientList)
+{
+	
+	boolean flag=false;
+	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShare));
+	for(int i=0; i<recepientList.length; i++)
+	{
+		
+		if(!recepientList[i].equals(null) && !recepientList[i].equals(""))
+		{
+			
+			 Browser.getWaits().wait(2);
+			 Browser.getActions().sendKeys(Browser.getElements().element(driver, ElementTags.txtVideoShareRecipient),recepientList[i]);
+			 Browser.getWaits().wait(1);
+			 WebElement element = Browser.getElements().element(driver, ".//*[@id='shareEmail']/div[1]/ul/li/a", LocateBy.xpath);
+			 Log.info("Element text : "+element.getText());
+			 if(element.getText().equalsIgnoreCase("Sorry, no match was found"))
+			 {
+				Log.error("Given recipient is invalid.");
+				
+				return false;
+			 }
+			 else
+			 {
+				Browser.getActions().click(element);
+				flag= true;
+			 }
+		}
+	}
+	Browser.getWaits().wait(2);
+	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnVideoShare));
+	Browser.getWaits().wait(2);
+	return flag;
+}
+
+public static boolean verifyCancelPlayerShare(WebDriver driver)	
+{
+	
+	Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoShareClose));
+	if(Browser.getElements().element(driver,ElementTags.popupVideoShare).isDisplayed())
+	{
+		return false;
+	}
+	return true;
+}
+
+public static boolean verifyReplayIcon(WebDriver driver)	
+{
+	String titleText=Browser.getElements().element(driver, ElementTags.iconVideoPlay).getAttribute("title");
+	if (titleText.equalsIgnoreCase("Restart") && Browser.getElements().element(driver, ElementTags.imgVideoPlayPause).getAttribute("src").contains("Replay_small.png"))
+	{
+		return true;
+	}
+	Log.error("Replay icon is not displayed");
+		return false;
+}
+		
+public static void toggleFullScreen(WebDriver driver,String fullScreen)
+		{
+			
+			
+			if(fullScreen.equalsIgnoreCase("expand") && Browser.getElements().isElementPresent(driver, "div.fullScreenImage.expandIconImage",LocateBy.css))
+			{
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoFullScreen));
+				
+			}
+			else if(fullScreen.equalsIgnoreCase("retract") && Browser.getElements().isElementPresent(driver,"div.fullScreenImage.retractIconImage",LocateBy.css))
+			{
+				Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoFullScreen));
+			}
+			else if(fullScreen.equalsIgnoreCase("expand") && Browser.getElements().isElementPresent(driver,"div.fullScreenImage.retractIconImage",LocateBy.css))
+			{
+				Log.info("Video is already expanded to full screen.");
+			}
+			else if(fullScreen.equalsIgnoreCase("retract") && Browser.getElements().isElementPresent(driver,"div.fullScreenImage.expandIconImage",LocateBy.css))
+			{
+				Log.info("Video is already retracted from full screen mode.");
+			}
+			else
+			{
+				if(Browser.getElements().isElementPresent(driver,"div.fullScreenImage.expandIconImage",LocateBy.css))
+				{
+					Log.info("Video is in retracted mode");
+				}
+				else  if(Browser.getElements().isElementPresent(driver,"div.fullScreenImage.retractIconImage",LocateBy.css))
+				{
+					Log.info("Video is in expanded full screen mode");
+				}
+			}
+			
+		}
+		public static void CreateWebPageWithEmbedPlayer(String videoName)
+		{
+			String data="<html><body>"+computeEmbedCode("1377", "765", videoName).replace("iframe", "iframe id=\"EmbedVideo\"")+"</body></html>";
+			GenericUtils.writeToFile(System.getProperty("user.dir")+"\\testdata\\Embed\\Large.html", data);
+			data="<html><body>"+computeEmbedCode("945", "525", videoName).replace("iframe", "iframe id=\"EmbedVideo\"")+"</body></html>";
+			GenericUtils.writeToFile(System.getProperty("user.dir")+"\\testdata\\Embed\\Medium.html", data);
+			data="<html><body>"+computeEmbedCode("689", "383", videoName).replace("iframe", "iframe id=\"EmbedVideo\"")+"</body></html>";
+			GenericUtils.writeToFile(System.getProperty("user.dir")+"\\testdata\\Embed\\Small.html", data);
+		}
+		
+		
+		
+}

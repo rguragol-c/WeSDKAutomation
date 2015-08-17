@@ -1,0 +1,333 @@
+package com.pismo.PismoAutomation;
+	
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+	
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.SolrQueryUtils;
+import com.pismo.lib.appSpecific.VideoICanEdit;
+import com.pismo.lib.appSpecific.VideoICanView;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.appSpecific.VideoSharedWithMe;
+import com.pismo.lib.appSpecific.VideoWatchLater;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestAssert;
+import com.pismo.lib.generic.TestStatus;
+
+	public class VideoIndividualSubmenuPagesTests 
+	{
+		public WebDriver driver =  null;
+		public SoftAssert softassert=new SoftAssert();
+		public TestAssert testassert=new TestAssert();		
+		public  String [] Video1={String.valueOf(GenericUtils.getRandomNumber())};	
+		public  String [] Video2={String.valueOf(GenericUtils.getRandomNumber())};
+		private String msg;
+		private String Video1md5;
+		private String Video2md5;
+		private String VideoDescription,description,desc;
+			
+		@BeforeClass
+		public void setUp() 
+		{
+			 driver=Fixtures.setupFixture("Video Shared with me test class setup initiated.");
+			  VideoDescription="This video has no description.\n Add a description to make your video easier to find.\n This video has no description." +
+					"\n Add a description to make your video easier to find.\n ";
+			
+			 String userPermission [][]={{Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_3),"Viewer"}};
+			 String userPermission1 [][]={{Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_4),"Editor"}};
+			 
+			 //*****************Upload video*************************************
+			VideoProcessing.uploadAndpublishVideo(driver, 
+					Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+					Video1[0], VideoDescription, true,userPermission, null, null, null,null,null,false);		
+				
+			VideoProcessing.uploadAndpublishVideo(driver, 
+							Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+							Video2[0], VideoDescription, false,userPermission1, null, null,null,null,null, false);
+							Home.goToHomePage(driver);
+							
+			 Video1md5 =SolrQueryUtils.getVideoMD5FromSolr(Video1[0]);
+			 Video2md5=SolrQueryUtils.getVideoMD5FromSolr(Video2[0]); 
+		}
+	
+		@Test(description="Trv603893c,Trv603895c,Trv603896c,Trv603897c,Trv603898c",enabled=true,priority=1)
+		public void verifyShareVideoWithOtherUser(){
+			
+			//Trv603897c,Trv603893c,Trv603895c,Trv603896c,Trv603898c
+						
+			String [] userfullName={Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_2)};
+			
+			//*****************Verify if video is not shared by author is not shown on the Videos shared with me page for that user
+			Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_2),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_2),true);
+			
+			VideoSharedWithMe.goToVideoSharedWithMe(driver);
+			
+			softassert.assertFalse(Browser.getElements().isElementPresent(driver,"thumbnailImage_" + Video1md5, LocateBy.id),"FAILED  |TIMS ID : Trv603896c |" +
+					"Video unshared by author is shown on the Videos shared with me page for that user");
+			
+			Authentication.logOut(driver);
+			
+			//***************share video with other user'etao'*************************************************
+			
+			Authentication.doLogin(driver);
+			
+			Home.goToHomePage(driver);
+			
+			Browser.getActions().click(Browser.getElements().element(driver,"thumbnailImage_" + Video1md5, LocateBy.id));
+			
+			softassert.assertTrue(PlayerControls.shareVideo(driver,userfullName), "FAILED |  TIMS ID: Trv603893c | Failed to share video.");
+			Browser.getWaits().wait(3);
+			
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.imgLikeIcon));
+			Browser.getWaits().wait(4);
+			
+			Home.goToHomePage(driver);
+			
+			description=Browser.getElements().element(driver, "video_description_container_"+ Video1md5, LocateBy.id).getText();
+			
+			Authentication.logOut(driver);
+			
+			//******************login with other LDAP user**************************************************
+			
+			Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_2),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_2),true);
+			VideoSharedWithMe.goToVideoSharedWithMe(driver);
+			
+			//********************verify video details & Video shared by author to other user is shown on Videos shared with me page for that user(Trv603895c)&
+						
+			softassert.merge(VideoICanEdit.verifyVideoDetails(driver, Video1[0],"04 sec",Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_1),"1", "0",description, "Trv603893c","Trv603895c","Trv603898c"));
+			VideoSharedWithMe.goToVideoSharedWithMe(driver);
+			
+			//..action menu slider
+			softassert.assertTrue(Browser.getElements().isElementPresent(driver,ElementTags.bttnActionMenuSlider),"FAILED | TIMS ID :ID:Trv603893c |" +
+					"Action slider is not present for this video.");
+			softassert.assertTrue(Browser.getElements().isElementPresent(driver, "watch-later-"+Video1md5, LocateBy.id),"FAILED | TIMS ID :ID:Trv603893c |" +
+					"Watch Later icon is not present for this video.");	
+			
+			//********************add video to watch later*******************
+			
+			String msg=VideoWatchLater.clickOnWatchLater(driver,Video1md5);
+			softassert.assertEquals(msg,"Video added to watch later list","FAILED | TIMES ID: Trv603897c| Video not added to watch later successfully.");
+						
+						
+			//*********************verify video is added in watch later list********************
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnActionMenuSlider));
+			softassert.assertTrue(Browser.getElements().element(driver,"watch-later-"+ Video1md5, LocateBy.id).getAttribute("class").contains("vid-inactive-watch")
+					,"FAILED   | TIMS ID: Trv603897c| Watchlater icon is enabled.");	
+			
+			Home.goToHomePage(driver);
+			VideoWatchLater.goToWatchLater(driver);
+			
+			softassert.assertEquals(Browser.getElements().element(driver, "title_"+ Video1md5, LocateBy.id).getText(), Video1[0],
+			"FAILED | TIMS ID : Trv603897c | Video Is not added to watch later list on watch later page.");
+							
+			Authentication.logOut(driver);
+			
+			softassert.showResults();
+			TestStatus.pass("PASSED | TIMS ID : Trv603893c,Trv603897c,Trv603895c,Trv603896c,Trv603898c");
+		}
+		
+		@Test(description="Trv603886c,Trv603888c,Trv603890c,Trv603891c",enabled=true,priority=2)
+		public void verifyCanViewPage(){
+			
+			//******************Navigate to home page***************************************
+			Authentication.doLogin(driver);
+			
+			Home.goToHomePage(driver);
+			Browser.getActions().click(Browser.getElements().element(driver, "thumbnailImage_"+Video1md5,LocateBy.id));
+			Browser.getWaits().wait(5);
+			
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.imgLikeIcon));
+			Browser.getWaits().wait(5);
+			
+			Home.goToHomePage(driver);
+			description=Browser.getElements().element(driver, "video_description_container_"+ Video1md5, LocateBy.id).getText();
+			
+			Authentication.logOut(driver);
+			
+			//********************Navigate to I Can View page*******************************
+			Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_3),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_3),true);
+			
+			VideoICanView.goToVideosICanView(driver);
+						
+			//String viewPageTitle=Browser.getElements().element(driver, ElementTags.titleOnPage).getText();
+						
+			softassert.merge(VideoICanEdit.verifyVideoDetails(driver, Video1[0],"04 sec",Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_1),"0", "0",description, "Trv603886c","Trv603888c","Trv603891c"));
+			
+			VideoICanView.goToVideosICanView(driver);
+						
+			softassert.assertTrue(Browser.getElements().isElementPresent(driver,ElementTags.bttnActionMenuSlider),"FAILED | TIMS ID :Trv603886c |" +
+					"Action slider is not present for this video.");
+			
+			softassert.assertTrue(Browser.getElements().isElementPresent(driver, "watch-later-"+Video1md5, LocateBy.id),"FAILED | TIMS ID :Trv603886c |" +
+					"Watch Later icon is not present for this video.");			
+						
+			//*********************add video to watch later**************************8
+			
+			msg=VideoWatchLater.clickOnWatchLater(driver,Video1md5);
+			softassert.assertEquals(msg,"Video added to watch later list","FAILED | TIMES ID: Trv603890c | Video not added to watch later successfully.");
+						
+			
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnActionMenuSlider));
+			
+			softassert.assertTrue(Browser.getElements().element(driver,"watch-later-"+ Video1md5, LocateBy.id).getAttribute("class").contains("vid-inactive-watch"),
+				"FAILED  | TIMS ID : Trv603890c| Watchlater icon is enabled.");			
+			
+			//********************verify video is added in watch later list*****************************
+			
+			Home.goToHomePage(driver);
+			VideoWatchLater.goToWatchLater(driver);
+			
+			softassert.assertEquals(Browser.getElements().element(driver, "title_"+ Video1md5, LocateBy.id).getText(), Video1[0],
+			"FAILED | TIMS ID : Trv603890c | Video Is not added to watch later list on watch later page.");
+			
+			Authentication.logOut(driver);
+			
+			softassert.showResults();		
+			
+			TestStatus.pass("PASSED | TIMS ID : Trv603886c,Trv603888c,Trv603890c,Trv603891c");
+		}
+			
+		@Test(description="Trv603889c",enabled=true,priority=3)
+		public void verifyVideoWithoutViewerPermission(){
+			
+			//**********************login with other LDAP user***************************************			
+					
+			Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_4),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_4),true);
+		
+			//********************navigate to I Can View******************************			
+			VideoICanView.goToVideosICanView(driver);
+			softassert.assertFalse(VideoICanView.isVideoPresent(driver,Video2[0]),"FAILED | TIMS ID: Trv603889c | Video is not present in I Can View list when user has Viewer permission.");
+						
+			Authentication.logOut(driver);
+						
+			softassert.showResults();
+			TestStatus.pass("PASSED  | Trv603889c");
+		}
+		
+		
+		@Test(description="Trv603900c,Trv603902c,Trv603903c,Trv603904c,Trv603905c,Trv603907c,Trv603908c",enabled=true,priority=4)
+		public void verifyICanEditPage(){
+			
+			//******************Navigate to home page***************************************
+			Authentication.doLogin(driver);
+			
+			Home.goToHomePage(driver);
+			Browser.getActions().click(Browser.getElements().element(driver, "thumbnailImage_"+Video2md5,LocateBy.id));
+			Browser.getWaits().wait(5);
+			
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.imgLikeIcon));
+			
+			Home.goToHomePage(driver);
+			description=Browser.getElements().element(driver, "video_description_container_"+ Video2md5, LocateBy.id).getText();
+			
+			Authentication.logOut(driver);
+			
+			//**********************navigate to I Can Edit******************************
+			
+			Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_4),Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_4),true);
+			
+			VideoICanEdit.goToVideosICanEdit(driver);
+						
+			softassert.merge(VideoICanEdit.verifyVideoDetails(driver, Video2[0],"04 sec",Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_2),"0", "0",description, "Trv603900c","Trv603907c","Trv603905c"));
+			VideoICanEdit.goToVideosICanEdit(driver);
+			
+			//**************************verify action slider********************************
+			
+			softassert.assertTrue(Browser.getElements().isElementPresent(driver, "editVideo_" + Video2md5, LocateBy.id),"FAILED | TIMS ID :Trv603900c,Trv603902c,Trv603903c |" +
+					"Action slider is not present for this video.");
+			
+					
+			msg=VideoICanEdit.clickOnWatchLater(driver,Video2md5);
+			softassert.assertEquals(msg,"Video added to watch later list","FAILED | TIMES ID: Trv603904c| Video not added to watch later successfully.");
+						
+			
+			Browser.getActions().click(Browser.getElements().element(driver,"hr-slider-"+ Video2md5, LocateBy.id));
+			softassert.assertTrue(Browser.getElements().element(driver,"watch-later-"+ Video2md5, LocateBy.id).getAttribute("class").contains("vid-inactive-watch"),
+					"FAILED | TIMES ID: Trv603904c| Watchlater icon is enabled.");
+						
+			//**********************verify video is added in watch later list***************************
+			
+			Home.goToHomePage(driver);
+			VideoWatchLater.goToWatchLater(driver);
+			softassert.assertEquals(Browser.getElements().element(driver, "title_"+ Video2md5, LocateBy.id).getText(), Video2[0],
+			"FAILED | TIMS ID : Trv603904c | Video Is not added to watch later list on watch later page.");
+						
+			VideoICanEdit.goToVideosICanEdit(driver);
+			VideoICanEdit.clickEditVideo(driver, Video2[0]);
+			
+			//**************Edit video (change video title) & verify it*******************************
+			
+			softassert.assertTrue(driver.getTitle().equals("Edit Video"),"FAILED | TIMS ID : Trv603902c | On click on Edit button by user, page is not redirected to Edit page.");			
+			VideoICanEdit.editVideoMetadata(driver,"EditVideoTest");
+			
+			Home.goToHomePage(driver);
+			VideoICanEdit.goToVideosICanEdit(driver);
+			WebElement videoTitle = Browser.getElements().element(driver,ElementTags.labelSeeLatestVideoTitle);
+			softassert.assertTrue(videoTitle.getText().contains("EditVideoTest"),"FAILED | TIMS ID: Trv603902c |Failed to save changes in Edit Video Page.");
+						
+			
+			//****************delete video & verify it is deleted from I Can Edit page***********************
+			VideoICanEdit.deleteVideo(driver, Video2md5);
+			
+			softassert.assertFalse(VideoICanEdit.isVideoPresent(driver,"EditvideoTest"),"FAILED | TIMS ID:Trv603903c | Video is present");			
+			softassert.assertTrue(driver.getTitle().equals("I can edit"),"FAILED | TIMS ID : ID:Trv603903c | User is not on I Can Edit page");
+			
+			
+			//**********************Verify video uploaded without editors right is not shown on the Videos I can Edit page***********
+			
+			VideoICanEdit.goToVideosICanEdit(driver);
+			softassert.assertFalse(Browser.getElements().isElementPresent(driver,"thumbnailImage_" + Video2md5, LocateBy.id),"FAILED |TIMS ID:Trv603908c|" +
+					" Video is  present in I Can Edit list when user has not  Editor permission.");
+			
+			Authentication.logOut(driver);
+			softassert.showResults();
+			
+			
+			TestStatus.pass("PASSED | TIMS ID : Trv603900c,Trv603902c,Trv603903c,Trv603904c,Trv603905c,Trv603907c,Trv603908c");
+			
+		}
+		@Test(description="Trv603892c,Trv603899c,Trv603906c,=",enabled=true,priority=5)
+		public void verifyVideoDropDownForGuestUser(){			
+			
+			//**********************navigate to I Can View************************************
+			Home.goToHomePage(driver);
+			VideoICanView.goToVideosICanView(driver);
+			softassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.linkSignIn) 
+					&& driver.getTitle().equals("Cisco Portal"),"FAILED | TIMS ID : Trv603892c | On click on I Can View  by Guest user, page is not redirected to Login page.");
+						
+			//***********************navigate to I Can Edit**************************************
+			Home.goToHomePage(driver);
+			VideoICanEdit.goToVideosICanEdit(driver);
+			softassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.linkSignIn) 
+					&& driver.getTitle().equals("Cisco Portal"),"FAILED | TIMS ID : Trv603906c | On click on I Can Edit  by Guest user, page is not redirected to Login page.");
+						
+			//**************************navigate to Shared With Me*******************************
+			
+			Home.goToHomePage(driver);
+			VideoSharedWithMe.goToVideoSharedWithMe(driver);
+			softassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.linkSignIn) 
+					&& driver.getTitle().equals("Cisco Portal"),"FAILED | TIMS ID : Trv603899c | On click on Shared With Me  by Guest user, page is not redirected to Login page.");
+						
+			softassert.showResults();
+			TestStatus.pass("PASSED | TIMS ID : Trv603892c,Trv603899c,Trv603906c");
+		}
+	
+		@AfterClass
+		public void tearDown() {
+			
+			Authentication.doLogin(driver);
+			VideoProcessing.deletePublishedVideo(driver, Video1);
+			Fixtures.tearDownFixture(driver);
+		}
+	}

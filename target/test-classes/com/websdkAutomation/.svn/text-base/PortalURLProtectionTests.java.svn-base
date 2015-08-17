@@ -1,0 +1,132 @@
+package com.pismo.PismoAutomation;
+
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.VideoIUploaded;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.ExpectedCondition;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class PortalURLProtectionTests 
+{
+	private WebDriver driver =  null;
+	private SoftAssert sassert=new SoftAssert();
+	private String BaseWindowHandle= null;
+	
+	
+	@BeforeClass
+	public void setUp() 
+	{
+		driver=Fixtures.setupFixture("URl Protection test class setup initiated.");
+	}
+	
+	@Test(description="TIMS ID : Trv588096c,Trv588102c",priority=1)
+	public void verifyPageUI()
+	{
+		BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+		sassert.assertTrue(Browser.getElements().element(driver, ElementTags.dropdownUrlProtection).isDisplayed(),
+				"FAILED | TIMS ID : Trv588096c | Drop Down for URL protection is not displayed on site settings page.");
+		sassert.assertEquals(Browser.getElements().element(driver, ElementTags.dropdownUrlProtection).getText(), "On","FAILED | TIMS ID : Trv588096c,Trv588102c | Default URL protection value is not ON");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588096c,Trv588102c");
+	}
+	
+	@Test(description="TIMS ID : Trv588100c",priority=2)
+	public void verifyCancelButton()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+		Browser.getElements().selectDropDownValueByVisibleText(Browser.getElements().element(driver, ElementTags.dropdownUrlProtection), "Off");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCancelSiteSettings));
+		sassert.assertEquals(Browser.getElements().element(driver, ElementTags.dropdownUrlProtection).getText(), "On",
+				"FAILED | TIMS ID: Trv588100c | URL protection settings are not reset after clicking on cancel button.");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588100c");
+	}
+	
+	
+	@Test(description="TIMS ID : Trv588099c,Trv588101c",priority=3)
+	public void verifySaveFunctionality()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, null, "Off", null, null, null, null, null, null);
+		String msg = null;
+		if((boolean) Browser.getWaits().wait(driver, ElementTags.labelSiteSettingsMsg, 
+				ExpectedCondition.textToBePresentInElementLocated, 4, "Site Settings Saved Successfully."))
+		{
+			msg = Browser.getElements().element(driver, ElementTags.labelSiteSettingsMsg).getText();
+		}
+		sassert.assertEquals(msg, "Site Settings Saved Successfully.","FAILED | TIMS ID : Trv588099c,Trv588101c | URL Protection settings were not save succesfully.");
+		driver.navigate().refresh();
+		sassert.assertEquals(Browser.getElements().element(driver, ElementTags.dropdownUrlProtection).getText(), "Off","FAILED | TIMS ID : Trv588099c,Trv588101c | URL protection value is not Off after save.");
+		
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588099c,Trv588101c");
+	}
+	
+	@Test(description="TIMS ID : Trv588103c",priority=4)
+	public void verifyVideoUploadedBeforeURLProtectionOn()
+	{
+		VideoProcessing.uploadAndpublishVideo(driver, 
+				Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2),
+				"BeforeURLProtectionOn", "URL Protection Off", true, null, null, null,null,null,null, false);
+		Home.goToHomePage(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, null, "On", null, null, null, null, null, null);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		VideoIUploaded.selectVideoFomList(driver, "BeforeURLProtectionOn");
+		Browser.getWaits().wait(5);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		sassert.assertTrue(PlayerControls.isVideoPlaying(driver, 2), "FAILED | TIMS ID: Trv588103c | Video is not Played uploaded before URL Protection On");
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588103c");
+	}
+	
+	@Test(description="TIMS ID : Trv588104c",priority=5)
+	public void verifyVideoUploadedAfterURLProtectionOn()
+	{
+		VideoProcessing.uploadAndpublishVideo(driver, 
+				Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2),
+				"AfterURLProtectionOn", "URL Protection On", true, null, null, null,null,null,null, false);
+		Home.goToHomePage(driver);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		VideoIUploaded.selectVideoFomList(driver, "AfterURLProtectionOn");
+		Browser.getWaits().wait(5);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		sassert.assertTrue(PlayerControls.isVideoPlaying(driver, 2), "FAILED | TIMS ID: Trv588104c | Video is not Played uploaded after URL Protection On");
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588104c");
+	}
+	
+	@AfterClass(alwaysRun=true)
+	public void tearDown()
+	{
+		Home.goToHomePage(driver);
+		String [] Videos = {"BeforeURLProtectionOn","AfterURLProtectionOn"};
+		VideoProcessing.deletePublishedVideo(driver, Videos);
+		Fixtures.tearDownFixture(driver);
+	}
+}

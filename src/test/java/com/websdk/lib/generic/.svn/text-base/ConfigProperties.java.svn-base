@@ -1,0 +1,105 @@
+package com.pismo.lib.generic;
+
+public class ConfigProperties 
+{
+	public static String BROWSER= "Browser";
+	public static String IP= "IP";
+	public static String Solr_Port="Solr_Port";
+	public static String Portal_User_1="Portal_User_1";
+	public static String Portal_Username_1="Portal_Username_1";
+	public static String Portal_Password_1="Portal_Password_1";
+			
+	public static String Portal_User_2="Portal_User_2";
+	public static String Portal_Username_2="Portal_Username_2";
+	public static String Portal_Password_2="Portal_Password_2";
+			
+	public static String Portal_User_3="Portal_User_3";
+	public static String Portal_Username_3="Portal_Username_3";
+	public static String Portal_Password_3="Portal_Password_3";
+	
+	public static String Portal_User_4="Portal_User_4";
+	public static String Portal_Username_4="Portal_Username_4";
+	public static String Portal_Password_4="Portal_Password_4";
+	
+
+	public static String Server_Port="Server_Port";
+	public static String Server_Username="Server_Username";
+	public static String Server_Password="Server_Password";
+	
+	public static String SYSADMIN_USERNAME="SYSADMIN_USERNAME";
+	public static String SYSADMIN_PASSWORD="SYSADMIN_PASSWORD";
+	
+	public static String NFS_Host="NFS_Host";
+	public static String NFS_MountPath="NFS_MountPath";
+	public static String NFS_vmusername="NFS_vmusername";
+	public static String NFS_vmpassword="NFS_vmusername";	
+	
+	public static String SMTPServerSettingsLink="SMTPServerSettingsLink";
+	public static String SMTP_Server="SMTP_Server";
+	public static String SMTP_Port="SMTP_Port";
+	public static String SMTP_User="SMTP_User";
+	public static String SMTP_Password="SMTP_Password";
+	public static String SMTP_FromEmail="SMTP_FromEmail";
+	public static String SMTP_FromName="SMTP_FromName";
+	public static String SMTP_AdminAlias="SMTP_AdminAlias";
+	
+	
+	public static String LDAP_Server_IP="LDAP_Server_IP";
+	public static String LDAP_Server_Port="LDAP_Server_Port";
+	public static String LDAP_Username="LDAP_Username";
+	public static String LDAP_passowrd="LDAP_passowrd";
+	public static String LDAP_User_Path="LDAP_User_Path";
+	public static String LDAP_Group_Path="LDAP_Group_Path";
+	public static String LDAP_Mapping_Object_Filer="LDAP_Mapping_Object_Filer";
+	public static String LDAP_Mapping_User_ID="LDAP_Mapping_User_ID";
+	public static String LDAP_Mapping_Given_Name="LDAP_Mapping_Given_Name";
+	public static String LDAP_Mapping_Given_LastName="LDAP_Mapping_Given_LastName";
+	public static String LDAP_Mapping_Email="LDAP_Mapping_Email";
+	public static String LDAP_Mapping_DisplayName="LDAP_Mapping_DisplayName";
+	public static String LDAP_Mapping_Group="LDAP_Mapping_Group";
+	public static String LDAP_SSL_Enable="LDAP_SSL_Enable";
+	public static String LDAP_SSL_Port="LDAP_SSL_Port";
+		
+	public static String CONTENTMANAGER_USERNAME="CONTENTMANAGER_USERNAME";
+	public static String CONTENTMANAGER_PASSWORD="CONTENTMANAGER_PASSWORD";
+	
+	public static String ftphost="ftphost";
+	public static String ftpusername="ftpusername";
+	public static String ftppassword="ftppassword";
+	public static String ftpport="ftpport";
+	public static String ftpvmusername="ftpvmusername";
+	public static String ftpvmpassword="ftpvmpassword";
+	
+	public static String sshhost="sshhost";
+	public static String sshuser="sshuser";
+	public static String sshpassword="sshpassword";
+	
+	public static String sftphost="sftphost";
+	public static String sftpusername="sftpusername";
+	public static String sftppassword="sftppassword";
+	public static String sftpport="sftpport";
+	public static String sftpvmusername="sftpvmusername";
+	public static String sftpvmpassword="sftpvmpassword";
+	
+	public static String timeout="timeout";
+	public static String maxWaitForJobsToComplete_analytics="maxWaitForJobsToComplete_analytics";
+	
+	public static String CDSIP="CDSIP";
+	public static String CDSPort="CDSPort";
+	public static String Content_Origin="Content_Origin";
+	public static String CDS_user="CDS_user";
+	public static String CDS_password="CDS_password";
+	
+	// test video names
+	public static String testdatavideoname1="testdatavideoname1";
+	public static String testdatavideoname2="testdatavideoname2";
+	public static String testdatavideoname3="testdatavideoname3";
+	public static String testdatavideoname4="testdatavideoname4";
+	public static String testdatavideoname5="testdatavideoname5";
+	public static String testdatavideoname6="testdatavideoname6";
+	
+	// test caption file names
+	public static String testcaptionname1="testcaptionname1";
+	
+	
+}

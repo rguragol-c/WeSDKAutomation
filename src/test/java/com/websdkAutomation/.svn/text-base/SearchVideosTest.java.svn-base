@@ -1,0 +1,154 @@
+package com.pismo.PismoAutomation;
+
+import java.util.List;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.SearchVideos;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class SearchVideosTest {
+	
+	private WebDriver driver =  null;
+	private TestAssert testassert= new TestAssert();
+	private SoftAssert SAssert= new SoftAssert();
+	
+	private static String VideoSearchGuest = "Video Search Guest";
+	private static String VideoSearchAutor = "Video Search Author";
+	private static String VideoSearchWithoutmetadata = "Video Search No Metadata";
+	private static String LongDescription="This is a description having more than three lines.This is a description having more than three lines.This is a description having more than three lines.This is a description having more than three lines.This is a description having more than three lines.This is a description having more than three lines.This is a description having more than three lines.This is a description having more than three lines.This is a description having more than three lines.This is a description having more than three lines.This is a description having more than three lines.";	
+	private static String Category = "SearchTest";
+	private static String VideoDuration ="00:00:04";
+	private static String Categories[]={Category};
+	private static String [] Tags={"tag1", "tag2", "tag3", "tag4", "tag5", "tag6", "tag7", "tag8"};
+	
+	
+	@BeforeClass
+	public void setUp() 
+	{
+		driver = Fixtures.setupFixture("Search Video test class setup initiated.");
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, true, true, false);
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, "No", null, null, null, null, null, null, null);
+		PortalSettings.gotoCategoryPage(driver);
+		PortalSettings.addCategories(driver,Categories);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		
+		//for guest search
+		VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+				VideoSearchGuest, "Video Search Description", true, null, Category, Tags,null,null,null, false);
+		
+		//For Author search //TODO : Have video with more than five tags
+		VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+				VideoSearchAutor, LongDescription, true, null, Category, Tags,null,null,null, false);
+		
+		//Without meta-data
+		VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+				VideoSearchWithoutmetadata, null, true, null, null, null,null,null,null, false);
+		Log.info("Test videos is uploaded");
+	}
+	
+	@Test(description= "TIMS ID: Trv591052c", priority=1)
+	public void searchNonExistingVideo()
+	{
+		Home.goToHomePage(driver);
+		SearchVideos.searchVideo(driver,"NonExistingVideo");
+		SAssert = SearchVideos.verifySearchVideoListing(driver,"NonExistingVideo", 0 ,"Trv591052c");
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv591052c");
+	}
+	
+	@Test (description= "TIMS ID: Trv591048c", priority=2)
+	public void searchVideoGuestUser()
+	{
+		Authentication.logOut(driver);
+		Home.goToHomePage(driver);
+		SearchVideos.searchVideo(driver,VideoSearchGuest);
+		SAssert.merge(SearchVideos.verifySearchVideoListing(driver,VideoSearchGuest, 1 ,"Trv591048c"));
+		SAssert.merge(SearchVideos.verifySearchedVideoDetails(driver, VideoSearchGuest, VideoDuration, "mins ago", 
+				"Anindya Sinha", "0", "0", "Video Search Description", Category, "","Trv591048c"));
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv591048c");
+	}
+	
+	@Test(description= "TIMS ID: Trv591057c,Trv591051c,Trv591049c,Trv591050c", priority=3)
+	public void searchVideoAuthor()
+	{
+		Authentication.doLogin(driver);
+		SearchVideos.searchVideo(driver,VideoSearchAutor);
+		SAssert.merge(SearchVideos.verifySearchVideoListing(driver,VideoSearchAutor,1,"Trv591057c,Trv591051c,Trv591049c,Trv591050c"));
+		SAssert.merge(SearchVideos.verifySearchedVideoDetails(driver,VideoSearchAutor, VideoDuration,"mins ago",
+				 "Anindya Sinha", "0", "0", "This is a description having more than three lines.This is a description having more than three lines.This is a description having more than three lines.This is a description having more than three li..."
+					, "SearchTest", "","Trv591057c,Trv591051c,Trv591049c,Trv591050c"));
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv591057c,Trv591051c,Trv591049c,Trv591050c");
+	}
+	
+	@Test(description= "TIMS ID: Trv591062c", priority=4)
+	public void searchVideoWithNoMetadata() 
+	{
+		Home.goToHomePage(driver);
+		SearchVideos.searchVideo(driver,VideoSearchWithoutmetadata);
+		SAssert.merge(SearchVideos.verifySearchVideoListing(driver,VideoSearchWithoutmetadata, 1 ,"Trv591062c"));
+		Browser.getWaits().wait(100);
+		SAssert.merge(SearchVideos.verifySearchedVideoDetails(driver,VideoSearchWithoutmetadata, VideoDuration,"mins ago",
+				 "Anindya Sinha", "0", "0", ""
+					, "", "","Trv591062c"));
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv591062c");
+	}
+	
+	@Test(description= "TIMS ID: Trv591056c", priority=5)
+	public void searchCatagoryResult()
+	{
+		Home.goToHomePage(driver);
+		SearchVideos.searchVideo(driver,VideoSearchAutor);
+		SAssert =  SearchVideos.verifyCategoryResult(driver,Categories,"Trv591056c");
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv591056c");
+	}
+	
+	@Test(description="TIMS ID: Trv591058c", priority=6)
+	public void searchResultVideoTags()
+	{
+		Home.goToHomePage(driver);
+		SearchVideos.searchVideo(driver,VideoSearchAutor);
+		List<WebElement> tags= Browser.getElements().elements(driver, ElementTags.labelSearchTags);
+		testassert.assertEquals(tags.size(), 5, "FAILED | TIMES ID : Trv591058c | More than five tags are shown for the video on search page.");
+		TestStatus.pass("PASSED | TIMS ID : Trv591058c");
+	}
+	
+	@AfterClass(alwaysRun=true)
+	public void tearDown()
+	{
+		//clean up
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoCategoryPage(driver);
+		PortalSettings.deleteCategories(driver,Categories);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Home.goToHomePage(driver);
+		String [] Videos={VideoSearchAutor,VideoSearchGuest,VideoSearchWithoutmetadata};
+		VideoProcessing.deletePublishedVideo(driver, Videos);
+		Fixtures.tearDownFixture(driver);
+	}
+}

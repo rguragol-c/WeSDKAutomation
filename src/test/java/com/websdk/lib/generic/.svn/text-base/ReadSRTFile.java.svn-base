@@ -1,0 +1,86 @@
+package com.pismo.lib.generic;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ReadSRTFile {
+
+	private static BufferedReader br;
+	List<String> timelines = new ArrayList<String>(); // create a new list
+	List<String> lineNos = new ArrayList<String>(); // create a new list
+	List<String> captionText = new ArrayList<String>(); // create a new list
+
+	public static void main(String args[]){
+		System.out.println("Inside main");
+		//String file = "C:\\Shweta\\eng.srt";
+		//String file = "C:\\Shweta\\Italian.sbv";
+		String file = "C:\\Shweta\\Portuguese.vtt"; //..for portuguese split with -->
+		
+		try {
+			ReadSRTFile rsData = new ReadSRTFile(file);
+			try {
+				rsData.getCaptionLines("->");
+				System.out.println("---: "+rsData.timelines);
+				System.out.println("---: "+rsData.captionText);
+				System.out.println("---: "+rsData.lineNos);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+
+	}
+
+	public ReadSRTFile(String filePath) throws FileNotFoundException{
+		br = new BufferedReader(new FileReader(filePath));
+	}
+
+	public void getCaptionLines(String splitChar) throws IOException{
+		System.out.println("inside get captions..");
+		String line = null; // read a line at a time
+		int numberOfLine =0;
+		String temp = null;
+		boolean stringDetected = false;
+		while((line = br.readLine()) != null){ // loop till you have no more lines
+			if(line.contains(":")){
+				String s[] = line.split(splitChar);
+				stringDetected = false;
+				timelines.add(s[0]);
+				if(temp!=null){
+					captionText.add(temp);
+					temp=null;
+				}
+			}else if(!line.isEmpty()){
+				try{
+					Integer.parseInt(line.trim());
+					stringDetected = false;
+					lineNos.add(line);
+					if(temp!=null){
+						captionText.add(temp);
+						temp=null;
+					}
+				}catch(Exception e){
+					if(stringDetected){
+						temp = temp + "\n" + line;
+					}else 
+						temp = line;
+					stringDetected = true;
+				}
+			} 
+			numberOfLine++;
+		}
+		if(temp!=null){
+			captionText.add(temp);
+			temp=null;
+		}
+	}
+
+}

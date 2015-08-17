@@ -1,0 +1,451 @@
+package com.pismo.PismoAutomation;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.SearchVideos;
+import com.pismo.lib.appSpecific.SolrQueryUtils;
+import com.pismo.lib.appSpecific.VideoICanEdit;
+import com.pismo.lib.appSpecific.VideoIUploaded;
+import com.pismo.lib.appSpecific.VideoPendingApproval;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.ExpectedCondition;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestAssert;
+import com.pismo.lib.generic.TestStatus;
+
+
+public class ApproverWorkflowTest  {
+	
+	//TODO : Add test case for Search video by author & approver TIMS ID : Trv589220c
+	private WebDriver driver =null;
+	private SoftAssert SAssert= new SoftAssert();
+	private TestAssert testAssert=  new TestAssert();
+	private String approveVideo=null;
+	private String arr[][]={{Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_2),"Editor"}};
+	private String md5=null;
+	
+	@BeforeClass
+	public void setUp() 
+	{
+		driver = Fixtures.setupFixture("Approval Workflow test class setup initiated.");
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, true, true, true);
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, "Yes", null, null, null, null, null, null, null);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		approveVideo = "approveVideo" + GenericUtils.getRandomNumber();
+	}
+	
+	@Test(description="TIMS ID : Trv589176c,Trv589177c,Trv589186c,Trv589230c,Trv589178c,Trv589179c,Trv589181c,Trv589182c,Trv589192c,Trv589194c"
+			+ ",Trv589183c,Trv589193c,Trv589195c,Trv589211c,Trv589186c , Trv589212c,Trv589207c, Trv589208c ,Trv589221c,Trv589209c,Trv589228c,Trv603131c"
+			+ ",Trv603132c,Trv603146c,Trv603124c,Trv603115c,Trv603110c,Trv603111c,Trv603121c,Trv603107c,Trv603117c,Trv603119c,Trv603112c,Trv603114c,Trv603125c",
+			groups="Sanity",priority=1)
+	public void verifyApproveVideo()   
+	{
+		Home.goToHomePage(driver);
+		VideoProcessing.uploadVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname1));
+		VideoProcessing.verifyUpload(driver);
+		VideoProcessing.verifyVideoProcessStatus(driver);
+		VideoProcessing.setBasicVideo(driver, approveVideo, "Approve Video");
+		VideoProcessing.setPrivacyAndPermission(driver, true, arr);
+		SAssert.assertEquals(Browser.getElements().element(driver, ElementTags.bttnSendForApproval).getText(),"Send for Approval",
+				"FAILED | TIMS ID : Trv603124c | Send for approval button is not present.");
+		
+		SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.bttnSendForApproval).isEnabled(),
+				"FAILED | TIMS ID : Trv589176c,Trv589177c,Trv603115c | Send for approval button is disabled.");
+		SAssert.assertEquals(VideoProcessing.sendVideoForApproval(driver), "All Changes have been saved and video is sent for Approval."
+				,"FAILED | TIMS ID : Trv589186c | Video is not sent for approval Successfully");
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnSaveEdit).isEnabled(),
+				"FAILED | TIMS ID : Trv589230c | Save button is enabled even after video is sent for approval.");
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnSendForApproval).isEnabled(),
+				"FAILED | TIMS ID : Trv589228c | Send for approval button is not disabled.");
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnRevertToDraft).isDisplayed(),
+				"FAILED | TIMS ID : Trv589228c,Trv603146c | Revert to Draft button is displayed even after video is sent for approval.");
+		
+		Home.goToHomePage(driver);
+		md5 =SolrQueryUtils.getVideoMD5FromSolr(approveVideo);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		String PendingApprovalTitle = VideoIUploaded.getPendingApprovalVideoFromVideosIUploadedPage(driver, approveVideo) .getText();
+		SAssert.assertTrue(PendingApprovalTitle.contains(approveVideo.substring(0, 15)),
+				"FAILED | TIMS ID : Trv589178c,Trv589179c,Trv603110c,Trv603111c | Video is not present on Videos I uploaded page after approval.");
+		
+		SAssert.assertFalse( Browser.getElements().isElementPresent(driver, "hr-slider-" + md5,LocateBy.id), 
+				"FAILED | TIMS ID : Trv589181c,Trv589182c,Trv589192c,Trv589194c,Trv589221c,Trv603131c,Trv603132c,Trv603107c,Trv603117c | Action slider is present for pending approval video on Videos I uploaded page.");
+		
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		WebElement Videoitem= Browser.getElements().element(driver, "title_"+ md5, LocateBy.id);
+		SAssert.assertEquals(Videoitem.getText(), approveVideo,
+				"FAILED | TIMS ID : Trv589183c,Trv589207c,Trv603119c | Video is not listed in Pending approval listing page.");
+		SAssert.assertFalse( Browser.getElements().isElementPresent(driver, "hr-slider-" + md5,LocateBy.id), 
+				"FAILED | TIMS ID : Trv589193c,Trv589195c,Trv603131c,Trv603132c,Trv603107c,Trv603117c,Trv603114c,Trv603125c | Action slider is present for pending approval video on pending my approval page.");
+		Browser.getActions().click(Videoitem);
+		
+		Browser.getWaits().wait(10);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		SAssert.assertTrue(PlayerControls.isVideoPlaying(driver, 5),
+				"FAILED | TIMS ID : Trv589180c, Trv589208c,Trv603121c | User is not able to play video which is pending approval status.");
+
+		SAssert.assertFalse(Browser.getElements().isElementPresent(driver, "edit_video_" + md5,LocateBy.id), 
+				"FAILED | TIMS ID : Trv589209c,Trv603107c | Video edit button is present on video play page for pending approval video.");
+		SAssert.assertFalse( Browser.getElements().isElementPresent(driver, "download_video_" + md5,LocateBy.id), 
+				"FAILED | TIMS ID : Trv589209c | Video download button is present on video play page for pending approval video.");
+		SAssert.assertFalse(Browser.getElements().isElementPresent(driver, ElementTags.linkCommentSection), 
+				"FAILED | TIMS ID : Trv589209c | Comment section is present on video play page for pending approval video.");
+		SAssert.assertEquals(VideoProcessing.approveRejectVideo(driver,"Approve", "Approved."), "Video has been approved successfully.",
+				"FAILED | TIMS ID : Trv589211c |  Video is not successfully approved.");
+		
+		VideoIUploaded.goToVideosIUploaded(driver);
+		String publishtitle = VideoIUploaded.getPublishedVideoFromVideosIUploadedPage(driver, approveVideo).getText();
+		SAssert.assertTrue(publishtitle.contains(approveVideo.substring(0, 15)),
+				"FAILED | TIMS ID : Trv589186c , Trv589212c,Trv603112c | Video is not present in published video list after approval.");
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589176c,Trv589177c,Trv589186c,Trv589230c,Trv589178c,Trv589179c,Trv589181c,Trv589182c,Trv589192c,Trv589194c"
+			+ ",Trv589183c,Trv589193c,Trv589195c,Trv589211c,Trv589186c , Trv589212c,Trv589207c,Trv589208c ,Trv589221c,Trv589209c,Trv589228c,Trv603131c,"
+			+ "Trv603132c,Trv603146c,Trv603124c,Trv603115c,Trv603110c,Trv603111c,Trv603121c,Trv603107c,Trv603117c,Trv603119c,Trv603112c,Trv603114c,Trv603125c");
+	}
+	
+	@Test(description="TIMS ID : Trv589230c,Trv589187c,Trv589188c,Trv589189c,Trv589190c,Trv589191c,Trv589217c,Trv589222c,Trv589219c,Trv603128c"
+			+ ",Trv603133c,Trv603136c,Trv603126c,Trv603116c,Trv603122c,Trv603118c"
+			,priority=2,dependsOnMethods={"verifyApproveVideo"})
+	public void verifySaveButtonForPublishedVideos()
+	{
+		VideoIUploaded.goToVideosIUploaded(driver);
+		VideoIUploaded.getVideoEditPage(driver,approveVideo);
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnSaveEdit).isDisplayed(), 
+				"FAILED | TIMS ID : Trv589217c,Trv603133c,Trv603136c | Save Button is displyed for edit video page for already approved & published video");
+		VideoProcessing.sendVideoForApproval(driver);
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnSaveEdit).isEnabled(),
+				"FAILED | TIMS ID : Trv589230c,Trv589187c,Trv589188c,Trv589189c,Trv589190c,Trv589191c,Trv589222c,Trv603126c"
+				+ "Trv603133c,Trv603136c,Trv603116c,Trv603122c,Trv603118c | Save button is enabled even after video is sent for approval.");
+		SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.labelVideoStatus).getText().contains("Pending Approval"),
+				"FAILED | TIMS ID : Trv589219c,Trv603128c,Trv603136c | Video Status is not changed to 'Pending Approval' after clicking on send for approval button on edit page.");
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589230c,Trv589187c,Trv589188c,Trv589189c,Trv589190c,Trv589191c,Trv589217c,Trv589222c,Trv589219c,"
+				+ "Trv603128c,Trv603133c,Trv603136c,Trv603126c,Trv603116c,Trv603122c,Trv603118c");
+	}
+	
+	@Test(description="TIMS ID : Trv589223c,Trv589229c,Trv603142c,Trv603145c",priority=3,dependsOnMethods={"verifySaveButtonForPublishedVideos"})
+	public void verifyRevertToDraftForPublishedVideos()
+	{
+		Home.goToHomePage(driver);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		Browser.getActions().click(VideoIUploaded.getPendingApprovalVideoFromVideosIUploadedPage(driver, approveVideo));
+		VideoProcessing.approveRejectVideo(driver, "Approve", "Approved");
+		VideoIUploaded.goToVideosIUploaded(driver);
+		VideoIUploaded.getVideoEditPage(driver,approveVideo);
+		VideoProcessing.revertToDraft(driver);
+		Browser.getWaits().wait(driver, ElementTags.bttnSaveEdit, ExpectedCondition.visibilityOfElementLocated, 10, null);
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnRevertToDraft).isDisplayed(),
+				"FAILED | TIMS ID : Trv589229c,Trv603142c,Trv603145c | Revert to Draft button is displayed even after video is reverted to draft.");
+		SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.labelVideoStatus).getText().contains("Draft"),
+				"FAILED | TIMS ID : Trv589223c,Trv603142c | Video Status is not changed to 'In Draft' after clicking on send for approval button on edit page.");
+		SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.bttnSaveEdit).isDisplayed(), 
+				"FAILED | TIMS ID : Trv589223c,Trv603142c | Save Button is not displyed after clicking on revert to draft button.");
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnSaveEdit).isEnabled(),
+				"FAILED | TIMS ID : Trv589223c,Trv603142c | Save button is enabled even after clicking on revert to draft button.");
+		Home.goToHomePage(driver);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		WebElement Video= VideoIUploaded.getDraftVideoFromVideosIUploadedPage(driver, approveVideo);
+		SAssert.assertTrue(Video.isDisplayed(),"FAILED | TIMS ID : Trv589223c | Video is not listed in draft section on Videos I uploaded page.");
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589223c,Trv589229c,Trv603142c,Trv603145c");
+	}
+	
+	@Test(description="TIMS ID : Trv589225c,Trv603135c",priority=4,dependsOnMethods="verifyRevertToDraftForPublishedVideos")
+	public void verifyDraftVideoCanBeEdited()
+	{
+		VideoIUploaded.getVideoEditPage(driver, approveVideo);
+		VideoProcessing.setBasicVideo(driver, null, "Draft Changes done.");
+		testAssert.assertEquals(VideoProcessing.saveVideo(driver), "All Changes have been saved.",
+				"FAILED | TIMS ID : Trv589225c,Trv603135c | Video is not saved successfully.");
+		TestStatus.pass("PASSED | TIMS ID : Trv589225c,Trv603135c");
+	}
+	
+	@Test(description="TIMS ID : Trv589224c,Trv589226c,Trv603130c,Trv603141c",priority=5,dependsOnMethods="verifyDraftVideoCanBeEdited")
+	public void verifySendDraftVideoForApproval()
+	{
+		Home.goToHomePage(driver);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		VideoIUploaded.getVideoEditPage(driver, approveVideo);
+		SAssert.assertEquals(VideoProcessing.sendVideoForApproval(driver), "All Changes have been saved and video is sent for Approval."
+				,"FAILED | TIMS ID : Trv589226c,Trv603130c | Draft Video is not sent for approval Successfully without change in metadata.");
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnSendForApproval).isEnabled(),
+				"FAILED | TIMS ID : Trv589224c,Trv603141c | Send for approval button is not disabled.");
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnSaveEdit).isEnabled(),
+				"FAILED | TIMS ID : Trv589224c,Trv603141c | Save button is enabled even after clicking on Send for approval button.");
+		SAssert.assertEquals(driver.getTitle(), "Edit Video",
+				"FAILED | TIMS ID : Trv589224c,Trv603141c | Page is redirected after clicking on Send for approval button.");
+		SAssert.showResults();
+		Home.goToHomePage(driver);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		Browser.getActions().click(VideoIUploaded.getPendingApprovalVideoFromVideosIUploadedPage(driver, approveVideo));
+		VideoProcessing.approveRejectVideo(driver, "Approve", "Approved");
+		TestStatus.pass("PASSED | TIMS ID : Trv589224c,Trv589226c,Trv603130c,Trv603141c");
+	}
+	
+	@Test(description="TIMS ID : Trv603140c,Trv589218c",priority=6,dependsOnMethods={"verifySendDraftVideoForApproval"})
+	public void verifyEditorCanEditPublishedVideo()
+	{
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_2), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_2),true);
+		VideoICanEdit.goToVideosICanEdit(driver);
+		Browser.getElements().element(driver,"hr-slider-" + md5 , LocateBy.id).click();
+		WebElement element =(WebElement) Browser.getWaits().wait(driver, "editVideo_"+md5, 
+				LocateBy.id, ExpectedCondition.visibilityOfElementLocated, 2, null);
+		element.click();
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnSaveEdit).isDisplayed(), 
+				"FAILED | TIMS ID : Trv603140c,Trv589218c | Save Button is displyed for edit video page for already approved & published video");
+		VideoProcessing.setBasicVideo(driver, null, "Editors Changes");
+		VideoProcessing.sendVideoForApproval(driver);
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnSaveEdit).isEnabled(),
+				"FAILED | TIMS ID : Trv603140c,Trv589218c | Save button is enabled even after video is sent for approval.");
+		SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.labelVideoStatus).getText().contains("Pending Approval"),
+				"FAILED | TIMS ID : Trv603140c,Trv589218c | Video Status is not changed to 'Pending Approval' after clicking on send for approval button on edit page.");
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv603140c");
+	}
+	
+	@Test(description ="TIMS ID : Trv589214c,Trv589232c,Trv589231c,Trv603139c,Trv603144c,Trv603147c,Trv588996c",
+			groups="Sanity",priority=7 ,dependsOnMethods={"verifyEditorCanEditPublishedVideo"})
+	public void verifyRejectVideo() 
+	{
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		
+		Browser.getActions().click(Browser.getElements().element(driver, "title_"+ md5, LocateBy.id));
+		SAssert.assertEquals(VideoProcessing.approveRejectVideo(driver,"Reject", "Illegal contents."), "Video is been marked as Rejected.",
+				"FAILED | TIMS ID : Trv589214c | Video is not rejected Successfully");
+		VideoIUploaded.goToVideosIUploaded(driver);
+		
+		String RejectedVideoTitle  = VideoIUploaded.getRejectedVideoFromVideosIUploadedPage(driver, approveVideo).getText();
+		SAssert.assertTrue(RejectedVideoTitle.contains(approveVideo.substring(0, 15)),
+				"FAILED | TIMS ID : Trv589232c,Trv589231c,Trv603144c,Trv603147c | Video is not present on Videos I uploaded page after rejected.");
+		
+		VideoIUploaded.getVideoEditPage(driver, approveVideo);
+		SAssert.assertEquals( Browser.getElements().element(driver, ElementTags.txtVideoTitle).getAttribute("value"), approveVideo, 
+				"FAILED | TIMS ID : Trv589231c,Trv603144c,Trv603147c,Trv588996c | Video title doesn't match");
+		SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.labelVideoStatus).getText().contains("Rejected"),
+				"FAILED | TIMS ID : Trv589231c,Trv603144c,Trv603147c,Trv588996c | Video status is not rejected");
+/*		SAssert.assertEquals( Browser.getElements().element(driver, ElementTags.toolTipComment).getAttribute("title"), "Approver's Comment", 
+				"FAILED | TIMS ID : Trv589231c,Trv603144c,Trv603147cTrv588996c | Tool tip is not present for approver's comment");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkCommentIcon)); 
+		SAssert.assertEquals(Browser.getElements().element(driver, ElementTags.labelCommentFacebox).getText(), "Illegal contents.", 
+				"FAILED | TIMS ID : Trv589231c,Trv603144c,Trv603147c,Trv588996c | Approver's comment are not correct.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCommentFaceboxClose)); */
+		
+		Home.goToHomePage(driver);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		Browser.getActions().click(VideoIUploaded.getRejectedVideoFromVideosIUploadedPage(driver, approveVideo));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		Browser.getWaits().wait(10);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		SAssert.assertTrue(PlayerControls.isVideoPlaying(driver, 5),
+					"FAILED | TIMS ID : Trv589234c,Trv603139c | Author is not able to play rejected video.");
+
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589214c,Trv589232c,Trv603139c,Trv603144c,Trv603147c");
+	}
+	
+	@Test(description="TIMS ID : Trv589233c,Trv603149c", priority=8,dependsOnMethods={"verifyRejectVideo"})
+	public void verifyRejectedVideoForOtherUser()
+	{
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_2), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_2),true);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		if (Browser.getElements().isElementPresent(driver, ElementTags.blockRejectVideo))
+		{
+			WebElement videolist= Browser.getElements().element(driver, ElementTags.blockRejectVideo);
+			testAssert.assertTrue(Browser.getElements().isElementPresent(driver,videolist, 
+					"//*[@id='thumbnail_link_" + md5 + "']/div[3]/p" , LocateBy.xpath),
+					"FAILED | TIMS ID : Trv589233c,Trv603149c | Rejected video is visible to user other than author.");
+		}else
+		{
+			//Check on entire page
+			SAssert.assertFalse(Browser.getElements().isElementPresent(driver, 
+					"//*[@id='thumbnail_link_" + md5 + "']/div[3]/p" , LocateBy.xpath),
+					"FAILED | TIMS ID : Trv589233c,Trv603149c | Rejected video is visible to user other than author.");
+		}
+		TestStatus.pass("PASSED | TIMS ID : Trv589233c,Trv603149c");
+	}
+	
+	@Test(description="TIMS ID : Trv589238c,Trv603134c",priority=9,dependsOnMethods="verifyRejectedVideoForOtherUser")
+	public void verifySearchRejectedVideo()
+	{
+		SearchVideos.searchVideo(driver,approveVideo);
+		SAssert = SearchVideos.verifySearchVideoListing(driver,approveVideo, 0 ,"Trv589238c,Trv603134c");
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589238c,Trv603134c");
+	}
+	
+	@Test(description="TIMS ID : Trv589236c, Trv589235c,Trv603138c,Trv603143c",priority=10,dependsOnMethods={"verifySearchRejectedVideo"})
+	public void verifyResendRejectedforApproval()
+	{
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		VideoIUploaded.getVideoEditPage(driver, approveVideo);
+		VideoProcessing.setBasicVideo(driver, null, "Resending for approval");
+		SAssert.assertEquals(VideoProcessing.saveVideo(driver), "All Changes have been saved.",
+				"FAILED | TIMS ID : Trv603138c| Video is not saved successfully.");
+		Browser.getWaits().wait(3);
+		SAssert.assertEquals(VideoProcessing.sendVideoForApproval(driver), "All Changes have been saved and video is sent for Approval."
+				,"FAILED | TIMS ID : Trv589236c, Trv589235c,Trv603143c | Video is not sent for approval Successfully");
+		Home.goToHomePage(driver);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		String PendingApprovalTitle = VideoIUploaded.getPendingApprovalVideoFromVideosIUploadedPage(driver, approveVideo).getText();
+		SAssert.assertTrue(PendingApprovalTitle.contains(approveVideo.substring(0, 15)),
+				"FAILED | TIMS ID : Trv589236c, Trv589235c,Trv603143c | Video is not present on Videos I uploaded page after approval.");
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		WebElement Videoitem= Browser.getElements().element(driver, "title_"+ md5, LocateBy.id);
+		SAssert.assertEquals(Videoitem.getText(), approveVideo,
+				"FAILED | TIMS ID : Trv589236c, Trv589235c,Trv603143c | Video is not listed in Pending approval listing page.");
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589236c, Trv589235c,Trv603138c,Trv603143c");
+	}
+	
+	@Test(description= "TIMS ID : Trv589184c", priority=11,dependsOnMethods={"verifyResendRejectedforApproval"})
+	public void verifySendApprovalButtonIsDisabled()
+	{
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, "title_"+ md5, LocateBy.id));
+		VideoProcessing.approveRejectVideo(driver,"Approve", "Approved.");
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, "No", null, null, null, null, null, null, null);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		VideoIUploaded.getVideoEditPage(driver, approveVideo);
+		SAssert.assertFalse(Browser.getElements().element(driver, ElementTags.bttnSendForApproval).isDisplayed(),
+				"FAILED | TIMS ID : Trv589184c | Send for approval button is displayed even if approval workflow is off.");
+		Home.goToHomePage(driver);
+		BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, "Yes", null, null, null, null, null, null, null);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589184c");
+	}
+
+	@Test(description="TIMS ID : Trv589185c", priority=12,dependsOnMethods={"verifySendApprovalButtonIsDisabled"})
+	public void verifyPendingApprovalPageNotDisplayedToUnauthorizedUser() 
+	{
+		VideoIUploaded.goToVideosIUploaded(driver);
+		VideoIUploaded.getVideoEditPage(driver,approveVideo);
+		VideoProcessing.sendVideoForApproval(driver);
+		Home.goToHomePage(driver);
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, true, true, false);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		testAssert.assertFalse(Browser.getElements().isElementPresent(driver, "title_"+ md5, LocateBy.id),
+				"FAILED | TIMS ID : Trv589185c | Video is displayed to unauthorized author on pending my approval page.");
+		TestStatus.pass("PASSED | TIMS ID : Trv589185c");
+	}
+	
+	@Test(description="TIMS ID : Trv589218c,Trv603127c,Trv603148c",priority=13,dependsOnMethods={"verifyPendingApprovalPageNotDisplayedToUnauthorizedUser"})
+	public void verifyUserAccessToPendingApprovalVideo()
+	{
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_2), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_2),true);
+		String URL= "http://" + Browser.getPropertyFromConfigFile(ConfigProperties.IP) + "/video/play/" + md5;
+		driver.navigate().to(URL);
+		SAssert.assertEquals(Browser.getElements().element(driver, ElementTags.labelAccessDenied).getText(), "Access Denied",
+				"FAILED | TIMS ID : Trv589185c,Trv603127c,Trv603148c | User is able to play video which is sent for approval.");
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, true, true, true);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		TestStatus.pass("PASSED | TIMS ID : Trv589218c,Trv603127c,Trv603148c");
+	}
+	
+	@Test(description="TIMS ID : Trv589213c, Trv589215c ,Trv589210c" ,priority=14, dependsOnMethods={"verifyUserAccessToPendingApprovalVideo"})
+	public void rejectVideoInvalidComment() 
+	{
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, "title_"+ md5, LocateBy.id));
+		SAssert.assertEquals(VideoProcessing.approveRejectVideo(driver,"Reject", ""),"Please add appropriate rejection comment.",
+				"FAILED | TIMS ID : Trv589213c, Trv589215c ,Trv589210c | Invalid comment popup is not shown in case of null commnent");
+		SAssert.assertEquals(VideoProcessing.approveRejectVideo(driver,"Reject", "      "),"Please add appropriate rejection comment.",
+				"FAILED | TIMS ID : Trv589213c, Trv589215c ,Trv589210c | Invalid comment popup is not shown in case of only white spaces in commnent");
+		//Finally reject video with proper comments
+		VideoProcessing.approveRejectVideo(driver,"Reject", "Invalid video");
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589213c, Trv589215c ,Trv589210c");
+	}
+	
+	@Test (description="TIMS ID : Trv589291c, Trv589237c,Trv603129c,Trv603137c", priority=15,dependsOnMethods={"rejectVideoInvalidComment"})
+	public void deleteRejectedVideos()
+	{
+		String [] VideosToDelete= {approveVideo};
+		VideoProcessing.deleteRejectedVideos(driver, VideosToDelete);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		if (Browser.getElements().isElementPresent(driver, ElementTags.blockRejectVideo))
+		{
+			//Check only on reject block
+			WebElement rejectedvideolist= Browser.getElements().element(driver, ElementTags.blockRejectVideo);
+			SAssert.assertFalse(Browser.getElements().isElementPresent(driver,rejectedvideolist, 
+					"//*[@id='thumbnail_link_" + md5 + "']/div[3]/p" , LocateBy.xpath),
+					"FAILED | TIMS ID : Trv589291c, Trv589237c,Trv603129c,Trv603137c | Video is present on Videos I uploaded page after deletion.");
+		}else
+		{
+			//Check on entire page
+			SAssert.assertFalse(Browser.getElements().isElementPresent(driver, 
+					"//*[@id='thumbnail_link_" + md5 + "']/div[3]/p" , LocateBy.xpath),
+					"FAILED | TIMS ID : Trv589291c, Trv589237c,Trv603129c,Trv603137c | Video is present on Videos I uploaded page after deletion.");
+		}
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589291c, Trv589237c,Trv603129c,Trv603137c");
+	}
+	
+	@AfterClass (alwaysRun=true)
+	public void tearDown()
+	{
+		String [] VideosToDelete= {approveVideo};
+		VideoProcessing.deletePendingVideos(driver, VideosToDelete);
+		VideoProcessing.deletePublishedVideo(driver, VideosToDelete);
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, true, true, false);
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, "No", null, null, null, null, null, null, null);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Fixtures.tearDownFixture(driver);
+	}
+	
+}

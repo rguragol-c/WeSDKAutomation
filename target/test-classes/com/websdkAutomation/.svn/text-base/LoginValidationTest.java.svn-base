@@ -1,0 +1,123 @@
+package com.pismo.PismoAutomation;
+
+import java.io.File;
+
+import jxl.*;
+
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.TestAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class LoginValidationTest 
+{
+	
+	private WebDriver driver = null;
+	private TestAssert testassert= new TestAssert();
+	
+	@BeforeClass
+	public void setUp()  
+	{
+		driver = Browser.getGlobalSetup().getDriver();
+		Log.info("Login Validation test class setup initiated.");
+		Browser.getWaits().wait(driver);
+		Log.info("Fixture Setup completed");
+	}
+
+   	@DataProvider(name = "Credentials")  
+   	public Object[][] createData1() throws Exception {  
+
+        Object[][] retObjArr=getTableArray("testdata\\Login\\Login_TestData.xls",
+                "Login_TestData", "testdata");
+        return(retObjArr);
+    }
+   	
+   	public String[][] getTableArray(String xlFilePath, String sheetName, String tableName) throws Exception{
+        String[][] tabArray=null;
+
+            Workbook workbook = Workbook.getWorkbook(new File(xlFilePath));
+            Sheet sheet = workbook.getSheet(sheetName); 
+            int startRow,startCol, endRow, endCol,ci,cj;
+            Cell tableStart=sheet.findCell(tableName);
+            startRow=tableStart.getRow();
+            startCol=tableStart.getColumn();
+            endRow= sheet.getRows();
+            endCol= sheet.getColumns();
+//            System.out.println("startRow="+startRow+", endRow="+endRow+", " +
+//                    "startCol="+startCol+", endCol="+endCol);
+            tabArray=new String[endRow-startRow-1][endCol-startCol-1];
+            ci=0;
+
+            for (int i=startRow+1;i<endRow;i++,ci++){
+                cj=0;
+                for (int j=startCol+1;j<endCol;j++,cj++){
+                    tabArray[ci][cj]=sheet.getCell(j,i).getContents();
+                }
+            }
+
+
+        return(tabArray);
+    }
+	
+	@Test(description= "TIMS ID | Trv591036c" , groups ="Sanity", dataProvider="Credentials", priority= 1)
+	public void loginValidations(String Username ,String Password) 
+	{		
+		Authentication.doLogin(driver, Username, Password,false);
+		String actualresult= Browser.getElements().element(driver, ElementTags.labelLoginMessage).getText();
+		testassert.assertEquals(actualresult, "Invalid Credentials", "FAILED | TIMS ID: Trv591036c | User is able to login with invalid credentials.");
+		TestStatus.pass("PASSED | TIMS ID : Trv591036c");
+	}
+   	 
+   	@Test(description= "TIMS ID | Trv591037c" , groups ="Sanity" , priority= 2)
+ 	public void verifyLoginWithBlankPassword()
+	{
+   		Authentication.doLogin(driver, "anisinha", "", false);
+		String actualresult= Browser.getElements().element(driver, ElementTags.labelLoginPasswordMsg).getText();
+		testassert.assertEquals(actualresult, "Please enter password.","FAILED | TIMS ID: Trv591037c | User is able to login without password.");
+		TestStatus.pass("PASSED | TIMS ID : Trv591037c");
+	}
+   	
+   	@Test(description= "TIMS ID | Trv591037c" , groups ="Sanity" , priority= 3)
+   	public void verifyLoginWithBlankUsername() 
+	{
+   		Authentication.doLogin(driver, "", "cisco_123", false);
+		String actualresult= Browser.getElements().element(driver, ElementTags.labelLoginUsernameMsg).getText();
+		testassert.assertEquals(actualresult, "Please enter username.","FAILED | TIMS ID: Trv591037c | User is able to login without username.");
+		TestStatus.pass("PASSED | TIMS ID : Trv591037c");
+	}
+		 
+    @Test(description= "TIMS ID | Trv591036c" , groups ="Sanity", priority= 4)
+   	public void verifyLoginWithValidCredentials() 
+	{
+    	Authentication.doLogin(driver);
+    	TestStatus.pass("PASSED | TIMS ID : Trv591036c");
+   	 }
+   	
+	@AfterClass
+	public void tearDown()
+	{
+		Fixtures.tearDownFixture(driver);
+	}
+}
+
+
+	 
+		
+		
+		 
+		 
+ 
+	 
+   
+ 
+	
+

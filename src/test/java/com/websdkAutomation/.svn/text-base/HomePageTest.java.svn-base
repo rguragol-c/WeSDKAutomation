@@ -1,0 +1,548 @@
+package com.pismo.PismoAutomation;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.SolrQueryUtils;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.appSpecific.VideoWatchLater;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class HomePageTest{
+
+	private WebDriver driver =  null;
+	private SoftAssert sassert=new SoftAssert();
+	private TestAssert testassert=new TestAssert();
+	private String[] videonames={"Video1","Video2","Video3","Video4","Video5","Video6","Video7","Video8","Video9","Video10"};
+	private String videos[] = { "LatestVideo0" };
+	private String videos1[] = { "LatestVideo1" };
+
+
+	@BeforeClass
+	public void setUp() 
+	{
+		driver=Fixtures.setupFixture("Home page test class setup initiated.");
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, true, true, false);
+		Browser.getWaits().wait(1);
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, "No", null, null, null, null, null, null, null);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		String VideoTitle="";
+		String VideoDescription="";
+		for(int j=0;j<10;j++)
+		{
+			VideoTitle="Featured"+String.valueOf(GenericUtils.getRandomNumber()); 
+			videonames[j]=VideoTitle;
+			VideoDescription="Featured video"+j;
+			VideoProcessing.uploadAndpublishVideo(driver, 
+			Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+			VideoTitle, VideoDescription, true, null, null, null,null,null,null, false);	
+		}
+
+		//Upload 2 videos
+		String bigDesc="This video has no description.\n Add a description to make your video easier to find.\n This video has no description." +
+				"\n Add a description to make your video easier to find.\n ";	
+		VideoProcessing.uploadAndpublishVideo(driver, 
+				Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+				videos[0], null, true, null, null, null,null,null,null, false);
+		VideoProcessing.uploadAndpublishVideo(driver, 
+				Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+				videos1[0], bigDesc, true, null, null, null,null,null,null, false);
+
+		Home.goToHomePage(driver);
+		BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.goToFeatureVideoPage(driver);
+
+		//Set feature video
+		if(Browser.getElements().isElementPresent(driver, ElementTags.labelFeaturedVideosCountRight))
+		{
+			PortalSettings.clearAllFeatureVideo(driver);
+		}
+		PortalSettings.setFeatureVideo(driver,videonames);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		
+		Authentication.logOut(driver);
+
+
+	}
+
+	@Test(description="TIMS ID : Trv589893c" ,priority=1, enabled=true)
+	public void verifyFeaturedVideosFromGuestView() 
+	{
+		Home.goToHomePage(driver);
+		sassert.assertTrue(Home.isFeatureVideoPresent(driver),
+				"FAILED | TIMS ID : Trv589895c | Videos added in featured video section is not visible to guest user");
+		sassert.assertEquals(Home.totalVideosDisplayedOnHomePage(driver),8,
+				"FAILED | TIMS ID : Trv589893c | Total 8 videos are not displayed on Home page");
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589893c");
+	}
+
+	@Test(description="TIMS ID : Trv589895c", enabled=true,priority=2)
+	public void verifyFeaturedVideoVisibleToAll() 
+	{
+		Authentication.doLogin(driver, Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_2), 
+				Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Password_2),true);
+		sassert.assertTrue(Home.isFeatureVideoPresent(driver),
+				"FAILED | TIMS ID : Trv589895c | Videos added in featured video section is not visible to all");
+		sassert.assertEquals(Home.totalVideosDisplayedOnHomePage(driver),8,
+				"FAILED | TIMS ID : Trv589895c | Total 8 videos are not displayed on Home page");
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589895c");
+	}
+
+	@Test(description="TIMS ID : Trv589894c", priority=3, enabled=true)
+	public void verifyMaxTenFeaturedVideo() 
+	{
+		testassert.assertEquals(Home.totalFeatureVideos(driver),10,
+				"FAILED | TIMS ID : Trv589894c | Max 10 featured videos are present on home page ");
+		TestStatus.pass("PASSED | TIMS ID : Trv589894c | max 10 featured videos are present on home page.");
+	}
+
+	@Test(description="TIMS ID : Trv589900c,Trv589907c",priority=4, enabled=true)
+	public void verifyFirstFeatureVideoisSelected() 
+	{
+		testassert.assertTrue(Home.activeVideoFromCarousel(driver),
+				"FAILED | TIMS ID : Trv589900c,Trv589907c |First featured video selected from Carousel ");
+		TestStatus.pass("PASSED | TIMS ID : Trv589900c,Trv589907c");
+	} 
+
+	@Test(description="TIMS ID : Trv589908c",priority=5, enabled=true)
+	public void verifyTitleAndDurationOnFeatureVideo() 
+	{
+		sassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelFeaturedVideoTitle).getText(),videonames[0].toString(), 
+				"FAILED | TIMS ID : Trv589908c | Video title is not present for featured video");
+		sassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelFeaturedVideoDuration).getText(),"00:04", 
+				"FAILED | TIMS ID : Trv589908c | Video duration is not present for featured video");
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589908c"); 	  
+	}
+
+	@Test(description="TIMS ID : Trv589901c,Trv589902c",priority=6, enabled=true)
+	public void verifyVideoRelatedDataOnCorosel() 
+	{
+		//TODO : Change verifications and data + move elements to obj repo  
+		String Authorname= Browser.getElements().element(driver, 
+				"//div[@class='verticaljcarousel']/ul/li/div[2]/span[1]/a",LocateBy.xpath).getText();
+
+		String videouploadedtime= Browser.getElements().element(driver, 
+				"//div[@class='verticaljcarousel']/ul/li/div[2]/span[1]/a",LocateBy.xpath).getText();
+		System.out.println(videouploadedtime);
+		String videodescription= Browser.getElements().element(driver, 
+				"//div[@class='verticaljcarousel']/ul/li/div[2]/span[2]",LocateBy.xpath).getText();
+		System.out.println(videodescription);
+		String moreLink=Browser.getElements().element(driver, "read-more",LocateBy.classname).getText();
+
+		String videoName=Browser.getElements().element(driver,
+				"//div[@class='verticaljcarousel']/ul/li/div/a/div/span",LocateBy.xpath).getText();
+
+		String videoDuration=Browser.getElements().element(driver, 
+				"//div[@class='verticaljcarousel']/ul/li/div/a/div/span[2]",LocateBy.xpath).getText();
+
+		sassert.assertEquals(Authorname,"Anindya Sinha", "FAILED | TIMS ID : Trv589901c,Trv589902c | Authore name is not present");
+		sassert.assertTrue(videouploadedtime.contains("mins ago"),"FAILED | TIMS ID : Trv589901c,Trv589902c | Video Uploaded time is not present");
+		sassert.assertTrue(videodescription.contains("Featured video"),"FAILED | TIMS ID : Trv589901c,Trv589902c | Video description is not present");
+		sassert.assertEquals(moreLink,"more...", "FAILED | TIMS ID : Trv589901c,Trv589902c | morelink is not present");	
+		sassert.assertTrue(videoName.contains("Featured"), "FAILED | TIMS ID : Trv589901c,Trv589902c | Video name is not present");
+		sassert.assertEquals(videoDuration,"04 sec", "FAILED | TIMS ID : Trv589901c,Trv589902c | Video duration is not present");
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589901c,Trv589902c"); 
+	}
+
+	@Test(description="TIMS ID : Trv589897c",priority=7, enabled=true)
+	public void verifyFeaturedVideoPlay() 
+	{
+		Home.playFeatureVideo(driver);
+		testassert.assertTrue(PlayerControls.isVideoPlaying(driver,3),
+				"FAILED | TIMS ID : Trv589897c | Video does not get played.");
+		TestStatus.pass("PASSED | TIMS ID : Trv589897c"); 
+	}	
+
+	@Test( description="TIMS ID : Trv589898c",enabled=true,priority=8 )
+	public void verifyReplayIconDisplayedAfterVideoPlayComplete()
+	{
+		Home.goToHomePage(driver);
+		Home.playFeatureVideo(driver);
+		while(PlayerControls.isVideoPlaying(driver,3))
+		{
+			Log.info("Video is in play mode");
+		}
+		testassert.assertEquals(Browser.getElements().element(driver, ElementTags.iconfeatureVideoReplay).getAttribute("title"),"Restart",
+				"FAILED | TIMS ID : Trv589898c | verify replay icon should be displayed after video is complted");
+		TestStatus.pass("PASSED | TIMS ID : Trv589898c"); 
+	}
+
+
+	@Test(description="TIMS ID : Trv589899c",priority=9, enabled=true)
+	public void verifyPlayAnotherVideoDuringFeatureVideoPlay()  
+	{
+		Home.playFeatureVideo(driver);
+		sassert.assertTrue(PlayerControls.isVideoPlaying(driver,3),"FAILED | TIMS ID : Trv589899c | First video is not played");
+		sassert.assertTrue(Home.playVideoFromCarousel(driver, 2),"FAILED | TIMS ID : Trv589899c | Play video from carousel");
+		sassert.assertTrue(PlayerControls.isVideoPlaying(driver,3),"FAILED | TIMS ID : Trv589899c | Carousal video is not played properly.");
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589899c");
+	}
+
+
+	@Test(description=" TIMS ID : Trv589903c",priority=10, enabled=false)
+	public void verifyVideoWithNoDescriptionOnCorosel() 
+	{ 
+		//TODO : Upload atleast one video with No description, edit any one featured video to remove description
+		//correct the verification goal and move elements to repo
+		//		WebElement element2= driver.findElement(By.xpath("//div[@class='verticaljcarousel']/ul/li/div[2]/p"));
+		//		String videodescription= element2.getText();
+		//		  
+		//		element2=driver.findElement(By.className("read-more"));
+		//		String moreLink=element2.getText();
+		//read-more
+		//testassert.assertTrue(Home.verifyMoreLink(driver,videodescription,moreLink),
+		//		"FAILED | TIMS ID : Trv589903c | verify that more link is present even if video  has no description .");
+		TestStatus.pass("PASSED | TIMS ID : Trv589903c");
+	}
+
+
+	@Test(description="TIMS ID : Trv589906c",priority=11, enabled=false)
+	public void verifyMoreLinkOnCarosel() 
+	{
+		//TODO : check verification goal and correct the test steps
+		//testassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.linkMoreText),"FAILED | TIMS ID : Trv589906c | more link is not  available ."); 
+		//Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkMoreText));
+		//Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomePage_old));
+		//Home.goToHomePage(driver);
+		//Home.navigateToPlayPage(driver);
+		//TODO : Ad verification
+		//sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589906c");
+	}
+
+	@Test(description="TIMS ID : Trv589905c",priority=12, enabled=true)
+	public void verifyNextVideoWithTwoFeatureVideo() 
+	{
+		Authentication.doLogin(driver);
+		String baseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.goToFeatureVideoPage(driver);
+		PortalSettings.clearFeatureVideo(driver,8);
+		Browser.getSwitchto().closePopupWindow(driver, baseWindowHandle);
+		Home.goToHomePage(driver);
+		sassert.assertEquals(Home.totalFeatureVideos(driver), 2);
+		sassert.assertFalse(Browser.getElements().element(driver,ElementTags.linkNextArraow).isDisplayed(),
+				"FAILED | TIMS ID : Trv589905c | verify that next featured video is present .");
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589905c");
+	}
+
+	@Test(description="TIMS ID : Trv589909c",priority=13, enabled=true)
+	public void verifyHomePageWithNoFeatureVideo()
+	{
+		Authentication.doLogin(driver,"anisinha", "cisco_123",true);
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.goToFeatureVideoPage(driver);
+		PortalSettings.clearAllFeatureVideo(driver);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Home.goToHomePage(driver);
+		testassert.assertFalse(Home.isFeatureVideoPresent(driver), "FAILED | TIMS ID : Trv589909c | Feature video is displyed on home page");
+		TestStatus.pass("PASSED | TIMS ID : Trv589909c");
+	}
+
+	//.. Test scripts of See All & Home page
+
+	@Test(description="TIMS ID : Trv589936c, Trv591090c", enabled=true,priority=14)
+	public void verifyWatchLaterForGuestUser(){
+		Authentication.logOut(driver);
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos1[0]);
+		//click on watch later button
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnActionMenuSlider));
+		Browser.getActions().click(Browser.getElements().element(driver,"watch-later-"+ md5, LocateBy.id));
+		//verify login page
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.linkSignIn) 
+				&& driver.getTitle().equals("Cisco Portal"),"FAILED | TIMS ID : Trv589937c | On click on watch later icon by Guest user, page is not redirected to Login page.");
+		
+		//..verify for sell all page
+		Home.goToHomePage(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSeeAll));
+
+		// ..add to watch later
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.bttnActionMenuSlider));
+		Browser.getActions().click(Browser.getElements().element(driver, "watch-later-" + md5,LocateBy.id));
+
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver,ElementTags.linkSignIn),"FAILED | TIMS ID : Trv591090c |Failed to navigate to watchlater page.");
+
+		Authentication.doLogin(driver, "anisinha", "cisco_123", true);
+
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589936c, Trv591090c");
+
+	}
+
+	@Test(description="TIMS ID :Trv589937c", enabled=true,priority=15)
+	public void verifyaWatchLaterForUserHome(){
+		
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos1[0]);
+		//add video to watch later
+		String msg=VideoWatchLater.clickOnWatchLater(driver,md5);
+		sassert.assertEquals(msg,"Video added to watch later list","FAILED | TIMES ID: Trv589936c| Video not added to watch later successfully.");
+		Home.goToHomePage(driver);
+		VideoWatchLater.goToWatchLater(driver);
+		//verify video is added in watch later list
+		sassert.assertEquals(Browser.getElements().element(driver, "title_"+ md5, LocateBy.id).getText(), videos1[0],
+				"FAILED | TIMS ID : Trv589937c | Video Is not added to watch later list on watch later page.");
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID :Trv589937c");
+	}
+
+	@Test(description="TIMS ID : Trv589916c", enabled=true,priority=16)
+	public  void verifyLikecountHome(){
+		Home.goToHomePage(driver);
+		//..like count 
+		sassert.assertEquals(Integer.parseInt(Browser.getElements().element(driver, ElementTags.labelLatestUserLikeCount).getText()),0,"FAILED |TIMS ID : Trv589916c | like count is not zero.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkPlayIcon));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.imgLikeIcon));
+		Home.goToHomePage(driver);
+		sassert.assertEquals(Integer.parseInt(Browser.getElements().element(driver, ElementTags.labelLatestUserLikeCount).getText()),1,"FAILED |TIMS ID : Trv589916c |like count is  zero.");
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589916c ");
+	}
+
+	@Test(description="TIMS ID : Trv589911c,Trv589912c,Trv589913c,Trv589914c,Trv589915c,Trv589918c,Trv589920c,Trv589913c", enabled=true,priority=17)
+	public void verifyLatestVideoSectionHome(){
+		//Authentication.doLogin(driver, "anisinha", "cisco_123", true);
+		Home.goToHomePage(driver);
+		//verify recently added video displayed under latest video section
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkPlayIcon));
+		sassert.assertEquals(Browser.getElements().element(driver,ElementTags.labelVideoTitleOnThumbanail).getText(), videos1[0],
+				"FAILED | TIMS ID : Trv589912c | new video is not displayed to latest video section");
+
+		Home.goToHomePage(driver);
+		// recently added video with 'New' icon
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.labelVideoNewIcon),
+				"FAILED | Trv589920c | New icon is not present on latest video.");
+
+		//Thumbnail
+		sassert.assertTrue(Browser.getElements().element(driver, ElementTags.labelVideoThumbnail).isDisplayed(),
+				"FAILED | TIMS ID: Trv589913c | Thumbnail is not available");
+
+		// videoTitle and Duration 
+		String[] videoDuration=Browser.getElements().element(driver, ElementTags.labelSeeLatestVideoTitle).getText().split("\n");
+		sassert.assertEquals(videoDuration[0],videos1[0],"FAILED | TIMS ID : Trv589913C |Video title is empty");
+		sassert.assertEquals(videoDuration[1],"04 sec","FAILED | TIMS ID : Trv589913C |Video duration is empty");
+
+		//author
+		String md5 = SolrQueryUtils.getVideoMD5FromSolr(videos1[0]);
+		WebElement author = Browser.getElements().element(driver,"video_author_link_" + md5, LocateBy.id);
+		sassert.assertTrue(author.getText().contains("Anindya Sinha"),"FAILED | TIMS ID: Trv589913c | Author is null");
+		
+		//..relative time
+		WebElement visit_time=Browser.getElements().element(driver, ElementTags.labelVisitTime);
+		sassert.assertTrue((visit_time.getText().contains("mins ago") || visit_time.getText().contains("minute ago") 
+				||visit_time.getText().contains("min ago")),"FAILED | TIMS ID: Trv589913c,Trv589914c  | relative time is not displayed."+visit_time.getText());
+
+		//..action menu slider
+		WebElement actionMenu = Browser.getElements().element(driver, ElementTags.bttnActionMenuSlider);
+		boolean actionMenuFlag = actionMenu.isDisplayed();
+		sassert.assertTrue(actionMenuFlag, "FAILED | TIMS ID: Trv589913c | Action menu not displayed ");
+		boolean actionMenuEnableFlag=actionMenu.isEnabled();
+		sassert.assertTrue(actionMenuEnableFlag, "FAILED | TIMS ID: Trv589913c | Action menu not enabled");
+
+		//view count
+		sassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelViewCount).getText(),"0", "FAILED | TIMS ID: Trv589913c | View count is not 0");
+
+		// video with description 
+		String videoWithDesc =SolrQueryUtils.getVideoMD5FromSolr(videos1[0]);
+		sassert.assertTrue(Browser.getElements().element(driver, "video_description_container_"+ videoWithDesc, LocateBy.id).getText().contains("This video has"),
+				"FAILED | Trv589915c | video description is empty.");
+		sassert.assertTrue(Browser.getElements().element(driver, "video_description_container_"+ videoWithDesc, LocateBy.id).getText().contains("..."),
+				"FAILED | Trv589915c | ... not displayed even though the message is long.");
+
+		// Video with No description
+		String videoWithoutDesc =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+		sassert.assertTrue(Browser.getElements().element(driver, "video_description_container_"+ videoWithoutDesc, LocateBy.id).getText().isEmpty(),
+				"FAILED |TIMS ID : Trv589918c,Trv589913c,Trv589915c,Trv589914c | Verify when No description added for video.");
+
+		//verifyMax8VideoInLatestSection
+		sassert.assertEquals(Browser.getElements().elements(driver, ElementTags.labelTotalVideo).size(),8,
+				"FAILED | Trv589911c | max 8 videos are  not present in latest video section.");
+
+		sassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv589911c,Trv589912c,Trv589913c,Trv589914c,Trv589915c,Trv589918c,Trv589920c,Trv589913c  ");
+	}
+
+	@Test(description = "TIMS ID : Trv591091c", enabled = true, priority = 18)
+	public void verifyWatchLaterForUserSeeAll() {
+		//Authentication.doLogin(driver, "anisinha", "cisco_123", true);
+
+		// ..go to home page, click on SEE ALL link
+		Home.goToHomePage(driver);
+		Browser.getElements().element(driver, ElementTags.linkSeeAll).click();
+
+		String md5 = SolrQueryUtils.getVideoMD5FromSolr(videos1[0]);
+
+		String msg = VideoWatchLater.clickOnWatchLater(driver, md5);
+		sassert.assertEquals(msg, "Video added to watch later list","FAILED | TIMES ID: Trv591091c | Video not added to watch later successfully.");
+		Browser.getWaits().wait(3);
+
+		VideoWatchLater.goToWatchLater(driver);
+
+		// verify video is added in watch later list
+		Log.info("Title actual is: "+Browser.getElements().element(driver, "title_" + md5, LocateBy.id).getText());
+		sassert.assertEquals(Browser.getElements().element(driver, "title_" + md5, LocateBy.id).getText(),videos1[0],
+				"FAILED | TIMS ID : Trv591091c | Video Is not added to watch later list on watch later page.");
+
+		sassert.showResults();
+
+		TestStatus.pass("PASSED | TIMS ID : Trv591091c");
+	}
+
+
+
+	@Test(description = "TIMS ID: Trv591080c, Trv591086c, Trv591089c, Trv589919c, Trv589923c, Trv591084c, Trv591082c", enabled = true, priority = 19)
+	public void verifyVideoSeeAllDetails() {
+		// ..verify video with no desc
+		// ..verify other details (thumbnail, title, author, duration, relative
+		// time, action menu slider)
+		// ..delete successfully
+		Authentication.doLogin(driver, "anisinha", "cisco_123", true);
+		Home.goToHomePage(driver);
+
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.linkSeeAll),"FAILED |TIMS ID : Trv589919c |see all link is not available.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSeeAll));
+		sassert.assertTrue(driver.getTitle().equals("Video List"),"FAILED |TIMS ID : Trv589919c |On click on See All link  by  user, page is not redirected to see all  page.");
+
+		String md5_big = SolrQueryUtils.getVideoMD5FromSolr(videos1[0]);
+		String md5 = SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+
+		// ..thumbnail
+		WebElement thumbnailVideo = Browser.getElements().element(driver,"thumbnailImage_" + md5, LocateBy.id);
+		sassert.assertTrue(thumbnailVideo.isDisplayed(),"FAILED | TIMS ID: Trv591080c | Thumbnail not available");
+
+		// .blank desc
+		WebElement videoDesc = Browser.getElements().element(driver,"video_description_container_" + md5, LocateBy.id);
+		sassert.assertTrue(videoDesc.getText().equals(""),"FAILED | TIMS ID: Trv591086c | Description is not blank");
+
+		// ..Video description
+		videoDesc = Browser.getElements().element(driver,"video_description_container_" + md5_big, LocateBy.id);
+		boolean flag = videoDesc.getText().contains("...");
+		sassert.assertTrue(flag,"FAILED | TIMS ID: Trv591082c | ... not displayed as message may not be long enough");
+
+		// videoTitle and Duration 
+		String[] videoDuration=Browser.getElements().element(driver, ElementTags.labelSeeLatestVideoTitle).getText().split("\n");
+		sassert.assertEquals(videoDuration[0],videos1[0],"FAILED | TIMS ID : Trv591080c |Video title is empty");
+		sassert.assertEquals(videoDuration[1],"04 sec","FAILED | TIMS ID : Trv591080c |Video duration is empty");
+
+		// ..author
+		WebElement author = Browser.getElements().element(driver,"video_author_link_" + md5, LocateBy.id);
+		sassert.assertTrue(author.getText().contains("Anindya Sinha"),"FAILED | TIMS ID: Trv591080c | Author is null");
+
+		// ..relative time
+		WebElement relativeTime = Browser.getElements().element(driver,ElementTags.labelVisitTime);
+		boolean relativeFlag = relativeTime.getText().contains("mins ago")|| relativeTime.getText().contains("minute ago")|| relativeTime.getText().contains("min ago");
+		sassert.assertTrue(relativeFlag,"FAILED | TIMS ID: Trv591080c | Relative time contains "+ relativeTime.getText());
+
+		// ..action menu slider
+		WebElement actionMenu = Browser.getElements().element(driver,ElementTags.bttnActionMenuSlider);
+		boolean actionMenuFlag = actionMenu.isDisplayed()&& actionMenu.isEnabled();
+		sassert.assertTrue(actionMenuFlag,"FAILED | TIMS ID: Trv591080c | Action menu not displayed and enabled");
+
+		// ..View count
+		sassert.assertTrue(Browser.getElements().element(driver, ElementTags.labelLatestUserViewCount).getText().equals("0"),
+				"FAILED | TIMS ID: Trv591084c | View count is not 0");
+
+
+		// ..go to home page, click on SEE ALL link
+		Home.goToHomePage(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSeeAll));
+
+		// ..method to delete single video
+		VideoProcessing.deletePublishedVideo(driver, videos1);
+		sassert.assertTrue(Browser.getElements().element(driver, ElementTags.FlashMsg).isDisplayed(),"FAILED | TIMS ID: Trv591089c, Trv589923c | Unable to delete successfully  ");
+		sassert.assertFalse(Browser.getElements().isElementPresent(driver,"video_description_container_" + md5_big, LocateBy.id),
+				"FAILED | TIMS ID: Trv591089c, Trv589923c | Video not deleted successfully  ");
+
+		sassert.showResults();
+
+		TestStatus.pass("PASSED | TIMS Id: Trv591080c, Trv591086c, Trv591089c, Trv589919c, Trv589923c, Trv591084c, Trv591082c");
+	}
+
+
+	@Test(description = "TIMS ID: Trv591080c, Trv591088c, Trv591083c, Trv591087c", enabled = true, priority = 20)
+	public void verifyLikeCountNewPlayIcons() {
+		Home.goToHomePage(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSeeAll));
+		String md5 = SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+
+		// ..like count on home page
+		WebElement likeCount = Browser.getElements().element(driver,ElementTags.labelLatestUserLikeCount);
+		Log.info("Like count before clicking on LIKE: " + likeCount.getText());
+		sassert.assertTrue(Browser.getElements().element(driver, ElementTags.labelLatestUserLikeCount).getText().equals("0"),
+				"FAILED | TIMS ID: Trv591083c | Like count is not 0");
+
+		// ..click on play video and hit LIKE
+		WebElement playVideo = Browser.getElements().element(driver,"thumbnail_link_" + md5, LocateBy.id);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, playVideo,"//img[2]", LocateBy.xpath),
+				"FAILED | TIMS ID: Trv591088c | Play icon not visible on the thumbnail");
+		Browser.getActions().click(Browser.getElements().element(playVideo, "//img[2]",LocateBy.xpath));
+
+		// ..click on like icon
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.imgLikeIcon));
+
+		Browser.getWaits().wait(5);
+		WebElement UploadedlikeCount = Browser.getElements().element(driver,
+				ElementTags.labelUploadedLikeCount);
+		String count[] = UploadedlikeCount.getText().split(" ");
+
+		// ..go to home page, click on SEE ALL link
+		Home.goToHomePage(driver);
+		Browser.getActions().click(
+				Browser.getElements().element(driver, ElementTags.linkSeeAll));
+
+		likeCount = Browser.getElements().element(driver,ElementTags.labelLatestUserLikeCount);
+		sassert.assertTrue(likeCount.getText().equals(count[0]),"FAILED | TIMS ID: Trv591080c| Like count mismatch");
+
+		//..verify new icon
+		WebElement video = Browser.getElements().element(driver,"video_item_" + md5, LocateBy.id);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, video,"//div/div[2]", LocateBy.xpath),
+				"FAILED | TIMS ID: Trv591087c | New icon does not exist");
+		sassert.showResults();
+
+		TestStatus.pass("PASSED : TIMS ID: Trv591088c, Trv591080c, Trv591083c, Trv591087c");
+	}
+
+	@AfterClass(alwaysRun=true)
+	public void tearDown()
+	{
+		Home.goToHomePage(driver);
+		VideoProcessing.deletePublishedVideo(driver, videos);
+		VideoProcessing.deletePublishedVideo(driver, videos1);
+		VideoProcessing.deletePublishedVideo(driver, videonames);
+		Fixtures.tearDownFixture(driver);
+	}
+}

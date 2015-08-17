@@ -1,0 +1,152 @@
+package com.pismo.PismoAutomation;
+
+
+
+import org.openqa.selenium.WebDriver;
+
+
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.VideoProcessing;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+import com.pismo.lib.generic.GenericUtils;
+
+public class PlayerVolumeControlTest  {
+	
+	private WebDriver driver =  null;
+	private SoftAssert SAssert= new SoftAssert();
+	
+	public static String videoname=String.valueOf(GenericUtils.getRandomNumber());	
+	
+	
+	@DataProvider(name = "Usertype")  
+
+	public Object[][] createData1() {  
+
+	 return new Object[][] {  
+
+	   { Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_1) },  
+
+	   { "Guest" } 
+
+	 };  
+
+	}
+	
+	@BeforeClass
+	public void setUp() 
+	{
+	  driver=Fixtures.setupFixture("Player volume control setup initialization");
+	  VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), videoname, "VideoDescription", true, null, null, null,null,null,null, false);
+	  Log.info("Test video is uploaded");
+	}
+	
+	
+	/**
+	 * mute and unmute functionality.
+	 * author :
+	 * TIMS ID : Trv618032c,Trv618026c
+	 * @throws InterruptedException 
+	 */
+	
+	@Test(description= "TIMS ID: Trv618032c,Trv618026c", priority=1,enabled=true,dataProvider = "Usertype" )
+  public void checkMuteAndUnmute(String usertype)  {
+		
+		SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,usertype,videoname), "Failed | Tims Id : Trv618032c,Trv618026c| Player is not initialized");
+		PlayerControls.mute(driver,true);
+		//SAssert.assertTrue(PlayerControls.muteEnable(driver),  "Failed | Tims Id : Trv618032c | Failed to enable mute button");
+		SAssert.merge(PlayerControls.muteEnable(driver, "Trv618032c"));
+		PlayerControls.mute(driver,false);
+		SAssert.assertTrue( Browser.getElements().element(driver, ElementTags.iconVideoMute).getAttribute("src").contains("Mute_off.png"), "Failed | Tims Id : Trv618026c | Failed to enable unmute button");
+		Authentication.logOut(driver);
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv618032c,Trv618026c | checkMuteAndUnmute - "+ usertype );
+  }
+	
+	/**
+	 * lower and raise by drag.
+	 * author : 
+	 * TIMS ID : Trv618041c,Trv618037c
+	 * @throws InterruptedException 
+	 */
+	@Test( description= "TIMS ID: Trv618041c,Trv618037c",priority=3, enabled=true , dataProvider = "Usertype" )
+	
+	  public void lowerAndRaiseVolumeByDrag(String userType)  {
+		     SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname),  "Failed | TIMS ID : Trv618041c,Trv618037c| Player is not initialized");
+			 PlayerControls.setVolumeByDrag(driver,25);
+			 SAssert.assertEquals(PlayerControls.getVolumeValue(driver),25,"Failed | Tims Id : Trv618041c | Volume is not set properly after drag");
+			 PlayerControls.setVolumeByDrag(driver,50);
+			 SAssert.assertEquals(PlayerControls.getVolumeValue(driver),50,"Failed | Tims Id : Trv618037c | Volume is not set properly after drag");
+			 Authentication.logOut(driver);
+			 SAssert.showResults();
+			 TestStatus.pass("PASSED | TIMS ID : Trv618041c,Trv618037c | lowerAndRaiseVolumeByDrag- "+ userType);
+			
+	  }
+	
+	/**
+	 * mute by drag .
+	 * author : 
+	 * TIMS ID : Trv618025c
+	 * @throws InterruptedException 
+	 */
+	
+	@Test(description= "TIMS ID: Trv618025c", priority=2, enabled=true,dataProvider = "Usertype" )
+	
+	  public void muteByDrag(String userType) {
+			
+		     
+		     SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname), "FAILED| TIMS ID : Trv618025c | Player is not initialized");
+			 PlayerControls.setVolumeByDrag(driver,0);
+			 //SAssert.assertTrue(PlayerControls.muteEnable(driver),"FAILED| TIMS ID : Trv618025c | volume is not set to mute by drag ");
+			 SAssert.merge(PlayerControls.muteEnable(driver, "Trv618025c"));
+			 Authentication.logOut(driver);
+			 SAssert.showResults();
+			 TestStatus.pass("PASSED | TIMS ID : Trv618025c | muteByDrag- "+ userType);
+			
+	  }
+	
+	
+	/**
+	 * lower and raise by click.
+	 * author : 
+	 * TIMS ID :  	Trv618034c,Trv618029c
+	 * @throws InterruptedException 
+	 */
+	@Test(  description= "TIMS ID: Trv618034c,Trv618029c", priority=4 , enabled=true ,dataProvider = "Usertype")
+	
+	public void lowerAndRaiseVolumeByClick(String userType) {
+		
+		SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,userType,videoname),  " Failed | Tims Id : Trv618034c,Trv618029c | Player is not initialized");
+		 PlayerControls.setVolumeByClickOnVolumeBar(driver,48);
+		 SAssert.assertEquals(PlayerControls.getVolumeValue(driver),48,"Failed | Tims Id : Trv618034c | Player volume is not set by click");
+		 PlayerControls.setVolumeByDrag(driver,0);
+		 PlayerControls.setVolumeByClickOnVolumeBar(driver,48);
+		 SAssert.assertEquals(PlayerControls.getVolumeValue(driver),48,"Failed | Tims Id : Trv618029c | Player volume is not set by click");
+		 Authentication.logOut(driver);
+		 SAssert.showResults();
+		 TestStatus.pass("PASSED | TIMS ID : Trv618034c,Trv618029c | lowerAndRaiseVolumeByClick- "+ userType);
+	}
+	
+	@AfterClass
+	public void tearDown()
+	{
+		String [] videos= {videoname};
+		Log.info("Clearing test data videos");
+		Authentication.doLogin(driver);
+		VideoProcessing.deletePublishedVideo(driver,videos);
+		Fixtures.tearDownFixture(driver);
+		Log.info("Test data is deleted.");
+	}
+}

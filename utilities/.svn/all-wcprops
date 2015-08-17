@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/mxabu/mxabu-auto-svn/!svn/ver/3371/PismoAutomation/utilities
+END
+UploadFile.exe
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/mxabu/mxabu-auto-svn/!svn/ver/2954/PismoAutomation/utilities/UploadFile.exe
+END
+IEDriverServer_x64.exe
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/mxabu/mxabu-auto-svn/!svn/ver/3371/PismoAutomation/utilities/IEDriverServer_x64.exe
+END
+IEDriverServer_x86.exe
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/mxabu/mxabu-auto-svn/!svn/ver/3371/PismoAutomation/utilities/IEDriverServer_x86.exe
+END
+AutoItX3_x64.dll
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/mxabu/mxabu-auto-svn/!svn/ver/3362/PismoAutomation/utilities/AutoItX3_x64.dll
+END
+chromedriver.exe
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/mxabu/mxabu-auto-svn/!svn/ver/3371/PismoAutomation/utilities/chromedriver.exe
+END
+AutoItX3.dll
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/mxabu/mxabu-auto-svn/!svn/ver/3362/PismoAutomation/utilities/AutoItX3.dll
+END

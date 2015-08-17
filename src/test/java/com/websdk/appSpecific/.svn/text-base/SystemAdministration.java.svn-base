@@ -1,0 +1,137 @@
+package com.pismo.lib.appSpecific;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Log;
+
+public class SystemAdministration{
+	
+	
+	public static void goToSysadminPage(WebDriver driver){
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeLoginMenu));
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkHomeAdminMenu));
+     }
+	
+	public static void gotoSMTPPage(WebDriver driver)
+	{
+		Log.info("Navigate to SMTP settings page.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSystemConfiguration));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSmtpServer));
+	}
+	
+	public static boolean configureNFSDevice(WebDriver driver,String host, String storageFolder, String version)
+	{
+		boolean flag = false;
+		//Authentication.doLogin(CONFIG.getProperty("SYSADMIN_USERNAME"),CONFIG.getProperty("SYSADMIN_PASSWORD"));
+		Assert.assertEquals(driver.findElement(By.className("heading")).getText(), "System Configuration");
+		//driver.findElement(By.className("heading")).click();
+		Assert.assertEquals(driver.findElement(By.xpath("id('accordion')/li[2]/ul/li[4]/a")).getText(), "NFS Device");
+		driver.findElement(By.xpath("id('accordion')/li[2]/ul/li[4]/a")).click();
+		Assert.assertEquals(driver.findElement(By.xpath("id('contentDiv')/div/div/h1")).getText(),"NFS Device");
+		Assert.assertEquals(driver.findElement(By.xpath("id('contentDiv')/div/div/h2")).getText(),"Please Identify the Remote Storage Device and provide the path to the storage folder");
+		System.out.println("Label : "+driver.findElement(By.className("inputlabel")).getText());
+		Assert.assertEquals(driver.findElement(By.xpath("id('remoteStorage')/div[1]/div[1]/label")).getText(),"Server IP or Hostname  * ");
+		String hostName = driver.findElement(By.id("serverIP")).getText();
+		if(hostName.equals("")||hostName.equals(null)||hostName.equalsIgnoreCase("0.0.0.0"))
+		{
+			driver.findElement(By.id("serverIP")).clear();
+			driver.findElement(By.id("serverIP")).sendKeys(host);
+		}
+		
+		System.out.println("Label: "+driver.findElement(By.xpath("id('remoteStorage')/div[2]/div[1]/label")).getText());
+		Assert.assertEquals(driver.findElement(By.xpath("id('remoteStorage')/div[2]/div[1]/label")).getText(), "Path to Storage folder * ");
+		String pathToFolder = driver.findElement(By.id("mountPath")).getText();
+		if(pathToFolder.equals("")||pathToFolder.equals(null))
+		{
+			driver.findElement(By.id("mountPath")).clear();
+			driver.findElement(By.id("mountPath")).sendKeys(storageFolder);
+		}
+		Assert.assertEquals(driver.findElement(By.xpath("id('remoteStorage')/span")).getText(), "NFS Version *");
+		//Assert.assertEquals(driver.findElement(By.id("remoteStorage")).getText(), "Note: Mounting the storage path may take a few seconds.");
+		driver.findElement(By.xpath("id('remoteStorage')/label[2]/input")).click();
+		flag = true;
+		return flag;
+	}
+	
+	
+	public static boolean CheckNFSMountStatus(WebDriver driver)
+	{
+		boolean mountstatus=false;
+		
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkNFSPage));
+		Browser.getWaits().wait(5);
+		
+		String nfsip=Browser.getElements().element(driver,ElementTags.txtNFSHost).getAttribute("value").toString();		
+		
+		if(nfsip.contains("0.0")){			
+			mountstatus=false;
+		}else
+		{
+			mountstatus=true;
+		}		
+		return mountstatus;
+	}		
+	
+	
+	public static boolean mountNFS(WebDriver driver,String NfsServerIp,String mountPath, int version)
+	{
+		boolean flag=false;
+				
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.linkNFSPage));
+		Browser.getWaits().wait(5);
+		
+		Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtNFSHost));
+		Browser.getElements().element(driver,ElementTags.txtNFSHost).sendKeys(NfsServerIp);
+		
+		Browser.getActions().clear(Browser.getElements().element(driver,ElementTags.txtNFSPath));
+		Browser.getElements().element(driver,ElementTags.txtNFSPath).sendKeys(mountPath);		
+				
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.bttnSaveNFS));			
+					
+		WebDriverWait wait = new WebDriverWait(driver, 300);
+		WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[@id='topsection']/div/p")));
+		
+		String actualmsg=element.getText();
+		String expmsg="";
+		
+		if(NfsServerIp.contains("0.0"))
+		{
+			expmsg="Remote storage device configuration was not successful.";			
+		}
+		else 
+		{
+			expmsg="Remote storage device configuration was successful.";
+		}		 
+		
+		if(actualmsg==expmsg)
+		{
+			Log.info(actualmsg);
+			flag=true;
+		}
+		else 
+		{			
+			flag=false;
+		}		
+		
+		return flag;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+}

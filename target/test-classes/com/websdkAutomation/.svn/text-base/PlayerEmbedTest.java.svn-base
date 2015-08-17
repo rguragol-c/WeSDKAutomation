@@ -1,0 +1,165 @@
+package com.pismo.PismoAutomation;
+
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class PlayerEmbedTest {
+	
+	private WebDriver driver =  null;
+	private SoftAssert softassert= new SoftAssert();
+	public static String videoname1=String.valueOf(GenericUtils.getRandomNumber());
+	public static String videoname2=String.valueOf(GenericUtils.getRandomNumber());
+	//public static String videoname1="testvideo1";
+	//public static String videoname2="263075284034026";
+	
+    @DataProvider(name = "Usertype")  
+
+     public Object[][] createData1() {  
+
+     return new Object[][] {  
+
+          { Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_1) },
+          { "guest" }
+
+      };  
+
+}	
+	
+@BeforeClass
+public void setUp() 
+{
+	driver=Fixtures.setupFixture("Player embed test initialization");
+	//VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname3), videoname1, "VideoDescription", true, null, null, null, false);
+	VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname3), videoname2, "VideoDescription", false, null, null, null,null,null,null, false);
+	PlayerControls.CreateWebPageWithEmbedPlayer(videoname2);
+	Log.info("Test video is uploaded");
+}
+	
+	
+	/**
+	 * Tims Id: Trv618116c : Verify embed code is generated correctly	
+	 * 
+	 */
+  
+	 @Test(enabled=true, description="Tims Id : Trv618116c", dataProvider="Usertype",priority=4)
+    // will fail due to bug- 1074
+	public void playerEmbedCodeTest(String usertype) {
+		 Authentication.doLogin(driver);
+		 softassert.assertTrue(PlayerControls.initializeVideoPlayer(driver,usertype,videoname1),  "Failed | Tims id : Trv618116c| Player is not initialized");
+		 softassert.assertTrue(PlayerControls.verifyEmbedCodeGenerartion(driver,videoname1),"Failed | Tims id : Trv618116c| Embedded code is not generated properly ");
+		 Authentication.logOut(driver);
+		 softassert.showResults();
+		 TestStatus.pass("Passed | Tims id : Trv618116c");
+	}
+	 
+	 
+	 /**
+		 * Tims Id: Trv618113c : embedded player doesn't have login page
+		 * Tims Id: Trv618112c : Verify embed code can be used in a web page
+		 * 
+		 */
+	 // will fail due to bug- 1073
+	 @Test(description="Tims Id : Trv618113c,Trv618112c",priority=3)
+	 public void verifyEmbedCodeInWebPage()
+	 {
+		 driver.get("file:///"+System.getProperty("user.dir")+"\\testdata\\Embed\\Large.html");
+		 driver.switchTo().frame("EmbedVideo");
+		 softassert.merge(PlayerControls.verifyPlayerControls(driver,"Trv618113c"));
+		 Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		 softassert.assertTrue(PlayerControls.isVideoPlaying(driver, 3), "Failed | Tims id : Trv618112c | Video is not in play mode");
+		 driver.switchTo().defaultContent();
+		 driver.get("file:///"+System.getProperty("user.dir")+"\\testdata\\Embed\\Medium.html");
+		 driver.switchTo().frame("EmbedVideo");
+		 Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		 softassert.assertTrue(PlayerControls.isVideoPlaying(driver, 3), "Failed | Tims id : Trv618112c | Video is not in play mode");
+		 driver.switchTo().defaultContent();
+		 driver.get("file:///"+System.getProperty("user.dir")+"\\testdata\\Embed\\Small.html");
+		 driver.switchTo().frame("EmbedVideo");
+		 Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		 softassert.assertTrue(PlayerControls.isVideoPlaying(driver, 3), "Failed | Tims id : Trv618112c | Video is not in play mode");  
+		 driver.switchTo().defaultContent();
+		 softassert.showResults();
+		 TestStatus.pass("Passed | Tims id : Trv618113c,Trv618112c");
+	 }
+	 
+	 /**
+		 * Tims Id: Trv618119c : Verify video player controls on an embedded web page
+		 * Tims Id: Trv618115c : Verify video player resolutions for a video on an embedded web page
+		 */
+	 
+	 // will fail due to bug- 1073
+	 @Test(description="Tims Id : Trv618119c,Trv618115c" , priority=2)
+	 public void verifyPlayerControlsOnEmbedPlayer()
+	 {
+		PlayerControls.CreateWebPageWithEmbedPlayer(videoname1);
+		 //Authentication.doLogin(driver);
+		 driver.get("file:///"+System.getProperty("user.dir")+"\\testdata\\Embed\\Large.html");
+		 Browser.getWaits().wait(3);
+		 driver.switchTo().frame("EmbedVideo");
+		 Browser.getElements().element(driver, ".//*[@id='playerParent']/div[4]", LocateBy.xpath).click();
+		 Browser.getWaits().wait(10);
+		 softassert.merge(PlayerControls.verifyPlayerControls(driver,"Trv618119c"));
+		 Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		 softassert.assertTrue(PlayerControls.isVideoPlaying(driver, 3), "Failed | Tims id : Trv618119c | Video is not in play mode");
+		 Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		 softassert.assertFalse(PlayerControls.isVideoPlaying(driver, 3), "Failed | Tims id : Trv618119c | Video is not in pause mode");
+		 PlayerControls.mute(driver, true);
+		 softassert.merge(PlayerControls.muteEnable(driver,"Trv618119c"));
+		 PlayerControls.mute(driver, false);
+		 softassert.assertTrue(Browser.getElements().element(driver, ElementTags.iconVideoMute).getAttribute("src").contains("Mute_off.png"), "Failed | Tims id : Trv618119c | Video is not in ummute mode");
+		 PlayerControls.selectVideoResolution(driver,"480p");
+		 softassert.assertTrue(PlayerControls.verifySelectedResolution(driver,"480p"),"Failed | Tims id : Trv618115c | Expected resolution is not selected");
+		 driver.switchTo().defaultContent();
+		 softassert.showResults();
+		 TestStatus.pass("Passed | Tims id : Trv618119c,Trv618115c"); 
+	 }
+	 
+	 /**
+		 * Tims Id: Trv618114c : Verify access restriction for a video on an embedded web page.
+		 * 
+		 */
+	 
+	 @Test(description="Tims Id : Trv618114c" , priority=1)
+	 public void privateEmbedVideoRestricted()
+	 {
+		 Authentication.logOut(driver);
+		 driver.get("file:///"+System.getProperty("user.dir")+"\\testdata\\Embed\\Large.html");
+		 driver.switchTo().frame("EmbedVideo");
+		 softassert.assertTrue(Browser.getElements().element(driver, ElementTags.txtUserName).isDisplayed(), "Failed | Tims id : Trv618114c | User is not redirected to login ");
+		 driver.switchTo().defaultContent();
+		 softassert.showResults();
+		 TestStatus.pass("Passed | Tims id : Trv618114c"); 
+	 }
+	 
+	 @AfterClass
+		public void tearDown()
+		{
+		    String [] videos= {videoname1,videoname2};
+			Log.info("Clearing test data videos");
+			Authentication.doLogin(driver);
+			Home.goToHomePage(driver);
+			VideoProcessing.deletePublishedVideo(driver,videos);
+			GenericUtils.deleteFile(System.getProperty("user.dir")+"\\testdata\\Embed\\Large.html");
+			GenericUtils.deleteFile(System.getProperty("user.dir")+"\\testdata\\Embed\\Medium.html");
+			GenericUtils.deleteFile(System.getProperty("user.dir")+"\\testdata\\Embed\\Small.html");
+			Fixtures.tearDownFixture(driver);
+			Log.info("Test data is deleted.");
+		}
+}

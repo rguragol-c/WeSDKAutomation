@@ -1,0 +1,140 @@
+package com.pismo.PismoAutomation;
+
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.Restore;
+import com.pismo.lib.appSpecific.SystemAdministration;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class RestorewithoutNFSTest {
+	
+	private WebDriver driver =null;
+	private SoftAssert softassert= new SoftAssert();
+	public static String videoname1=String.valueOf(GenericUtils.getRandomNumber());	
+	public static String videoname2=String.valueOf(GenericUtils.getRandomNumber());	
+	
+	@BeforeClass
+	public void setUp() 
+	{
+		//**********************upload video with anisinha********************************
+		
+		VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), videoname1, "VideoDescription", true, null, null, null,null,null,null, false);
+		VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), videoname2, "VideoDescription2", true, null, null, null,null,null,null, false);
+		
+		Log.info("Test video is uploaded");
+		Authentication.logOut(driver);
+		
+		//***********************Check NFS is not mounted**********************************
+		
+		driver = Fixtures.setupFixture("Restore test initialize");
+		Authentication.doLogin(driver,Browser.getPropertyFromConfigFile(ConfigProperties.SYSADMIN_USERNAME),Browser.getPropertyFromConfigFile(ConfigProperties.SYSADMIN_PASSWORD),false);
+		
+		if(SystemAdministration.CheckNFSMountStatus(driver)==true){
+			
+			SystemAdministration.mountNFS(driver,"0.0.0.0", Browser.getPropertyFromConfigFile(ConfigProperties.NFS_MountPath),4);
+		}
+		
+		Authentication.logOutSysadmin(driver);
+	}
+	
+	/**
+	 * @author naznshai
+	 *  Tims id: Trv590447c: This testcases is to test restore through Local by restoring site setting
+	 */
+	
+	@Test(description="Trv590447c", priority=1)
+	public void LocalRestore() {
+		
+		Authentication.doLogin(driver);
+		
+		//**************************** set approver work flow on.*****************************************
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		
+		Home.goToHomePage(driver);		
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		
+		
+		PortalSettings.setSiteSettings(driver, "yes", "Off", "2 Hours", null, null, "test footer on coho", "Cisco", "http://www.cisco.com/web/IN/index.html");
+			
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		
+		//************************************* take local back-up************************************************
+		SystemAdministration.goToSysadminPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"LDAP");
+		
+		String backupdt=GenericUtils.RuntimeDatetime();
+		String backupfolder="temp"+backupdt;		
+			
+		//*******************Navigate to backup page and start manual backup on Local Storage device**************************** 
+		
+		String bxuptarfilepath= Restore.backupbundleforRestore(driver, "Local Storage", backupfolder);	
+		
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		
+		//***************************** Now login using sysadmin and set approver work flow off.*******************************
+		
+		Home.goToHomePage(driver);		
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		
+		PortalSettings.setSiteSettings(driver, "No", "On", "30 Mins", null, null, "test footer on coho modified", "Google modified", "http://www.google.co.in");
+				
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Home.goToHomePage(driver);	
+		Authentication.logOut(driver);
+		
+	   //************************************* restore using back-up bundle*************************************** 
+			
+		softassert.assertTrue(Restore.portalRestore("local", ConfigProperties.NFS_Host, null, null, null, bxuptarfilepath),"Restore failed.");
+		softassert.merge(softassert);
+		
+	 //************************* check that site setting values are restored.************************************** 
+		
+		Authentication.doLogin(driver);
+		
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");		
+		
+		PortalSettings.gotoSiteSettingsPage(driver);
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.dropdownApprovalWorkflow).getText(),"Yes","Site settings value for approval workflow is not restored");
+		softassert.merge(softassert);
+		
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.dropdownUrlProtection).getText(),"Off","Site settings value for url protection is not restored");
+		softassert.merge(softassert);
+		
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.dropdownSessionTimeOut).getText(),"30 Mins","Site settings value for session timeout is not restored");
+		softassert.merge(softassert);
+		
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.txtFooterCustomizeText),"test footer on coho","Site settings value for footer is not restored");
+		softassert.merge(softassert);
+		
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.txtFooterCustomizeLinkLabel),"Cisco","Site settings value for footer label is not restored");
+		softassert.merge(softassert);
+		
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.txtFooterCustomizeLinkURL),"http://www.cisco.com/web/IN/index.html","Site settings value for footer url is not restored");
+		softassert.merge(softassert);
+		
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		
+		Home.goToHomePage(driver);	
+		Authentication.logOut(driver);		  
+	    
+		softassert.showResults();
+		TestStatus.pass("Passed | Tims Id:Trv590447c ");     
+	}
+
+}

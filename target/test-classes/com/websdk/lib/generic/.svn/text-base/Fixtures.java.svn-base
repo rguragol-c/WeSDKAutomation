@@ -1,0 +1,27 @@
+package com.pismo.lib.generic;
+
+import org.openqa.selenium.WebDriver;
+
+import com.pismo.lib.appSpecific.Authentication;
+
+public class Fixtures 
+{
+	public static WebDriver setupFixture(String message)
+	{
+		WebDriver driver = Browser.getGlobalSetup().getDriver();
+		Log.info(message);
+		Browser.getWaits().wait(driver);
+		Authentication.doLogin(driver);
+		Log.info("Fixture Setup completed");
+		return driver;
+	}
+	
+	public static void tearDownFixture(WebDriver driver)
+	{
+		Log.info("Fixture teardown started.");
+		Authentication.logOut(driver);
+		driver.quit();
+		Log.info("Quit Webdriver.");
+		Log.info("Fixture teardown completed.");
+	}
+}

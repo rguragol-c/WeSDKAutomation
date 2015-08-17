@@ -1,0 +1,164 @@
+package com.pismo.PismoAutomation;
+
+
+
+import org.openqa.selenium.WebDriver;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+
+@Test( groups = "Regression")
+public class PlayerVideoResolutionTest {
+
+	private WebDriver driver =  null;
+	private SoftAssert SAssert= new SoftAssert();
+	public static String videoname=String.valueOf(GenericUtils.getRandomNumber());	
+	
+  @DataProvider
+  public Object[][] users() {
+    return new Object[][] {
+      new Object[] { Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_1)},
+      new Object[] { "guest"}
+    };
+  }
+  
+  // This script may fail if network is low.
+  @BeforeClass
+	public void setUp() 
+	{
+	  String arr[][]={{Browser.getPropertyFromConfigFile(ConfigProperties.Portal_User_2),"Editor"}};
+	  driver=Fixtures.setupFixture("Player video resolution initialization");
+	  VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname3), videoname, "VideoDescription", true, arr, null, null,null,null,null, false);
+	  Log.info("Test video is uploaded");
+	}
+	
+  /**
+   * TIMS ID: Trv618106c
+   * @param user
+   * @throws InterruptedException
+   */
+  
+ 
+  
+  @Test(description="TIMS ID: Trv618106c",priority=1, dataProvider = "users")
+  public void playerMultipleResolution(String usertype) {
+	  SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,usertype,videoname), "Failed | Tims Id : Trv618106c | Player is not initialized");
+	  PlayerControls.selectVideoResolution(driver,"480p");
+	  SAssert.assertTrue(PlayerControls.verifySelectedResolution(driver,"480p"),"Failed | Tims Id : Trv618106c | 480p resolution is not selected");
+	  PlayerControls.selectVideoResolution(driver,"720p");
+	  SAssert.assertTrue(PlayerControls.verifySelectedResolution(driver,"720p"),"Failed | Tims Id : Trv618106c | 720p resolution is not selected");
+	  PlayerControls.selectVideoResolution(driver,"360p");
+	  SAssert.assertTrue(PlayerControls.verifySelectedResolution(driver,"360p"),"Failed | Tims Id : Trv618106c | 360p resolution is not selected");
+	  Authentication.logOut(driver);
+	  SAssert.showResults();
+	  TestStatus.pass("PASSED | TIMS ID : Trv618106c " );
+  }
+
+  /**
+   * TIMS ID:  Trv618103c
+   * @param user
+   * @throws InterruptedException
+   */
+  
+  @Test(description="TIMS ID:  Trv618103c", priority= 2, dataProvider = "users")
+  public void playerResumeMultipleResolution(String usertype) {
+	  SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,usertype,videoname), "Failed | Tims Id : Trv618103c | Player is not initialized");
+	  Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+	  long startIndex = PlayerControls.getPlayPostion(driver);
+	  long nextIndex1,nextIndex2,nextIndex3 ;
+	  PlayerControls.selectVideoResolution(driver,"480p");
+	  PlayerControls.verifySelectedResolution(driver,"480p");
+	  nextIndex1 = PlayerControls.getPlayPostion(driver);
+	  SAssert.assertTrue(nextIndex1 >= startIndex,"Failed | Tims Id : Trv618103c | Player doesnot resume after changing the resolution to 480p");
+	  PlayerControls.selectVideoResolution(driver,"720p");
+	  nextIndex2 = PlayerControls.getPlayPostion(driver);
+	  PlayerControls.verifySelectedResolution(driver,"720p");
+	  SAssert.assertTrue(nextIndex2 >= nextIndex1,"Failed | Tims Id : Trv618103c | Player doesnot resume after changing the resolution to 720p");
+	  PlayerControls.selectVideoResolution(driver,"360p");
+	  nextIndex3 = PlayerControls.getPlayPostion(driver);
+	  PlayerControls.verifySelectedResolution(driver,"360p");
+	  SAssert.assertTrue(nextIndex3 >= nextIndex2,"Failed | Tims Id : Trv618103c | Player doesnot resume after changing the resolution to 360p");
+	  Authentication.logOut(driver);
+	  SAssert.showResults();
+	  TestStatus.pass("PASSED | TIMS ID : 	Trv618103c " );
+  }
+  
+  /**
+   * TIMS ID: TIMS ID: Trv618104c
+   * @param user
+   * @throws InterruptedException
+   */
+  
+  @Test(enabled=false, dataProvider = "users")
+  public void playerMultipleResolutionAtFullScreen(String user)  {
+	  
+	  SAssert.assertTrue(PlayerControls.initializeVideoPlayer(driver,user,videoname));
+	  PlayerControls.toggleFullScreen(driver,"expand");
+	  PlayerControls.selectVideoResolution(driver,"480p");
+	  SAssert.assertTrue(PlayerControls.verifySelectedResolution(driver,"480p"));
+	  PlayerControls.selectVideoResolution(driver,"720p");
+	  SAssert.assertTrue(PlayerControls.verifySelectedResolution(driver,"720p"));
+	  PlayerControls.selectVideoResolution(driver,"360p");
+	  SAssert.assertTrue(PlayerControls.verifySelectedResolution(driver,"360p"));
+	  Authentication.logOut(driver);
+	  SAssert.showResults();
+	  TestStatus.pass("PASSED | TIMS ID :  " );
+	 
+  }
+
+  /**
+   * TIMS ID: TIMS ID: Trv618104c
+   * @param user
+   * @throws InterruptedException
+   */
+  @Test(enabled=false,dataProvider = "users")
+  public void playerResumeMultipleResolutionAtFullScreen(String user)  {
+	  PlayerControls.initializeVideoPlayer(driver,user,videoname);
+	  PlayerControls.toggleFullScreen(driver,"expand");
+	  Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+	  long startIndex = PlayerControls.getPlayPostion(driver);
+	  long nextIndex1,nextIndex2,nextIndex3 ;
+	  PlayerControls.selectVideoResolution(driver,"480p");
+	  PlayerControls.verifySelectedResolution(driver,"480p");
+	  nextIndex1 = PlayerControls.getPlayPostion(driver);
+	  SAssert.assertTrue(nextIndex1 >= startIndex,"Player doesnot resume after changing the resolution to 480p");
+	  PlayerControls.selectVideoResolution(driver,"720p");
+	  nextIndex2 = PlayerControls.getPlayPostion(driver);
+	  PlayerControls.verifySelectedResolution(driver,"720p");
+	  SAssert.assertTrue(nextIndex2 >= nextIndex1,"Player doesnot resume after changing the resolution to 720p");
+	  PlayerControls.selectVideoResolution(driver,"360p");
+	  nextIndex3 = PlayerControls.getPlayPostion(driver);
+	  PlayerControls.verifySelectedResolution(driver,"360p");
+	  SAssert.assertTrue(nextIndex3 >= nextIndex2,"Player doesnot resume after changing the resolution to 360p");
+	  Authentication.logOut(driver);
+	  SAssert.showResults();
+	  TestStatus.pass("PASSED | TIMS ID :  " );
+  }
+  
+  @AfterClass
+	public void tearDown()
+	{
+	    String [] videos= {videoname};
+		Log.info("Clearing test data videos");
+		Authentication.doLogin(driver);
+		VideoProcessing.deletePublishedVideo(driver,videos);
+		Fixtures.tearDownFixture(driver);
+		Log.info("Test data is deleted.");
+
+	}
+  
+  }

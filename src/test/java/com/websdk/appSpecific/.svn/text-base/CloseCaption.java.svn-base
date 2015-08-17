@@ -1,0 +1,24 @@
+package com.pismo.lib.appSpecific;
+
+import org.openqa.selenium.WebDriver;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.SoftAssert;
+
+public class CloseCaption {
+	
+	private static SoftAssert softassert = new SoftAssert();
+	
+	public static SoftAssert verifyCaptionUI(WebDriver driver){
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.dropDownCaptionLanguage));
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.txtTrackName));
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnSelectCaptionFile));
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnCaptionSelectionCancel));
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnCaptionSelectionOk));
+		return softassert; 
+	}
+	
+	
+
+}

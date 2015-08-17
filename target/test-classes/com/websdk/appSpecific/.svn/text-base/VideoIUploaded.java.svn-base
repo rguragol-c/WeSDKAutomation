@@ -1,0 +1,227 @@
+package com.pismo.lib.appSpecific;
+
+
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.ExpectedCondition;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.Log;
+import com.pismo.lib.generic.SoftAssert;
+
+public class VideoIUploaded
+{
+	private static SoftAssert SAssert=new SoftAssert();
+	
+	public static void goToVideosIUploaded(WebDriver driver)
+	{
+		Log.info("Navigate to Videos I uploaded page");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeVideo));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeUploadVideo));
+		Browser.getWaits().wait(3);
+	}
+	
+	public static WebElement getPublishedVideoFromVideosIUploadedPage(WebDriver driver,String VideoName)
+	{
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(VideoName);
+		Browser.getActions().scrollPageIntoView(driver, ElementTags.blockPublishedVideo, 10);
+		WebElement videolist= Browser.getElements().element(driver, ElementTags.blockPublishedVideo);
+		return Browser.getElements().element(videolist, 
+				"//*[@id='thumbnail_link_" + md5 + "']/div[3]/p" , LocateBy.xpath);
+	}
+	
+	public static WebElement getDraftVideoFromVideosIUploadedPage(WebDriver driver,String VideoName)
+	{
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(VideoName);
+		WebElement videolist= Browser.getElements().element(driver, ElementTags.blockDraftVideo);
+		return Browser.getElements().element(videolist, 
+				"//*[@id='thumbnail_link_" + md5 + "']/div[3]/p" , LocateBy.xpath);
+	}
+	
+	public static WebElement getPendingApprovalVideoFromVideosIUploadedPage(WebDriver driver,String VideoName)
+	{
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(VideoName);
+		WebElement videolist= Browser.getElements().element(driver, ElementTags.blockPendingVideo);
+		return Browser.getElements().element(videolist, 
+				"//*[@id='thumbnail_link_" + md5 + "']/div[3]/p" , LocateBy.xpath);
+	}
+	
+	public static WebElement getRejectedVideoFromVideosIUploadedPage(WebDriver driver,String VideoName)
+	{
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(VideoName);
+		WebElement videolist= Browser.getElements().element(driver, ElementTags.blockRejectVideo);
+		return Browser.getElements().element(videolist, 
+				"//*[@id='thumbnail_link_" + md5 + "']/div[3]/p" , LocateBy.xpath);
+	}
+	
+	public static void getVideoEditPage(WebDriver driver,String videoName)
+	{		
+		String md5 = SolrQueryUtils.getVideoMD5FromSolr(videoName);
+		Browser.getActions().click(Browser.getElements().element(driver,"hr-slider-" + md5 , LocateBy.id));
+		WebElement element =(WebElement) Browser.getWaits().wait(driver, "editVideo_"+md5, 
+				LocateBy.id, ExpectedCondition.visibilityOfElementLocated, 2, null);
+		Browser.getActions().click(element);
+		Browser.getWaits().wait(5);
+	}
+	public static void getSeeAllDraftVideoPage(WebDriver driver)
+	{	
+		if(Browser.getElements().element(driver, ElementTags.draftVideoSeeAll).isDisplayed())
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.draftVideoSeeAll));
+		}
+		else
+		{
+			Log.error("See All option is not present for draft video section");
+		}
+	}
+	public static void getSeeAllPublishVideoPage(WebDriver driver)
+	{	
+		if(Browser.getElements().element(driver, ElementTags.publishVideoSeeAll).isDisplayed())
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.publishVideoSeeAll));
+		}
+		else
+		{
+			Log.error("See All option is not present for publish video section");
+		}
+	}
+	public static void getSeeAllRejectVideoPage(WebDriver driver)
+	{	
+		if(Browser.getElements().element(driver, ElementTags.rejectedVideoSeeAll).isDisplayed())
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.rejectedVideoSeeAll));
+		}
+		else
+		{
+			Log.error("See All option is not present for Rejected video section");
+		}
+	}
+	public static void getSeeAllPendingVideoPage(WebDriver driver)
+	{	
+		if(Browser.getElements().element(driver, ElementTags.pendingVideoSeeAll).isDisplayed())
+		{
+			Browser.getActions().click(Browser.getElements().element(driver, ElementTags.pendingVideoSeeAll));
+		}
+		else
+		{
+			Log.error("See All option is not present for Pending video section");
+		}
+	}
+	public static void deleteVideo(WebDriver driver,String videoName)
+	{
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videoName);
+		if (md5!=null)
+		{
+			if (Browser.getElements().isElementPresent(driver, "hr-slider-" + md5  , LocateBy.id))
+			{
+				Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-" + md5  , LocateBy.id));
+				Browser.getActions().click(Browser.getElements().element(driver, "delete_video_" + md5  , LocateBy.id));
+				Browser.getActions().click(Browser.getElements().element(driver, "deleteVideoBtn", LocateBy.id));
+			}else
+			{
+				Log.warn("Video" + videoName + "doesn't exisits, Can not delete video");
+			}
+		}else
+		{
+			Log.warn("Video" + videoName + "doesn't exisits, Can not delete video");
+		}
+	}
+	
+	public static int getTotalDraftVideoCount(WebDriver driver)
+	{
+		String value = Browser.getElements().element(driver, ElementTags.labelDraftVideoCount).getText();
+		return GenericUtils.extractNumber(value);	
+	}
+	public static int getTotalPublishVideoCount(WebDriver driver)
+	{
+		String value = Browser.getElements().element(driver, ElementTags.labelPublishVideoCount).getText();
+		return GenericUtils.extractNumber(value);
+	}
+	public static int getTotalPendingVideoCount(WebDriver driver)
+	{
+		String value = Browser.getElements().element(driver, ElementTags.labelPendingVideoCount).getText();
+		return GenericUtils.extractNumber(value);
+	}
+	public static int getTotalRejectVideoCount(WebDriver driver)
+	{
+		String value = Browser.getElements().element(driver, ElementTags.labelRejectVideoCount).getText();
+		return GenericUtils.extractNumber(value);
+	}
+	
+	public static SoftAssert verifyVideoDetails(WebDriver driver, String videoName, String duration, 
+			String uploadedBefore, String author, String likes, String views, String description,  String TimsID)
+	{
+		String md5 = SolrQueryUtils.getVideoMD5FromSolr(videoName);
+		
+		SAssert.assertTrue(Browser.getElements().element(driver,"thumbnailImage_"+md5,LocateBy.id).isDisplayed()
+				 ,"FAILED | TIMS ID:" + TimsID + " | Video thumbnail is missing on video i uploaded page");
+
+		SAssert.assertTrue(Browser.getElements().element(driver, ".//*[@id='thumbnail_link_"+md5+"']/div[3]/p",LocateBy.xpath).getText().contains(videoName)
+				, "FAILED | TIMS ID:" + TimsID + " | Video name is not correct or missing on video i uploaded page");
+		
+		SAssert.assertEquals(Browser.getElements().element(driver, ".//*[@id='thumbnail_link_"+md5+"']/div[3]/p/span" ,LocateBy.xpath).getText(),
+				duration,"FAILED | TIMS ID:" + TimsID + " | Duration: lable is not correct or missing on video i uploaded page");
+		
+		SAssert.assertEquals(Browser.getElements().element(driver, ".//*[@id='video_"+md5+"']/div[2]/div/div[4]/p[1]/a" ,LocateBy.xpath).getText(),
+				author ,"FAILED | TIMS ID:" + TimsID + " | Video Author name is not correct or missing on video i uploaded page" );
+		
+		SAssert.assertTrue(Browser.getElements().element(driver,".//*[@id='video_"+md5+"']/div[2]/div/div[4]/p[1]/span",LocateBy.xpath).getText().contains(uploadedBefore)
+				 ,"FAILED | TIMS ID:" + TimsID + " | Video last updated is not correct or missing on video i uploaded page");
+		
+		SAssert.assertEquals(Browser.getElements().element(driver, ".//*[@id='video_"+md5+"']/div[2]/div/div[4]/div[2]/div/span[2]" ,LocateBy.xpath).getText(),
+				likes ,"FAILED | TIMS ID:" + TimsID + " | Likes count is not correct or missing on video i uploaded page" );
+		
+		SAssert.assertEquals(Browser.getElements().element(driver, ".//*[@id='video_"+md5+"']/div[2]/div/div[4]/div[2]/div/span[4]" ,LocateBy.xpath).getText(),
+				views ,"FAILED | TIMS ID:" + TimsID + " | View count is not correct or missing on video i uploaded page" );
+		
+		SAssert.assertEquals(Browser.getElements().element(driver,"video_description_container_"+md5, LocateBy.id).getText(), 
+				description ,"FAILED | TIMS ID:" + TimsID + " | Description is not correct or missing for search result");
+		
+		return SAssert;
+	}
+	
+	public static SoftAssert verifyVideoDetailsOnSeeAll(WebDriver driver, String videoName, String duration, 
+			String uploadedBefore, String author, String likes, String views,  String TimsID)
+	{
+		String md5 = SolrQueryUtils.getVideoMD5FromSolr(videoName);
+		
+		SAssert.assertTrue(Browser.getElements().element(driver,"thumbnailImage_"+md5,LocateBy.id).isDisplayed()
+				 ,"FAILED | TIMS ID:" + TimsID + " | Video thumbnail is missing on video i uploaded page");
+
+		SAssert.assertTrue(Browser.getElements().element(driver, ".//*[@id='thumbnail_link_"+md5+"']/div[3]/p",LocateBy.xpath).getText().contains(videoName)
+				, "FAILED | TIMS ID:" + TimsID + " | Video name is not correct or missing on video i uploaded page");
+		
+		SAssert.assertEquals(Browser.getElements().element(driver, ".//*[@id='thumbnail_link_"+md5+"']/div[3]/p/span" ,LocateBy.xpath).getText(),
+				duration,"FAILED | TIMS ID:" + TimsID + " | Duration: lable is not correct or missing on video i uploaded page");
+		
+		SAssert.assertEquals(Browser.getElements().element(driver, ".//*[@id='video_author_link_"+md5+"']" ,LocateBy.xpath).getText(),
+				author ,"FAILED | TIMS ID:" + TimsID + " | Video Author name is not correct or missing on video i uploaded page" );
+		
+		SAssert.assertTrue(Browser.getElements().element(driver,".//*[@id='gridVideo_"+md5+"']/p/span",LocateBy.xpath).getText().contains(uploadedBefore)
+				 ,"FAILED | TIMS ID:" + TimsID + " | Video last updated is not correct or missing on video i uploaded page");
+		
+		SAssert.assertEquals(Browser.getElements().element(driver, ".//*[@id='video_item_"+md5+"']/div/div[4]/div[1]/div[1]/span[2]" ,LocateBy.xpath).getText(),
+				likes ,"FAILED | TIMS ID:" + TimsID + " | Likes count is not correct or missing on video i uploaded page" );
+		
+		SAssert.assertEquals(Browser.getElements().element(driver, ".//*[@id='video_item_"+md5+"']/div/div[4]/div[1]/div[1]/span[4]" ,LocateBy.xpath).getText(),
+				views ,"FAILED | TIMS ID:" + TimsID + " | View count is not correct or missing on video i uploaded page" );
+		
+		return SAssert;
+	}
+	
+	public static void selectVideoFromListMD5(WebDriver driver,String VideoMD5)
+	{
+		Browser.getActions().scrollPageIntoView(driver, "thumbnail_link_" + VideoMD5 , LocateBy.id, 10);
+		Browser.getActions().click(Browser.getElements().element(driver,"thumbnail_link_" + VideoMD5 , LocateBy.id));
+	}
+	
+	public static void selectVideoFomList(WebDriver driver,String videoName)
+	{
+		selectVideoFromListMD5(driver, SolrQueryUtils.getVideoMD5FromSolr(videoName));
+	}
+	
+}

@@ -1,0 +1,196 @@
+package com.pismo.PismoAutomation;
+
+
+import java.util.List;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.SolrQueryUtils;
+import com.pismo.lib.appSpecific.VideoPendingApproval;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class ApprovalWorkflowSettingTests 
+{
+	private WebDriver driver= null;
+	private String BaseWindowHandle= null;
+	private SoftAssert sassert = new SoftAssert();
+	
+	@BeforeClass
+	public void setUp() 
+	{
+		driver = Fixtures.setupFixture("Approval Workflow Settings test class started.");
+		//Ensure site settings approval work-flow are set to no
+		BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.setAllLDAPuserPermissions(driver, true, true, false);
+		PortalSettings.gotoSiteSettingsPage(driver);
+		PortalSettings.setSiteSettings(driver, "No", null, null, null, null, null, null, null);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+
+	}
+	
+	@Test(description="TIMS ID: Trv588126c,Trv588127c,Trv588128c,Trv588129c,Trv588130c,Trv588131c,Trv588132c,Trv588133c,"
+			+ "Trv588134c,Trv588135c,Trv588136c,Trv588137c",priority=1)
+	public void verifyUserPermissions()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.bttnEditUserPermission),
+				"FAILED | TIMS ID: Trv588128c | 'Edit Permission' button is not available.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnEditUserPermission));
+		Browser.getWaits().wait(2);
+		WebElement chkBxVideoApprover = Browser.getElements().element(driver, ElementTags.checkBoxVideoApprover);
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.checkBoxVideoApprover),
+				"FAILED | TIMS ID: Trv588126c,Trv588127c | 'Approve Videos' check box is not available under user permission list.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.checkBoxVideoEditor),
+				"FAILED | TIMS ID: Trv588127c | 'View & Edit Videos' check box is not available under user permission list.");
+		sassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.checkBoxVideoViewerUpload),
+				"FAILED | TIMS ID: Trv588127c | 'Upload Videos' check box is not available under user permission list.");
+		
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.checkBoxVideoEditor));
+		sassert.assertFalse(chkBxVideoApprover.isEnabled(),
+				"FAILED | TIMS ID: Trv588130c | 'Approve Videos' check box is enabled even after unchecking the view & edit checkbox");
+		
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.checkBoxVideoEditor));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.checkBoxVideoViewerUpload));
+		sassert.assertTrue(chkBxVideoApprover.isEnabled(),
+				"FAILED | TIMS ID: Trv588129c,Trv588131c | 'Approve Videos' check box is not enabled even after checking the view & edit checkbox");
+		Browser.getActions().click(chkBxVideoApprover);
+		//Delete last row first
+		List<WebElement> listRows =Browser.getElements().elements(
+				Browser.getElements().element(driver, ElementTags.tablePortalUserPermission), "tr", LocateBy.tagname);
+		List<WebElement> cols = Browser.getElements().elements(listRows.get(listRows.size()-1), "td", LocateBy.tagname);
+		Browser.getActions().click(Browser.getElements().element(cols.get(5), "a", LocateBy.tagname));	
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnSaveUserPermissions));	
+		chkBxVideoApprover = Browser.getElements().element(driver, ElementTags.checkBoxVideoApprover);
+		sassert.assertTrue(chkBxVideoApprover.isSelected(),
+				"FAILED | TIMS ID: Trv588134c | 'Approve Videos' check box is not selected after Save");
+		Browser.getWaits().wait(2);
+		driver.navigate().refresh();
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnEditUserPermission));
+		Browser.getWaits().wait(2);
+		chkBxVideoApprover = Browser.getElements().element(driver, ElementTags.checkBoxVideoApprover);
+		sassert.assertTrue(chkBxVideoApprover.isSelected(),
+				"FAILED | TIMS ID: Trv588136c | 'Approve Videos' check box is not selected after refresh");
+		chkBxVideoApprover.click();
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCancelUserPermissions));
+		Browser.getWaits().wait(2);
+		chkBxVideoApprover = Browser.getElements().element(driver, ElementTags.checkBoxVideoApprover);
+		sassert.assertTrue(chkBxVideoApprover.isSelected(),
+				"FAILED | TIMS ID: Trv588135c | 'Approve Videos' check box is not selected after cancel");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		Authentication.logOut(driver);
+		Authentication.doLogin(driver);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv588126c,Trv588127c,Trv588128c,Trv588129c,Trv588130c,Trv588131c,Trv588132c,Trv588133c,"
+				+ "Trv588134c,Trv588135c,Trv588136c,Trv588137c");
+	}
+	
+	
+	@Test(description="TIMS ID: Trv588122c",priority=2)
+	public void verifyCancelButtonApprovalWorkflow()
+	{
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+		WebElement element = Browser.getElements().element(driver, ElementTags.dropdownApprovalWorkflow);
+		Browser.getElements().selectDropDownValueByVisibleText(element, "Yes");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCancelSiteSettings));
+		element = Browser.getElements().element(driver, ElementTags.dropdownApprovalWorkflow);
+		sassert.assertEquals(element.getAttribute("value"), "No",
+				"FAILED | TIMS ID: Trv588122c | Approval workflow settings are not reset after clicking on cancel button.");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv588122c");
+	}
+	
+	@Test(description= "TIMS ID: Trv588120c",priority=3)
+	public void verifyVideoUploadWithApprovalWorkflowNo()
+	{
+		Home.goToHomePage(driver);
+		VideoProcessing.uploadVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2));
+		VideoProcessing.verifyUpload(driver);
+		VideoProcessing.verifyVideoProcessStatus(driver);
+		VideoProcessing.setBasicVideo(driver, "TestVideo1", "Approve Video");
+		VideoProcessing.setPrivacyAndPermission(driver, true, null);
+		
+		sassert.assertEquals(Browser.getElements().element(driver, ElementTags.bttnSendForApproval).getText(),"Publish",
+				"FAILED | TIMS ID : Trv588120c | Save and publish button is disabled.");
+		sassert.assertTrue(VideoProcessing.publishVideo(driver),"FAILED | TIMS ID : Trv588120c | Video is not successfully published.");
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv588120c");
+	}
+	
+	@Test(description="TIMS ID: Trv588117c,Trv588118c,Trv588121c,Trv588123c",priority=4)
+	public void verifyUIforApprovalWorkflowSetting()
+	{
+		Home.goToHomePage(driver);
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoSiteSettingsPage(driver);
+		WebElement element = Browser.getElements().element(driver, ElementTags.dropdownApprovalWorkflow);
+		sassert.assertTrue(element.isDisplayed(), 
+				"FAILED | TIMS ID: Trv588117c | Dropdown for setting approval workflow 'Yes/No' is not present on site settings page.");
+		sassert.assertEquals(element.getAttribute("value"), "No",
+				"FAILED | TIMS ID: Trv588118c | Default value for approval setting dropdown is not 'No'");
+		sassert.assertEquals(PortalSettings.setSiteSettings(driver, "Yes", null, null, null, null, null, null, null), "Site Settings Saved Successfully.",
+				"FAILED | TIMS ID: Trv588121c | Unable to save approval workflow settings.");
+		driver.navigate().refresh();
+		element = Browser.getElements().element(driver, ElementTags.dropdownApprovalWorkflow);
+		sassert.assertEquals(element.getAttribute("value"), "Yes",
+				"FAILED | TIMS ID: Trv588123c | Approval workflow settings are not same after page refresh.");
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv588117c,Trv588118c,Trv588121c,Trv588123c");
+	}
+	
+	@Test(description= "TIMS ID: Trv588119c",priority=5,
+			dependsOnMethods={"verifyUIforApprovalWorkflowSetting"})
+	public void verifyVideoUploadWithApprovalWorkflowYes()
+	{
+		Home.goToHomePage(driver);
+		VideoProcessing.uploadVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2));
+		VideoProcessing.verifyUpload(driver);
+		VideoProcessing.verifyVideoProcessStatus(driver);
+		VideoProcessing.setBasicVideo(driver, "TestVideo2", "Approve Video");
+		VideoProcessing.setPrivacyAndPermission(driver, true, null);
+		
+		sassert.assertEquals(Browser.getElements().element(driver, ElementTags.bttnSendForApproval).getText(),"Send for Approval",
+				"FAILED | TIMS ID : Trv588119c | Send for approval button is not present.");
+		sassert.assertEquals(VideoProcessing.sendVideoForApproval(driver), "All Changes have been saved and video is sent for Approval."
+				,"FAILED | TIMS ID : Trv588119c | Video is not sent for approval Successfully");
+		sassert.showResults();
+		TestStatus.pass("PASS | TIMS ID: Trv588119c");
+	}
+	
+	@AfterClass(alwaysRun=true)
+	public void tearDown()
+	{
+		Home.goToHomePage(driver);
+		VideoPendingApproval.goToPendingApprovalPage(driver);
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr("TestVideo2");
+		Browser.getActions().click(Browser.getElements().element(driver, "title_"+ md5, LocateBy.id));
+		VideoProcessing.approveRejectVideo(driver,"Approve", "Approved.");
+		Home.goToHomePage(driver);
+		String [] Videos= {"TestVideo1","TestVideo2"};
+		VideoProcessing.deletePublishedVideo(driver, Videos);
+		Fixtures.tearDownFixture(driver);
+	}
+}

@@ -1,0 +1,408 @@
+package com.pismo.PismoAutomation;
+
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import com.pismo.lib.generic.Log;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.Home;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.SolrQueryUtils;
+import com.pismo.lib.appSpecific.VideoIUploaded;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.appSpecific.VideoWatchLater;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class CategoryPageTest {
+
+	private WebDriver driver =  null;
+	private SoftAssert SAssert=new SoftAssert();
+	private TestAssert TAssert=new TestAssert();
+	private static String bigDesc=" This video has no description. Add a description to make your video easier to find.Created by: Anindya Sinha (anisinha) ";
+	private String videos[] = {"CatVideo1"};
+	private String Categories[] = {"category1","category2","category3","category4","category5","category6","category7","category8","category9"};
+	private String noVideoCategories[] = {"noVCat1"};
+	private String[] videonames={"Video1","Video2","Video3","Video4","Video5","Video6","Video7","Video8","Video9","Video10"};
+
+	@BeforeClass
+	public void setup(){
+		driver=Fixtures.setupFixture("Category test class setup initiated.");
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomeLoginMenu));
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkHomePortalMenu));
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+
+		//..navigate to category page and add category
+		PortalSettings.gotoCategoryPage(driver);
+
+		//..clean up
+		String actualCategories[] = PortalSettings.getCategoriesNames(driver);
+		for(int i=0;i<actualCategories.length;i++){
+			for(int j=0;j<Categories.length;j++){
+				if(actualCategories[i].equals(Categories[j])) {
+					PortalSettings.deleteCategories(driver, new String[]{Categories[j]});
+				}
+			}
+		}
+
+		//..add category
+		PortalSettings.addCategories(driver, Categories);
+
+		PortalSettings.addCategories(driver, noVideoCategories);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+
+		//..upload videos
+		Authentication.doLogin(driver);
+		Home.goToHomePage(driver);
+
+		String VideoDescription="";
+		for(int j=0;j<8;j++)
+		{
+			VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+					videonames[j], VideoDescription, true, null, Categories[j], null,null,null,null, false);	
+		}
+
+		VideoProcessing.uploadAndpublishVideo(driver, 
+				Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+				videos[0], bigDesc, true, null, Categories[0], null,null,null,null, false);
+
+
+		/*List<String> videos_md5 = Home.extractVideosHomePage(driver);
+		//..edit the video section and set to respective categories
+		Home.editVideosSetCategory(driver, 5, videos_md5, Categories, false);
+
+		VideoProcessing.uploadAndpublishVideo(driver, 
+				Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+				videos[0], bigDesc, true, null, Categories[0], null, false);
+
+		VideoProcessing.uploadAndpublishVideo(driver, 
+				Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), 
+				videos1[0], "", true, null, Categories[0], null, false);
+
+		//..go to home page*/
+		Home.goToHomePage(driver);
+
+	}
+
+
+	@Test(description="TIMS ID: Trv602975c", enabled=true, priority=1)
+	public void verifyAllCategorymenu(){
+
+		Browser.getElements().element(driver, ElementTags.linkCategory).click();
+		//..requires 5 videos with 5 categories
+		//..get list of categories in the menu
+
+		List<WebElement> l = Browser.getElements().elements(driver, ".//*[@class='dropdown active open']/ul/li/a", LocateBy.xpath);
+		int i=0;
+		List<String> expectedCategories= new ArrayList<String>();
+		expectedCategories.add("All");
+		expectedCategories.addAll(Arrays.asList(Categories));
+		for(WebElement e : l){
+			Log.info("hello: "+expectedCategories.get(i).equals(e.getText() +"text is: "+e.getText()));
+			SAssert.assertTrue(expectedCategories.get(i).equals(e.getText()), "Failed | TIMS ID: |");
+			i++;
+		}
+
+		SAssert.showResults();
+
+		TestStatus.pass("PASSED | TIMS ID: Trv602975c | Categories menu verified successfully");
+	}
+
+	@DataProvider(name = "videoCount")  
+	public Object[][] Videos() throws Exception {  
+		return new Object[][] {{ "guest", "Trv596217c"}, {"logged-in", "Trv596216c"}};
+	}
+
+	@Test(description="TIMS ID: Trv596217c, Trv596216c", dataProvider="videoCount", enabled=true, priority=2)
+	public void verifyVideoCountforUserandGuest(String user,String timsID){
+
+		if(user.equals("guest"))
+			Authentication.logOut(driver);
+		Home.navigatetoCategory(driver, Categories[0]);
+		String s[]=Browser.getElements().element(driver, ElementTags.labelLatestCategory).getText().split(" ");
+		String countOfVideos = s[1].substring(1, s[1].length()-1);
+		SAssert.assertEquals(countOfVideos, ""+Browser.getElements().elements(driver, ElementTags.labelTotalVideo).size(),"FAILED | TIMS ID: "+timsID+", Trv602983c | Count mismatch for user");
+
+		if(user.equals("guest"))
+			Authentication.doLogin(driver, "anisinha", "cisco_123", true);
+		SAssert.showResults();
+
+		TestStatus.pass("PASSED | TIMS ID: "+timsID +", Trv602983c | Video counts verified successfully for User and Guest");
+	}
+
+	@Test(description="TIMS ID: Trv596230c", enabled=true, priority=3)
+	public void verifyNoVideoCatergoryMenu(){
+
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkCategory));
+
+		TAssert.assertFalse(Browser.getElements().isElementPresent(driver, noVideoCategories[0], LocateBy.linktext),"FAILED | TIMS ID: Trv596230c | Required category exists in the sub-menu");
+
+		TestStatus.pass("PASSED | TIMS ID: Trv596230c | Navigated to correct category page");
+	}
+
+	//..already has an issue raised hence failing
+	@Test(description="TIMS ID: Trv596227c, Trv602988c, Trv602956c", enabled=true, priority=4)
+	public void verifyWatchLaterforUser(){
+
+		Home.goToHomePage(driver);
+		Home.navigatetoCategory(driver, Categories[0]);
+
+		SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.labelLatestCategory).getText().contains(Categories[0]), "FAILED | TIMS ID: Trv596227c | Unable to navigate to required Category");
+
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+
+		String msg = VideoWatchLater.clickOnWatchLater(driver, md5);
+		SAssert.assertEquals(msg, "Video added to watch later list","FAILED | TIMES ID: Trv596227c | Video not added to watch later successfully.");
+		Browser.getWaits().wait(3);
+
+		VideoWatchLater.goToWatchLater(driver);
+
+		// verify video is added in watch later list
+		SAssert.assertEquals(Browser.getElements().element(driver, "title_" + md5, LocateBy.id).getText(),
+				videos[0],"FAILED | TIMS ID : Trv596227c | Video Is not added to watch later list on watch later page.");
+
+		//..IDENTIFY CATEGORY BY LINKTEXT, CLICK
+		Browser.getActions().click(Browser.getElements().element(driver, Categories[0], LocateBy.linktext));
+
+		SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.labelLatestCategory).getText().contains(Categories[0]), "FAILED | TIMS ID: Trv602956c | Unable to navigate to required Category");
+
+		//..verify grayed out icon for All Category 
+		Home.navigatetoCategory(driver, "All");
+
+		if(Browser.getElements().element(driver,"watch-later-"+ md5, LocateBy.id).getAttribute("class").contains("vid-inactive-watch")){
+			msg = VideoWatchLater.clickOnWatchLater(driver, md5);
+			SAssert.assertEquals(msg, "Video removed from watch later list","FAILED | TIMS ID: Trv602988c | Video not removed from watch later successfully.");
+			Browser.getWaits().wait(3);
+		}
+		msg = VideoWatchLater.clickOnWatchLater(driver, md5);
+		SAssert.assertEquals(msg, "Video added to watch later list","FAILED | TIMES ID: Trv602988c | Video not added to watch later successfully.");
+		Browser.getWaits().wait(3);
+		SAssert.assertTrue(Browser.getElements().element(driver,"watch-later-"+ md5, LocateBy.id).getAttribute("class").contains("vid-inactive-watch"),
+				"FAILED | TIMS ID: Trv602988c | Watchlater icon is enabled.");
+
+		SAssert.showResults();
+
+		TestStatus.pass("PASSED | TIMS ID : Trv596227c, Trv602988c, Trv602956c | Videos added in watch later section are visible and navigates to the respective category page");
+
+	}
+
+	@DataProvider(name = "CategoryNames")  
+	public Object[][] guestCategory() throws Exception {  
+		return new Object[][] {{ "All", "Trv602989c"}, {Categories[0], "Trv596226c"}};
+	}
+
+	@Test(description="TIMS ID: Trv596226c, Trv602989c", enabled=true, dataProvider="CategoryNames", priority=5)
+	public void verifyWatchLaterforGuest(String expectedCategory, String timsID){
+
+		String md5 = SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+
+		Authentication.logOut(driver);
+
+		Home.navigatetoCategory(driver,expectedCategory);
+
+		// ..add to watch later
+		Browser.getActions().click(Browser.getElements().element(driver,ElementTags.bttnActionMenuSlider));
+		Browser.getActions().click(Browser.getElements().element(driver, "watch-later-" + md5,LocateBy.id));
+
+		SAssert.assertTrue(Browser.getElements().isElementPresent(driver,ElementTags.linkSignIn),
+				"FAILED | TIMS ID :" +timsID+" |Failed to navigate to watchlater page.");
+
+		Authentication.doLogin(driver, "anisinha", "cisco_123", true);
+
+		SAssert.showResults();
+
+		TestStatus.pass("PASSED | TIMS ID : " +timsID+"| Watch later page for guest user executed successfully");
+
+	}
+
+	@DataProvider(name = "VideoDetailsCategory")  
+	public Object[][] videoDetailsCategory() throws Exception {  
+		return new Object[][] {{ "All", "Trv602987c", "Trv602981c"}, {Categories[0], "Trv596221c", "Trv596219c"}};
+	}
+	@Test(description="TIMS ID: Trv596219c, Trv596220c, Trv596225c, Trv596221c, Trv596223c", enabled=true, dataProvider="VideoDetailsCategory", priority=6)
+	public void verifyVideowithAllDetails(String expectedCategory, String descTimsID, String timsID){
+		//..verify video with no desc 
+		//..verify other details (thumbnail, title, author, duration, relative time, action menu slider)
+		//..delete successfully
+
+		Home.navigatetoCategory(driver, expectedCategory);
+
+		String md5_big =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+
+		SAssert.assertTrue(Browser.getElements().element(driver, "video_description_container_"+ md5_big, LocateBy.id).getText().contains("..."),"FAILED | TIMS ID: "+descTimsID+" | ... not displayed as message may not be long enough");
+
+		//..thumbnail 
+		WebElement thumbnailVideo = Browser.getElements().element(driver, "thumbnailImage_"+md5_big,LocateBy.id);
+		SAssert.assertTrue(thumbnailVideo.isDisplayed(),"FAILED | TIMS ID:" +timsID+" | Thumbnail not available");
+
+		//.blank desc
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videonames[0]);
+		SAssert.assertTrue(Browser.getElements().element(driver, "video_description_container_"+ md5, LocateBy.id).getText().equals(""), "FAILED | TIMS ID: " +timsID+" | Description is not blank");
+
+		// videoTitle and Duration 
+		String[] videoDuration=Browser.getElements().element(driver, ElementTags.labelSeeLatestVideoTitle).getText().split("\n");
+		SAssert.assertEquals(videoDuration[0],videos[0],"FAILED | TIMS ID : " +timsID+" |Video title is empty");
+		SAssert.assertEquals(videoDuration[1],"04 sec","FAILED | TIMS ID : " +timsID+" |Video duration is empty");
+
+		//..author
+		WebElement author;
+		if(!expectedCategory.equals("All")){
+			author = Browser.getElements().element(driver, "video_author_link_"+ md5_big, LocateBy.id);
+			SAssert.assertNotNull(author.getText(), "FAILED | TIMS ID: " +timsID+" | Author is null");
+		}//else	{author = Browser.getElements().element(driver, ElementTags.labelCategoryAuthor);
+		//SAssert.assertNotNull(author.getText(), "FAILED | TIMS ID: " +timsID+" | Author is null");
+		//}
+
+		//..relative time
+		WebElement relativeTime = Browser.getElements().element(driver, ElementTags.labelVisitTime);
+		boolean relativeFlag = relativeTime.getText().contains("mins ago")||relativeTime.getText().contains("minute ago")||relativeTime.getText().contains("min ago");
+		SAssert.assertTrue(relativeFlag,"FAILED | TIMS ID: " +timsID+" , Trv596220c | Relative time contains "+relativeTime.getText());
+
+		//..action menu slider
+		WebElement actionMenu = Browser.getElements().element(driver, ElementTags.bttnActionMenuSlider);
+		boolean actionMenuFlag = actionMenu.isDisplayed() && actionMenu.isEnabled();
+		SAssert.assertTrue(actionMenuFlag, "FAILED | TIMS ID: " +timsID+" | Action menu not displayed and enabled");
+
+		//..View count
+		if(!expectedCategory.equals("All"))
+			SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.labelLatestUserViewCount).getText().equals("0"), "FAILED | TIMS ID: Trv596223c | View count is not 0");
+		//else
+		//SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.labelCategoryViewCount).getText().equals("0"), "FAILED | TIMS ID: Trv596223c | View count is not 0");
+
+		//..like count 
+		if(!expectedCategory.equals("All"))
+			SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.labelLatestUserLikeCount).getText().equals("0"), "FAILED | TIMS ID: Trv596222c | Like count is not 0");
+
+		SAssert.showResults();
+
+		TestStatus.pass("PASSED | TIMS Id:Trv596219c, Trv596225c, Trv596220c | Video verified with all details and deleted successfully");
+	}
+
+	@Test(description="TIMS ID: Trv602980c", priority=7, enabled=true)
+	public void verifySeeAllRedirection(){
+		Home.goToHomePage(driver);
+		//..extract video id's from home page to set category
+		List<String> md5_videos = Home.extractVideosHomePage(driver);
+
+		//..edit the video section and set all to category1
+		Home.editVideosSetCategory(driver, 9, md5_videos, Categories, true);
+
+		Home.navigatetoCategory(driver, "All");
+
+		SAssert.assertTrue(Browser.getElements().isElementPresent(driver, "leftarrowID", LocateBy.id));
+
+		SAssert.assertTrue(Browser.getElements().isElementPresent(driver, "rightarrowID", LocateBy.id));
+
+
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.linkSeeAll));
+		String s = driver.getCurrentUrl();
+
+		TAssert.assertEquals(s.substring(s.lastIndexOf("/")+1), Categories[0],"FAILED | TIMS ID: Trv602980c | Not navigated to "+Categories[0]+" page"); 
+		TestStatus.pass("PASSED | TIMS ID: Trv602980c | See all redirected to required category");
+	}
+
+	@Test(description="TIMS ID: Trv602985c", enabled = true, priority=8)
+	public void verifyPrivateVideo(){
+		Home.goToHomePage(driver);
+		String user[][]={{"Ethan Tao", "Viewer"}};
+
+		// edit video and set a category 
+		VideoIUploaded.goToVideosIUploaded(driver);
+		VideoIUploaded.getVideoEditPage(driver, videos[0]);
+
+		//and set permission for single user
+		VideoProcessing.setPrivacyAndPermission(driver, false, user);
+
+		//..set category which is not set to any video
+		VideoProcessing.setCategory(driver, Categories[5]);
+		Browser.getElements().element(driver, "editVideoDetailButton", LocateBy.id).click();
+		Browser.getWaits().wait(2);
+		Home.goToHomePage(driver);
+		Browser.getElements().element(driver, ElementTags.linkCategory).click();
+
+		List<WebElement> l = Browser.getElements().elements(driver, ".//*[@class='dropdown active open']/ul/li/a", LocateBy.xpath);
+		//driver.findElements(By.xpath(".//*[@class='dropdown active open']/ul/li/a"));
+
+		boolean userFlag = Home.verifyAllElements(driver,l, Categories[5]);	
+		SAssert.assertTrue(userFlag,"FAILED");
+		Authentication.logOut(driver);
+		System.out.println("category for guest");
+		Browser.getElements().element(driver, ElementTags.linkCategory).click();
+
+		l = driver.findElements(By.xpath(".//*[@class='dropdown active open']/ul/li/a"));
+		boolean guestFlag = Home.verifyAllElements(driver,l, Categories[5]);
+
+		//boolean guestFlag = Home.verifyAllElements(driver,l, Categories[5]);
+		SAssert.assertFalse(guestFlag,"FAILED | TIMSD ID: Trv602985c | Required category link exists on the Category menu");
+
+
+		if(guestFlag){
+			Browser.getActions().click(Browser.getElements().element(driver, Categories[5], LocateBy.linktext));
+			String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+			SAssert.assertFalse(Browser.getElements().isElementPresent(driver, "thumbnailImage_"+md5,LocateBy.id),"FAILED | TIMS ID:Trv602985c | Thumbnail available of private video");
+		}
+		Authentication.doLogin(driver, "anisinha", "cisco_123", true);
+		SAssert.showResults();
+		TestStatus.pass("PASSED");
+
+	}
+
+	@Test(description="TIMS ID: Trv602978c, Trv602984c ", enabled=true, priority=9)
+	public void verifyNoCatergoryMenu(){
+
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+
+		//..method to delete single video (may be required to move in another test case)
+		VideoProcessing.deletePublishedVideo(driver, videos);
+		SAssert.assertTrue(Browser.getElements().element(driver, ElementTags.FlashMsg).isDisplayed(),"FAILED | TIMS ID: Trv596225c | Unable to delete successfully  ");
+		SAssert.assertFalse(Browser.getElements().isElementPresent(driver, "video_description_container_"+ md5, LocateBy.id), "FAILED | TIMS ID: Trv596225c | Video not deleted successfully  ");
+
+		String BaseWindowHandle = Browser.getSwitchto().getBasewindowHandle(driver);
+
+		//..delete category
+		PortalSettings.gotoPortalManagementPage(driver);
+		Browser.getSwitchto().switchToPopupWindow(driver,"User Permissions");
+		PortalSettings.gotoCategoryPage(driver);
+
+		PortalSettings.deleteCategories(driver,Categories);
+		Browser.getSwitchto().closePopupWindow(driver, BaseWindowHandle);
+
+		Home.goToHomePage(driver);			
+		SAssert.assertFalse(Browser.getElements().isElementPresent(driver, ElementTags.linkCategory),"FAILED | TIMS ID: Trv602978c| Category menu exists for user");
+
+		Authentication.logOut(driver);
+		SAssert.assertFalse(Browser.getElements().isElementPresent(driver, ElementTags.linkCategory),"FAILED | TIMS ID:Trv602984c | Category menu exists for guest");
+
+		Authentication.doLogin(driver, "anisinha", "cisco_123", true);
+		SAssert.showResults();
+		TestStatus.pass("PASSED | TIMS ID: Trv602978c, Trv602984c| Category menu does not exists for user and guest");
+	}
+
+
+	@AfterClass
+	public void teardown(){
+
+		//..delete video
+		VideoProcessing.deletePublishedVideo(driver, videonames);
+		Fixtures.tearDownFixture(driver);
+	}
+}

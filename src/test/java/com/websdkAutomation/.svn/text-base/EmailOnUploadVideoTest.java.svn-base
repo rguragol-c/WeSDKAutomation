@@ -1,0 +1,43 @@
+package com.pismo.PismoAutomation;
+
+import org.testng.Assert;
+import org.testng.annotations.*;
+
+import java.io.IOException;
+import java.util.Date;
+
+import javax.mail.MessagingException;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+
+import com.pismo.lib.appSpecific.EmailProcessing;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.generic.Log;
+
+@Test( groups = {"Regression"} )
+public class EmailOnUploadVideoTest {
+	private WebDriver driver =null;
+	static String loginAs = null;
+		
+	@Test(groups={"Sanity"}, enabled=false)
+	public void testEmailOnAnalyticsOff() throws IOException, MessagingException, InterruptedException {
+		Log.info("****** STARTING TEST : "+new Exception().getStackTrace()[0].getMethodName()+" ******");
+		//Check SMTP server settings
+		//String emailFrom = PortalSettings.SMTPServerSettings(driver);
+		Authentication.logOut(driver);
+		//Assert.assertTrue(PortalSettings.portalSetUpToggleAnalytics(driver,"Off"));
+		driver.findElement(By.id("loginMenu")).click();
+		//driver.findElement(By.xpath("id('logoutMenu')")).click();
+		driver.findElement(By.xpath("//div[@id='submenu']/ul/li[3]")).click();
+		Authentication.doLogin(driver);
+		//VideoProcessing.uploadAndpublishVideo(driver, VideoName, VideoTitle, VideoDescription, canEveryOneView, userPermission, Category, Tags, ApprovalWorkFlowStatus)
+		//UploadFile.uploadfile(driver,Browser.getPropertyFromConfigFile("testvideofilelocation1"));
+		Thread.sleep(15000);
+		Date date = new Date();
+		//Assert.assertTrue(EmailProcessing.VerifyEmail(emailFrom+"@mxabu1.com","Processing of video \"Shortvideo.mp4\" has completed",date,"dummy content"));
+		Log.info("****** TEST EXECUTION COMPLETED ******");
+		}
+		
+}

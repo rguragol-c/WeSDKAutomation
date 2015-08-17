@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+
+<suite name="PismoAutomation" parallel="none">
+	<test name="Login Validation Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.LoginValidationTest"/>
+		</classes>
+	</test> 
+	<test name="User Preference Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.UserPreferenceTests"/>
+		</classes>
+	</test> 
+	<test name="Video I uploaded Page Tests">
+	<classes>
+			<class name="com.pismo.PismoAutomation.VideoIUploadedTest"/>
+		</classes>
+	</test>
+	<test name="Portal Settings  URL Protection Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.PortalURLProtectionTests"/>
+		</classes>
+	</test> 
+	<test name="Portal Management User Permissions Settings Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.PortalUserPermissionsTests"/>
+		</classes>
+	</test> 
+	<test name="Approval work flow Settings Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.ApprovalWorkflowSettingTests"/>
+		</classes>
+	</test> 
+	<test name="Approval work flow Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.ApproverWorkflowTest"/>
+		</classes>
+	</test> 
+	<test name="Home Page Feature Video And Latest Video Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.HomePageTest"/>
+		</classes>
+	</test>
+	<test name="Search Page Tests">
+	<classes>
+			<class name="com.pismo.PismoAutomation.SearchVideosTest"/>
+		</classes>
+	</test>  
+	<test name="Player Volume controls Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.PlayerVolumeControlTest"/>
+		</classes>
+	</test> 
+	<test name="Player Video Resolution Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.PlayerVideoResolutionTest"/>
+		</classes>
+	</test> 
+	<test name="Player Controls Play Pause Seek Test">
+		<classes>
+			<class name="com.pismo.PismoAutomation.PlayerControlsPlayPauseSeekTest"/>
+		</classes>
+	</test>
+	<test name="Player Share feature Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.PlayerShareTest"/>
+		</classes>
+	</test>
+	<test name="Player Embed Tests">
+	<classes>
+			<class name="com.pismo.PismoAutomation.PlayerEmbedTest"/>
+		</classes>
+	</test> 
+	<test name="ECDS Medial delivery Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.ECDSMediaDeliveryTest"/>
+		</classes>
+	</test> 
+	<test name="Backup with FTP And SFTP Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.BackUpFtpAndSftpTest"/>
+		</classes>
+	</test>
+	<test name="Backup without NFS mount Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.BackUpWithoutNFSMountTest"/>
+		</classes>
+	</test>
+	<test name="Backup  with NFS mount Tests">
+		<classes>
+			<class name="com.pismo.PismoAutomation.BackUpWithNFSMountTest"/>
+		</classes>
+	</test>
+</suite> 

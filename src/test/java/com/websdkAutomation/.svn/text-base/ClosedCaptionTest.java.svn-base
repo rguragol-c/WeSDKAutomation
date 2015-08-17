@@ -1,0 +1,293 @@
+package com.pismo.PismoAutomation;
+
+import java.util.List;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
+
+import com.pismo.lib.appSpecific.Authentication;
+import com.pismo.lib.appSpecific.CloseCaption;
+import com.pismo.lib.appSpecific.Home;
+//import com.pismo.lib.appSpecific.ClosedCaption;
+import com.pismo.lib.appSpecific.PlayerControls;
+import com.pismo.lib.appSpecific.PortalSettings;
+import com.pismo.lib.appSpecific.SolrQueryUtils;
+import com.pismo.lib.appSpecific.VideoIUploaded;
+import com.pismo.lib.appSpecific.VideoPendingApproval;
+import com.pismo.lib.appSpecific.VideoProcessing;
+import com.pismo.lib.appSpecific.VideoSharedWithMe;
+import com.pismo.lib.generic.Browser;
+import com.pismo.lib.generic.ConfigProperties;
+import com.pismo.lib.generic.ElementTags;
+import com.pismo.lib.generic.ExpectedCondition;
+import com.pismo.lib.generic.Fixtures;
+import com.pismo.lib.generic.GenericUtils;
+import com.pismo.lib.generic.LocateBy;
+import com.pismo.lib.generic.SoftAssert;
+import com.pismo.lib.generic.TestStatus;
+
+public class ClosedCaptionTest {
+
+	private WebDriver driver =  null;
+	private SoftAssert softassert= new SoftAssert();
+	private static String videoname1="NoCaption";
+	private static String videoname2="SingleCaption";
+	private static String videoname3="MultipleCaption";
+	private static String videos[]={"LatestVideo1","video1"};
+	private static String errorMsg = "Please select caption file in .srt/.vtt/.sbv/.sub format.";
+
+	@DataProvider(name = "Usertype")  
+	public Object[][] createData1() {  
+
+		return new Object[][] {  
+
+				{ Browser.getPropertyFromConfigFile(ConfigProperties.Portal_Username_1) },  
+
+				{ "Guest" } 
+
+		};  
+
+	}
+
+	@BeforeClass
+	public void setUp() {
+		driver=Fixtures.setupFixture("Video I uploaded setup initialization");
+		// add a code for uploaded the above 3 video files.
+		// VideoProcessing.uploadAndpublishVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2), publishVideos[i], "VideoDescription", false, null, null, null, false);
+
+	}
+
+	/**
+	 * 
+	 * TIMS ID : Trv588216c : Do not show caption icon on the player if no caption file is present for a video for signed in LDAP user
+	 * TIMS ID : Trv588215c :  Do not show caption icon on the player if no caption file is present for a video guest user
+	 */
+
+
+	@Test(description="TIMS ID: Trv588216c,Trv588215c",dataProvider="Usertype", enabled=true)
+	public void VerifyCaptionIconForVideoWithoutCaption(String userType) {
+		PlayerControls.initializeVideoPlayer(driver, userType, videoname2);
+		softassert.assertFalse(Browser.getElements().element(driver, ElementTags.iconVideoCaption).isDisplayed(), "FAILED | TIMS ID : Trv588216c,Trv588215c | Caption icon is displayed for video without caption when user is "+userType);
+		Authentication.logOut(driver);
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588216c,Trv588215c | VerifyCaptionIconForVideoWithoutCaption - "+ userType);
+	}
+
+	/**
+	 * 
+	 * TIMS ID : Trv588218c : Caption icon displays for the video if caption file present for the signed in LDAP user
+	 * TIMS ID : Trv588219c : Clicking on Caption icon starts the captions and by default language selected is English (United States)	
+	 * TIMS ID : Trv588222c : User can turn OFF captions
+	 */
+
+
+	@Test(description="TIMS ID: Trv588218c,Trv588219c,Trv588222c",dataProvider="Usertype", enabled=true)
+	public void defaultLanguageInCaption(String userType) {
+		PlayerControls.initializeVideoPlayer(driver, userType, videoname3);
+		//play the video
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoPlay));
+		softassert.assertFalse(Browser.getElements().element(driver, ElementTags.labelVideoCaption).isDisplayed(), "FAILED | TIMS ID : Trv588219c | Captions should not displayed on video load");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.iconVideoCaption));
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.labelVideoCaption).getText(), "This is testing","FAILED | TIMS ID : Trv588219c | Captions are not displayed ");
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.dropdownCaptionFile).getText(), "English (United States)","FAILED | TIMS ID : Trv588219c | Default selected language in caption is not english.");
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCaptionOff));
+		softassert.assertFalse(Browser.getElements().element(driver, ElementTags.labelVideoCaption).isDisplayed(), "FAILED | TIMS ID : Trv588222c | Captions are displayed after clicking on Off");
+		Authentication.logOut(driver);
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID : Trv588218c,Trv588219c,Trv588222c |  - "+userType);
+	}
+
+	@Test(description="Trv584235c, Trv604415c", enabled=true)
+	public void verifyUploadVideoCaptionUI(){
+
+		VideoProcessing.uploadVideo(driver, Browser.getPropertyFromConfigFile(ConfigProperties.testdatavideoname2));
+		VideoProcessing.verifyUpload(driver);
+		VideoProcessing.verifyVideoProcessStatus(driver);
+		VideoProcessing.setBasicVideo(driver, videos[1], "desc");
+
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnAddCaption));
+		softassert.merge(CloseCaption.verifyCaptionUI(driver));
+
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCaptionSelectionCancel));
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.msgNoCaptions));
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID:Trv584235c, Trv604415c | Caption ui verified successfully while creating video ");
+	}
+
+	@Test(description="Trv584235c", enabled=true)
+	public void verifyEditVideoCaptionUI(){
+		Home.goToHomePage(driver);
+
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+
+		VideoIUploaded.goToVideosIUploaded(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-"+md5, LocateBy.id));
+		Browser.getActions().click(Browser.getElements().element(driver, "editVideo_"+md5, LocateBy.id));
+		//upload caption
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnAddCaption));
+		softassert.merge(CloseCaption.verifyCaptionUI(driver));
+
+		Browser.getActions().click(Browser.getElements().element(driver, ElementTags.bttnCaptionSelectionCancel));
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID: Trv584235c | Caption ui verified successfully on edit video page");
+	}
+
+	@Test(description="Trv588480c, Trv584257c, Trv588476c", enabled=true)
+	public void verifyDownloadCaption(){
+		Home.goToHomePage(driver);
+		String CaptionFileName="EnglishCaptionSRT.srt";
+		String Language = "English (United States)";
+		String TrackName = "track1";
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-"+md5, LocateBy.id));
+		Browser.getActions().click(Browser.getElements().element(driver, "editVideo_"+md5, LocateBy.id));
+		VideoProcessing.uploadCaption(driver, CaptionFileName, TrackName, Language);
+		Browser.getWaits().wait(driver, ElementTags.bttnSaveEdit,ExpectedCondition.elementToBeClickable, 5, null);
+		Browser.getElements().element(driver, ElementTags.bttnSaveEdit).click();
+		softassert.assertTrue(VideoProcessing.verifyCaptionFile(driver, Language, TrackName, CaptionFileName),"FAILED | TIMS ID:Trv584257c | " +
+				" Caption file format displayed is incorrect");
+		softassert.assertTrue(VideoProcessing.downloadCaption(driver, "EnglishCaptionSRT.srt"),
+				"FAILED | TIMS ID: Trv588480c | Download failed");
+		softassert.assertTrue(VideoProcessing.deleteCaption(driver, CaptionFileName, false), 
+				"FAILED | TIMS ID: Trv588476c | Unable to delete");
+		Browser.getWaits().wait(driver, ElementTags.bttnSaveEdit,ExpectedCondition.elementToBeClickable, 5, null);
+		Browser.getElements().element(driver, ElementTags.bttnSaveEdit).click();
+
+		softassert.showResults();
+
+		TestStatus.pass("PASSED | TIMS ID: Trv588480c, Trv584257c, Trv588476c | Download and delete executed successfully");
+	}
+
+	@Test(description="Trv588475c", enabled=true)
+	public void verifyDeleteUnsavedCaptionFile(){
+		Home.goToHomePage(driver);
+		String CaptionFileName="EnglishCaptionSRT.srt";
+		String Language = "English (United States)";
+		String TrackName = "track1";
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-"+md5, LocateBy.id));
+		Browser.getActions().click(Browser.getElements().element(driver, "editVideo_"+md5, LocateBy.id));
+		VideoProcessing.uploadCaption(driver, CaptionFileName, TrackName, Language);
+		Browser.getWaits().wait(2);
+
+		softassert.assertTrue(VideoProcessing.deleteCaption(driver, CaptionFileName, false), 
+				"FAILED | TIMS ID: Trv588475c | Unable to delete");
+		Browser.getWaits().wait(driver, ElementTags.bttnSaveEdit,ExpectedCondition.elementToBeClickable, 5, null);
+		Browser.getElements().element(driver, ElementTags.bttnSaveEdit).click();
+
+		softassert.showResults();
+
+		TestStatus.pass("PASSED | TIMS ID: Trv588475c | Deleted unsaved caption file successfully");
+	}
+
+	@Test(description="Trv584252c, Trv584241c", enabled=true)
+	public void verifyMultipleSaveCaption(){
+		String[][] CaptionFileName={{"EnglishCaptionSRT.srt","track1","English (United States)"},{"Italian.sbv",null,"English (United States)"}};
+		Home.goToHomePage(driver);
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-"+md5, LocateBy.id));
+		Browser.getActions().click(Browser.getElements().element(driver, "editVideo_"+md5, LocateBy.id));
+
+		VideoProcessing.uploadCaptions(driver,CaptionFileName);
+
+		Browser.getWaits().wait(driver, ElementTags.bttnSaveEdit,ExpectedCondition.elementToBeClickable, 5, null);
+		Browser.getElements().element(driver, ElementTags.bttnSaveEdit).click();
+
+		VideoProcessing.verifyCaptions(driver,CaptionFileName);
+
+		//softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID: Trv584252c, Trv584241c | Multiple caption files saved successfully");
+
+	}
+
+	@Test(description="Trv584242c", enabled=true)
+	public void verifyInvalidCaptionFile(){
+		Home.goToHomePage(driver);
+		String CaptionFileName="captions - dutch.txt";
+		String Language = "English (United States)";
+		String TrackName = "track1";
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-"+md5, LocateBy.id));
+		Browser.getActions().click(Browser.getElements().element(driver, "editVideo_"+md5, LocateBy.id));
+
+		VideoProcessing.uploadCaption(driver, CaptionFileName, TrackName, Language);
+
+		Browser.getWaits().wait(driver, ElementTags.modalErrorPOPUP,ExpectedCondition.visibilityOfElementLocated, 5, null);
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.modalErrorLabel).getText(),"Upload failed","FAILED | TIMS ID: Trv584242c | Error dialog does not exist");
+		softassert.assertEquals(Browser.getElements().element(driver, ElementTags.msgInvalidCaption).getText(), errorMsg, "FAILED | TIMS ID: Trv584242c | Expected error message not displayed");
+
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID: Trv584242c | Invalid caption file message displayed, hence test executed successfully");
+	}
+
+
+	//..PENDING
+	@Test(description="Trv584244c", enabled=false)
+	public void verifySameCaptionFile(){
+
+		String CaptionFileName="captions - dutch.txt";
+		String Language = "English (United States)";
+		String TrackName = "track1";
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-"+md5, LocateBy.id));
+		Browser.getActions().click(Browser.getElements().element(driver, "editVideo_"+md5, LocateBy.id));
+
+		VideoProcessing.uploadCaption(driver, CaptionFileName, TrackName, Language);
+
+		//..no confirmation popup to overwrite file
+		//..PENDING
+
+	}
+
+	@Test(description="TIMS ID: Trv588476c ", enabled=true)
+	public void verifyRemoveCaption(){
+		String CaptionFileName="EnglishCaptionSRT.srt";
+
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+		VideoIUploaded.goToVideosIUploaded(driver);
+
+		Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-"+md5, LocateBy.id));
+		Browser.getActions().click(Browser.getElements().element(driver, "editVideo_"+md5, LocateBy.id));
+
+		softassert.assertTrue(VideoProcessing.deleteCaption(driver, CaptionFileName, false), "FAILED | TIMS ID: Trv588476c | Unable to delete");
+
+		TestStatus.pass("PASSED | TIMS ID: Trv588476c| Caption file removed successfully");
+	}
+
+	@Test(description="Trv588481c", enabled=true)
+	public void verifyMultipleDeleteCaption(){
+		Home.goToHomePage(driver);
+		String md5 =SolrQueryUtils.getVideoMD5FromSolr(videos[0]);
+		VideoIUploaded.goToVideosIUploaded(driver);
+		Browser.getActions().click(Browser.getElements().element(driver, "hr-slider-"+md5, LocateBy.id));
+		Browser.getActions().click(Browser.getElements().element(driver, "editVideo_"+md5, LocateBy.id));
+
+		softassert.assertTrue(VideoProcessing.deleteCaption(driver, null, true), "FAILED | TIMS ID: Trv588481c | Unable to delete");
+
+		Browser.getWaits().wait(driver, ElementTags.bttnSaveEdit,ExpectedCondition.elementToBeClickable, 5, null);
+		Browser.getElements().element(driver, ElementTags.bttnSaveEdit).click();
+
+		softassert.assertTrue(Browser.getElements().isElementPresent(driver, ElementTags.msgNoCaptions));
+
+		softassert.showResults();
+		TestStatus.pass("PASSED | TIMS ID: Trv588481c | All caption files deleted successfully");
+
+	}
+
+
+	@AfterMethod(alwaysRun=true)
+	public void tearDown() {
+
+	}
+
+
+}

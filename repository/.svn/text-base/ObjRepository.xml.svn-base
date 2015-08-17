@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">-->
+<Pages>
+	<LoginPage>
+		<txtUserName by="id">username</txtUserName>
+		<txtPassword by="id">password</txtPassword>
+		<bttnLogin by="xpath">//*[@id='login-form']/fieldset/div[3]/input</bttnLogin>
+		<linkSignOut by="linktext">Sign Out</linkSignOut>
+		<labelLoginMessage by="xpath">//html/body/div/div/div/strong</labelLoginMessage>
+		<labelLoginUsernameMsg by="xpath">//*[@id='login-form']/fieldset/div[1]/span</labelLoginUsernameMsg>
+		<labelLoginPasswordMsg by="xpath">//*[@id='login-form']/fieldset/div[2]/span</labelLoginPasswordMsg>
+	</LoginPage>
+
+	<HomePage>
+		<!-- Header menu -->
+		<linkHomePage by="id">drop1</linkHomePage>
+		<linkHomePage_old by="id">homeMenu</linkHomePage_old>
+		<linkHomeVideo by="linktext">VIDEOS</linkHomeVideo>
+		<linkHomeAllVideo by="linkText">All</linkHomeAllVideo>
+		<linkHomeUploadVideo by="linktext">I uploaded</linkHomeUploadVideo>
+		<linkHomeViewVideo by="linktext">I can view</linkHomeViewVideo>
+		<linkHomeEditVideo by="linktext">I can edit</linkHomeEditVideo>
+		<linkHomeShareVideo by="linktext">Shared with me</linkHomeShareVideo>
+		<linkHomePendingVideo by="linktext">Pending my approval</linkHomePendingVideo>
+		<linkHomeWatchLater by="linktext">Watch later</linkHomeWatchLater>
+		<linkHomeCategory by="id">category</linkHomeCategory>
+		<linkHomeCategoryAll by="classname">categoryAll</linkHomeCategoryAll>
+		<linkHomeSearch by="id">drop5</linkHomeSearch>
+		<txtSearchVideo by="id">searchText</txtSearchVideo>
+		<linkHomePlusIcon by="id">drop6</linkHomePlusIcon> 
+		<linkVideoUpload by="linktext">Video</linkVideoUpload>
+		<linkSignIn by="linkText">Sign in</linkSignIn>
+		<!-- Menu for login user -->
+		<linkHomeLoginMenu by="id">drop7</linkHomeLoginMenu>
+		<linkHomePortalMenu by="linktext">Portal Management</linkHomePortalMenu>
+		<linkHomeAdminMenu by="linktext">System Administration</linkHomeAdminMenu>
+		<linkHomeLanguageMenu by="linktext">User Preferences</linkHomeLanguageMenu>
+		<!--Feature Video Section-->
+		<labelFeaturedVideoTitle by="xpath">//*[@id='playerParent']/div[4]/span[1]</labelFeaturedVideoTitle>
+		<labelFeaturedVideoDuration by="xpath">//*[@id='playerParent']/div[4]/span[2]</labelFeaturedVideoDuration>
+		<iconFeatureVideoPlay by="xpath">//*[@id='playerParent']/img</iconFeatureVideoPlay>
+		<iconfeatureVideoReplay by="xpath">//*[@id='playerParent']/div[6]/div[3]</iconfeatureVideoReplay>
+		<divFeatureVideo by="classname">fet-videos</divFeatureVideo>
+		<divFeatureVideoCarousal by="classname">vert-carousel</divFeatureVideoCarousal>
+		<listHomeLatestVideo by="xpath">//div[contains(@id,'video_item_')]</listHomeLatestVideo>
+		<carrosalOnHomePage>
+			<sectionVerticalCarousel by="classname">vert-carousel</sectionVerticalCarousel>
+			<listVeriticalCarousel by="xpath">//div[@class='verticaljcarousel']/ul/li[*]</listVeriticalCarousel>
+			<linkPrevArrow by="id">mycarousel-prev</linkPrevArrow>
+			<linkNextArraow by="id">mycarousel-next</linkNextArraow>
+		</carrosalOnHomePage>
+		<SeeAllPage>
+			<linkSeeAll by="linktext">See All</linkSeeAll>
+			<labelLatestUserViewCount by="xpath">//*[@class='latest-vid-description']/div[1]/div[1]/span[4]</labelLatestUserViewCount>
+			<labelLatestUserLikeCount by="xpath">//*[@class='latest-vid-description']/div[1]/div[1]/span[2]</labelLatestUserLikeCount>
+			<labelSeeLatestVideoTitle by="classname">latest-vid-box</labelSeeLatestVideoTitle>
+			<labelLatestVideoDesc by="classname">latest-vid-description</labelLatestVideoDesc>
+			<imgLikeIcon by="id">thumps</imgLikeIcon>
+			<imgPlayIcon by="classname">playButtonIcon playPauseIcon</imgPlayIcon>
+			<FlashMsg by="classname">ms01</FlashMsg>
+			<bttnActionMenuSlider by="classname">btn-watch-fav</bttnActionMenuSlider>
+			<labelVisitTime by="classname">visit-time</labelVisitTime>
+			<labelUploadedLikeCount by="id">idLikeCount</labelUploadedLikeCount>
+		</SeeAllPage>
+		
+		<WatchLater>
+			<labelTotalVideo by="className">latest-vid-one</labelTotalVideo>
+			<labelSerachVideoCount by="id">searchVideoCnt</labelSerachVideoCount>
+		</WatchLater>
+		
+	</HomePage>
+	<UserPreferencePage>
+		<headerUserPreference by="xpath">//html/body/div[1]/div[1]/div/h3</headerUserPreference>
+		<labelChooseLanguage by="id">languageApply</labelChooseLanguage>
+		<dropdownSelectLanguage by="id">idLanguageSelection</dropdownSelectLanguage>
+		<iconPreferenceHelp by="id">preference-help</iconPreferenceHelp>
+		<popupPreferenceHelpMessage by="xpath">.//*[@id='frmLanguage']/div/div/div/div[2]/div[2]</popupPreferenceHelpMessage>
+		<bttnSavePreferences by="id">idSave</bttnSavePreferences>
+		<bttnCancelPreferences by="id">idCancel</bttnCancelPreferences>
+	</UserPreferencePage>
+	<SearchPage>
+		<!-- Search Result page -->
+		<labelSerachResult by="xpath">//html/body/div[1]/div[1]/div[1]/div</labelSerachResult>
+		<labelSearchNoResult by="id">noSearchResults</labelSearchNoResult>
+		<labelSerachCount by="id">searchCount</labelSerachCount>
+		<linkSearchVideoTitle by="xpath">//a[contains(@id,'title_')]</linkSearchVideoTitle>
+		<labelSearchVideoRealteiveTime by="id">relative_time</labelSearchVideoRealteiveTime>
+		<labelSearchVideoAuthor by="id">video_author_link_</labelSearchVideoAuthor>
+		<labelSearchVideoDescription by="id">videoDescriptionDisplay_</labelSearchVideoDescription>
+		<labelSearchTags by="xpath">//a[contains(@id,'tag_')]</labelSearchTags>
+		<labelSearchCategoryResult by="classname">category-result</labelSearchCategoryResult>
+		<listSearchCategoryresults by="xpath">Value</listSearchCategoryresults>
+	</SearchPage>
+
+	<CategoriesPage>
+		<!-- Category search page -->
+		<labelCategoryAll by="classname">allCategory </labelCategoryAll>
+		<linkCategoryName by="classname">categoryName </linkCategoryName>
+		<labelCategoryTitle by="classname">categoryTitle</labelCategoryTitle>
+		<labelCategoryNo_vid by="classname">no_vid</labelCategoryNo_vid>
+		<linkCategorySeeAll by="classname">see_all </linkCategorySeeAll>
+		<linkCategoryThumbnail by="id">videoThumbnail</linkCategoryThumbnail>
+		<labelCategoryAuthor by="classname">author_name</labelCategoryAuthor>
+		<labelCategoryVisitTime by="classname">visit_time</labelCategoryVisitTime>
+		<labelCategoryLikeCount by="classname">like_count</labelCategoryLikeCount>
+		<labelCategoryViewCount by="classname">view_count </labelCategoryViewCount>
+		<bttnCategoryWatchLater by="id">watch_later </bttnCategoryWatchLater>
+		<labelCategoryDescription by="id">video_description </labelCategoryDescription>
+	</CategoriesPage>
+	
+	
+	<CategoryPage>
+		<linkCategory by="id">drop2</linkCategory>
+		<labelLatestCategory by="id">latestVideoTitle</labelLatestCategory>
+	</CategoryPage>
+
+	<PortalManagmentPage>
+		<linkPortalSetUpMenu by="id">setUpMenu</linkPortalSetUpMenu>
+		<linkPortalFeaturedVideo by="linktext">Featured Videos</linkPortalFeaturedVideo>
+		<linkPortalSiteSetting by="linktext">Site Settings</linkPortalSiteSetting>
+		<linkPortalCategory by="linktext">Categories</linkPortalCategory>
+
+		<SiteSettingsPage>
+			<dropdownApprovalWorkflow by="id">videoApprove</dropdownApprovalWorkflow>
+			<dropdownUrlProtection by="id">urlProtection</dropdownUrlProtection>
+			<dropdownSessionTimeOut by="id">sessionTimeout</dropdownSessionTimeOut>
+			<dropdownPortalLanguage by="id">idLanguageSelection</dropdownPortalLanguage>
+			<dropdownContentWithoutLogin by="id">idLandingPage</dropdownContentWithoutLogin>
+			<bttnSaveSiteSettings by="id">idSaveSetting</bttnSaveSiteSettings>
+			<labelSiteSettingsMsg by="id">flashDiv</labelSiteSettingsMsg>
+			<bttnCancelSiteSettings by="id">idCancel</bttnCancelSiteSettings>
+			<txtFooterCustomizeText by="id">footerCustomText</txtFooterCustomizeText>
+			<txtFooterCustomizeLinkLabel by="id">footerCustomLink</txtFooterCustomizeLinkLabel>
+			<txtFooterCustomizeLinkURL by="id">footerCustomLinkURL</txtFooterCustomizeLinkURL>
+			<labelfooterCustomtext by="xpath">.//*[@id='footerCustomText']</labelfooterCustomtext>
+			<labelfooterCustomLinkURL by="xpath">.//*[@id='footerCustomLinkURL']/a</labelfooterCustomLinkURL>
+			<labelfooterCustomtext1 by="xpath">html/body/footer/div/div/p/span[1]</labelfooterCustomtext1>
+			<labelfooterCustomLinkURL1 by="xpath">html/body/footer/div/div/p/span[2]/a</labelfooterCustomLinkURL1>
+		</SiteSettingsPage>
+
+		<CategoriesSettingsPage>
+			<bttnPortalAddCategory by="id">addCategory</bttnPortalAddCategory>
+			<txtPortalCategoryName by="id">categoryName</txtPortalCategoryName>
+			<bttnPortalSaveCategory by="id">idAddCategory</bttnPortalSaveCategory>
+			<labelPortalCategoryMsg by="id">flashDiv</labelPortalCategoryMsg>
+			<bttnPortalDeleteCategory by="id">deleteMulti</bttnPortalDeleteCategory>
+			<bttnPortalConfirmDeleteCategoryMulti by="id">idMultipleCategoryDelete</bttnPortalConfirmDeleteCategoryMulti>
+			<bttnPortalConfirmDeleteCategorySingle by="id">idSingleCategoryDelete</bttnPortalConfirmDeleteCategorySingle>
+			<listPortalSettingsCategory by="name">categoryId[]</listPortalSettingsCategory>
+		</CategoriesSettingsPage>
+
+		<FeaturedVideoPage>
+			<linkPortalFeatureVideo by="linkText">Featured Videos</linkPortalFeatureVideo>
+			<linkPortalChooseVideo by="linktext">Choose video</linkPortalChooseVideo>
+			<labelFeaturedVideosCountRight by="id">featuredVideosCountRight</labelFeaturedVideosCountRight>
+			<linkRightScroll by="id">rightScroll</linkRightScroll>
+			<labelSearchText by="id">searchText</labelSearchText>
+			<linkSeleceVideo by="id">selectVideoLink_0</linkSeleceVideo>
+			<bttnSaveFaeuredVideo by="id">loginCancelButton</bttnSaveFaeuredVideo>
+			<labelNoMatchFound by="xpath">/html/body/ul/li/a</labelNoMatchFound>
+			<linkClearFeatureVideo by="linkText">Clear</linkClearFeatureVideo>
+		</FeaturedVideoPage>
+
+		<UserPermissions>
+			<bttnEditUserPermission by="id">editPermissionBtn</bttnEditUserPermission>
+			<checkBoxVideoApprover by="id">permissionDefaultApprover</checkBoxVideoApprover>
+			<checkBoxVideoEditor by="id">permissionDefaultEditor</checkBoxVideoEditor>
+			<checkBoxVideoViewerUpload by="id">permissionDefaultCreator</checkBoxVideoViewerUpload>
+			<bttnSaveUserPermissions by="id">saveGroupPermissionCancel</bttnSaveUserPermissions>
+			<bttnCancelUserPermissions by="id">editGroupPermissionCancel</bttnCancelUserPermissions>
+			<txtPermissionAddUser by="id">searchGroupText</txtPermissionAddUser>
+			<tablePortalUserPermission by="id">listOfGroupPermission</tablePortalUserPermission>
+		</UserPermissions>
+	</PortalManagmentPage>
+
+	<VideoUploadPage>
+		<bttnSelectuploadFile by="id">fileupload</bttnSelectuploadFile>
+		<bttnUploadFile by="id">uploadFileBtn</bttnUploadFile><!--Option Not available on new page-->
+		<labelUploadSuccessmsg by="id">uploadStatus</labelUploadSuccessmsg>
+		<bttnCacelUpload by="id">cancelVideoUpload</bttnCacelUpload>
+		<bttnCancelUploadConfirm by="id">cancelVideoYesBtn</bttnCancelUploadConfirm><!-- New Page element-->
+	</VideoUploadPage>
+
+	<VideoEditPage>
+		<labelvideoUploadTitle by="id">uploadTitleInside</labelvideoUploadTitle><!--Option Not available on new page-->
+		<labelVideoStatus by ="id">videoStatus</labelVideoStatus>
+		<labelVideoAuthor by="id">videoAuthor</labelVideoAuthor><!-- New Page element-->
+		<labelVideoUploadedDate by="id">videoUploadedOn</labelVideoUploadedDate><!-- New Page element-->
+		<labelVideoDuration by="id">videoDuration</labelVideoDuration><!-- New Page element-->
+		<labelVideoLikeCount by="id">vidTotalLikes</labelVideoLikeCount><!-- New Page element-->
+		<labelVideoViewCount by="id">vidViewCount</labelVideoViewCount><!-- New Page element-->
+		
+		<linkReadyToView by="id">viewVideoLink</linkReadyToView> <!--Moved to Edit Page-->
+		<linkDownloadVideo by="id">downloadVideoLink</linkDownloadVideo><!-- New Page element-->
+		<linkDeleteVideo by="id">deleteUploadLink</linkDeleteVideo><!-- New Page element-->
+		<toolTipComment by="className">rejectedComment</toolTipComment> <!--Option Not available on new page-->
+		<linkCommentIcon by="xpath">//*[@id='videoCurrentStatus']/span[1]/span/img</linkCommentIcon><!--Option Not available on new page-->
+		<labelCommentFacebox by="xpath">//*[@id='facebox']/div/div/div/div[1]/p</labelCommentFacebox><!--Option Not available on new page-->
+		<bttnCommentFaceboxClose by="xpath">//*[@id='facebox']/div/a/img</bttnCommentFaceboxClose><!--Option Not available on new page-->
+		<tabBasicInfo by="id">basicInfoTab_link</tabBasicInfo><!--Option Not available on new page-->
+		
+		<txtVideoTitle by="id">videoTitle</txtVideoTitle>
+		<txtVideoDescription by="id">videoDescription</txtVideoDescription>
+		<bttnCustomThumbnailImage by="id">fileInputCustomThubnail</bttnCustomThumbnailImage><!-- New Page element-->
+		<bttnUploadAttachments by="id">fileuploadAttach</bttnUploadAttachments><!-- New Page element-->
+		<labelCombinedUploadTitle by="id">combinedUploadTitle</labelCombinedUploadTitle><!-- New Page element-->
+		<bttnCancelAttachmentUpload by="id">cancelLinkAttachment</bttnCancelAttachmentUpload><!-- New Page element-->
+		<checkBoxAllowDownload by="id"></checkBoxAllowDownload><!-- New Page element-->
+		<checkBoxAllowComments by="id"></checkBoxAllowComments><!-- New Page element-->
+		<optionEditSelectCategory by="id">videoCategories</optionEditSelectCategory>
+		<txtEditTags by="id">idTagitNew</txtEditTags>
+		<tabPrivacyAndPermission by="id">privacyPermissionTab_link</tabPrivacyAndPermission><!--Option Not available on new page-->
+		<chkEveryOnePermission by="id">permissionChk_everyone</chkEveryOnePermission>
+		<txtReciepientName by="id">userTyperAheadInput</txtReciepientName>
+		<bttnSendForApproval by="id">publishBtn</bttnSendForApproval>
+		<bttnRevertToDraft by="id">revertToDraftBtn</bttnRevertToDraft>
+		<labelApprovalMessage by="classname">videoDetailSaved</labelApprovalMessage>
+		<bttnSaveEdit by="id">editVideoDetailButton</bttnSaveEdit>
+		<bttnAddCaption by="xpath">.//*[@id='video_detail_form']/div/div[1]/div[4]/div[8]/div[1]/span</bttnAddCaption>
+		<dropDownCaptionLanguage by="id">captionLang</dropDownCaptionLanguage>
+		<txtTrackName by="id">track_name</txtTrackName>
+		<bttnSelectCaptionFile by="id">caption_fileinput</bttnSelectCaptionFile>
+		<bttnCaptionSelectionOk by="id">idCloseCaptionModalYes</bttnCaptionSelectionOk>
+		<bttnCaptionSelectionCancel by="id">idCloseCaptionModalClosed</bttnCaptionSelectionCancel>
+		<modalErrorPOPUP by="id">fileTypeErrorModal</modalErrorPOPUP>
+		<modalErrorLabel by="id">fileTypeErrorModalLabel</modalErrorLabel>
+		<msgInvalidCaption by="id">fileTypeErrorDetail</msgInvalidCaption>
+		<bttnCancelError by="id">cancelVideoNoBtn</bttnCancelError>
+		<msgNoCaptions by="id">noCaptions</msgNoCaptions>
+</VideoEditPage>
+
+	<VideoIUploadedPage>
+		<draftVideoSeeAll by="id">draft_video_see_all</draftVideoSeeAll>
+		<publishVideoSeeAll by="id">published_video_see_all</publishVideoSeeAll>
+		<rejectedVideoSeeAll by="id">rejected_video_see_all</rejectedVideoSeeAll>
+		<pendingVideoSeeAll by="id">pending_video_see_all</pendingVideoSeeAll>
+		<blockPendingVideo by="id">pending_video_block</blockPendingVideo>
+		<blockRejectVideo by="id">rejected_video_block</blockRejectVideo>
+		<blockDraftVideo by="id">draft_video_block</blockDraftVideo>
+		<blockPublishedVideo by="id">published_video_block</blockPublishedVideo>
+		<labelDraftVideoCount by="id">draft_video_result</labelDraftVideoCount>
+		<labelPendingVideoCount by="id">pending_video_result</labelPendingVideoCount>
+		<labelRejectVideoCount by="id">rejected_video_result</labelRejectVideoCount>
+		<labelPublishVideoCount by="id">published_video_result</labelPublishVideoCount>
+		<labelVideoCountOnSeeAll by="id">iuploaded-totalvideos</labelVideoCountOnSeeAll>
+		<iconDraftCarousalLeft by="xpath">.//*[@id='draft_leftarrowID']/a</iconDraftCarousalLeft>
+		<iconDraftCarousalRight by="xpath">.//*[@id='draft_rightarrowID']/a</iconDraftCarousalRight>
+		<iconPendingCarousalLeft by="xpath">.//*[@id='pending_leftarrowID']/a</iconPendingCarousalLeft>
+		<iconPendingCarousalRight by="xpath">.//*[@id='pending_rightarrowID']/a</iconPendingCarousalRight>
+		<iconPublishedCarousalLeft by="xpath">.//*[@id='published_leftarrowID']/a</iconPublishedCarousalLeft>
+		<iconPublishedCarousalRight by="xpath">.//*[@id='published_rightarrowID']/a</iconPublishedCarousalRight>
+		<iconRejectedCarousalLeft by="xpath">.//*[@id='rejected_leftarrowID']/a</iconRejectedCarousalLeft>
+		<iconRejectedCarousalRight by="xpath">.//*[@id='rejected_rightarrowID']/a</iconRejectedCarousalRight>
+		<labelSeeAllPageHeader by="id">latestVideoTitle</labelSeeAllPageHeader>
+	</VideoIUploadedPage>
+	
+	<VideoPendingApprovalPage>
+		<headerPendingApprovalPage by="xpath">//html/body/div[1]/div[1]/div[1]/div/h3</headerPendingApprovalPage>
+		<labelCountPendingApproval by="id">pendingappproval-totalvideos</labelCountPendingApproval>
+		<linkPendingApprovalVideoTitle by="xpath">//a[contains(@id,'title_')]</linkPendingApprovalVideoTitle>
+		<linkPendingApprovalTags by="xpath">//a[contains(@id,'tag_')]</linkPendingApprovalTags>
+	</VideoPendingApprovalPage>
+	
+	<VideoPlayPage>
+		<labelVideoTitlePlayPage by="xpath">//html/body/div[1]/div[3]/div/div[1]/h3</labelVideoTitlePlayPage>
+		<labelAccessDenied by="id">accessDeniedTitle</labelAccessDenied>
+		<bttnApproveNPublish by="id">approvePublishBtn</bttnApproveNPublish>
+		<txtApproveComment by="id">approval_rejection_remarks</txtApproveComment>
+		<bttnRejectVideo by="id">rejectVideoBtn</bttnRejectVideo>
+		<labelApproveMsg by="id">approveMsg</labelApproveMsg>
+		<linkCommentSection by="id">//*[@id='accordion']/div[3]/div[1]/h4/a/span[1]</linkCommentSection>
+		<txtComment by="id">idComment</txtComment>
+		<iconBigVideoPlay by="id">bigPlayPauseBtn</iconBigVideoPlay>
+		<iconVideoPlay by="id">plyPauseBtn</iconVideoPlay>
+		<imgVideoPlayPause by="xpath">.//*[@id='plyPauseBtn']/img</imgVideoPlayPause>
+		<progressVolumeBar by="xpath">.//*[@id='volumeBarTrackBtn']/div/div[1]</progressVolumeBar>
+		<iconVideoFullScreen by="id">fullscreenBtn</iconVideoFullScreen>
+		<iconVideoResolution by="id">resolutionBtn</iconVideoResolution>
+		<iconVideoMute by="xpath">.//*[@id='muteUnmuteIconBtn']/img</iconVideoMute>
+		<iconVideoCaption by="id">captionBtn</iconVideoCaption>
+		<progressAudioBar by="xpath">.//*[@id='volumeBarTrackBtn']/div</progressAudioBar>
+		<iconVolumeSlider by="id">volumeDragBtn</iconVolumeSlider>
+		<iconVideoShare by="id">shareBtn</iconVideoShare>
+		<txtheaderResolution by="id">ui-id-8</txtheaderResolution>
+		<labelTimeIndex by="classname">timeIndex</labelTimeIndex>
+		<iconPlayerSeekScrubber by="id">scrubberBtn</iconPlayerSeekScrubber>
+		<progressPlayerSeekScrubber by="id">scrubTrackBtn</progressPlayerSeekScrubber>
+		<linkVideoShareEmail by="id">ui-id-3</linkVideoShareEmail>
+		<linkVideoShareEmbed by="id">ui-id-4</linkVideoShareEmbed>
+		<linkVideoShareLink by="id">ui-id-5</linkVideoShareLink>
+		<txtVideoShareUrl by="xpath">.//*[@id='shareLink']/input</txtVideoShareUrl>
+		<txtVideoEmbed by="xpath">.//*[@id='shareEmbed']/textarea</txtVideoEmbed>
+		<txtVideoShareEmailMessage by="xpath">.//*[@id='shareEmail']/textarea</txtVideoShareEmailMessage>
+		<bttnVideoShare by="xpath">.//*[@id='shareEmail']/div[4]/input[1]</bttnVideoShare>
+		<bttnVideoShareCancel by="id">videoShareCancelButton</bttnVideoShareCancel>
+		<labelVideoTitle by="xpath">html/body/div[1]/div[3]/div/div[1]/h3</labelVideoTitle>
+		<iconVideoShareClose by="id">shareCloseBtn</iconVideoShareClose>
+		<popupVideoShare by="classname">shareTabs</popupVideoShare>
+		<labelVideoCaption by="classname">player-captions</labelVideoCaption>
+		<dropdownCaptionFile by="id">videoCaptionDropdown</dropdownCaptionFile>
+		<txtVideoShareRecipient by="xpath">.//*[@id='shareEmail']/div[1]/div/input</txtVideoShareRecipient>
+		<dropDownPlayerEmbedSelection by="xpath">.//div[@id='shareEmbed']/div/select</dropDownPlayerEmbedSelection>
+		<bttnCaptionOn by="id">captionOnBtn</bttnCaptionOn>
+		<bttnCaptionOff by="id">captionOffBtn</bttnCaptionOff>
+	</VideoPlayPage>
+
+	<AdministrationPage>
+		<linkSystemConfiguration by="linkText">System Configuration</linkSystemConfiguration>
+		<linkAdminMenu by="id">dropdownArrow</linkAdminMenu>
+		<linkAdminSignOut by="linkText">Sign Out</linkAdminSignOut>
+		<BackupPage>
+			<ManualBackup>
+				<linkMaintenance by="linkText">Maintenance</linkMaintenance>
+				<linkBackupPage by="linkText">Backup</linkBackupPage>
+				<bttnManualBackup by="id">manualBackup_id</bttnManualBackup>
+				<bttnManualBacupCancel by="id">manualBackupCancel_id</bttnManualBacupCancel>
+				<txtHostName by="id">ftpHostId</txtHostName>
+				<txtPortNo by="id">ftpPortId</txtPortNo>
+				<txtFtpUserName by="id">ftpUsernameId</txtFtpUserName>
+				<txtFtpPassword by="id">ftpPasswordId</txtFtpPassword>
+				<txtFtpBackupLocation by="id">ftpBackupLocationId</txtFtpBackupLocation>
+				<txtNfsBackupLocation by="id">backupLocation</txtNfsBackupLocation>
+				<linkgenerateCSR by="xpath">.//*[@id='generateCSR']</linkgenerateCSR>
+				<txtLocalBackupLocation by="id">localBackupLocation</txtLocalBackupLocation>
+				<txtBkpLocationNFS by="id">idBkpLocationNFS</txtBkpLocationNFS>
+				<MsgBackupStatus by="xpath">id('idCurrentStatus')/p/font</MsgBackupStatus>
+				<MsgLastBackupstatus by="id">idLastBackupStatus</MsgLastBackupstatus>
+				<bttnLocalConfig by="xpath">.//*[@id='showHideLocalBlock']/div[7]/div[1]/input</bttnLocalConfig>
+				<bttnLocalConfigContent by="xpath">.//*[@id='showHideLocalBlock']/div[7]/div[4]/input</bttnLocalConfigContent>	
+				<bttnLocalConfig1 by="xpath">.//*[@id='showHideFtpBlock']/div[13]/input</bttnLocalConfig1>
+				<bttnLocalConfigContent1 by="xpath">.//*[@id='showHideFtpBlock']/div[16]/input</bttnLocalConfigContent1>
+				<MsgManualBlankHost by="xpath">.//*[@id='idManBkpHost']/div</MsgManualBlankHost>				
+				<MsgManualBlankPort by="xpath">.//*[@id='idManBkpPort']/div</MsgManualBlankPort>
+				<MsgManualBlankusername by="xpath">.//*[@id='idManBkpUsername']/div</MsgManualBlankusername>
+				<MsgManualBlankpassword by="xpath">.//*[@id='idManBkpPassword']/div</MsgManualBlankpassword>
+				<MsgManualBlankLocation by="xpath">.//*[@id='idManBkpLocation']/div</MsgManualBlankLocation>	
+
+			</ManualBackup>
+
+			<SheduledBackup>
+				<bttnSceduleBackup by="id">scheduleBackup_id</bttnSceduleBackup>
+				<linkBackupAutomatic by="id">idBackupAutomatic</linkBackupAutomatic>
+				<txtBackupDay by="id">backupDay</txtBackupDay>
+				<txtScheduleBackupFtpHost by="id">ScheduleBackupFtpHost</txtScheduleBackupFtpHost>
+				<txtScheduleBackupFtpPort by="id">ScheduleBackupFtpPort</txtScheduleBackupFtpPort>
+				<txtScheduleBackupFtpUsername by="id">ScheduleBackupFtpUsername</txtScheduleBackupFtpUsername>
+				<txtScheduleBackupFtpPassword by="id">ScheduleBackupFtpPassword</txtScheduleBackupFtpPassword>
+				<txtScheduleBackupFtpLocation by="id">ScheduleBackupFtpLocation</txtScheduleBackupFtpLocation>
+				<selectScheduleBackupDevice by="id">ScheduleBackupDevice</selectScheduleBackupDevice>
+				<txtScheduleBackupLocation by="id">ScheduleBackupLocation</txtScheduleBackupLocation>
+				<bttnCancelSceduleBackup by="id">cancelScheduledBackup</bttnCancelSceduleBackup>
+				<MsgBlankFrequency by="xpath">.//*[@id='idBkpFrequency']/div</MsgBlankFrequency>
+				<MsgBlankDay by="xpath">id('idBkpDay')/div</MsgBlankDay>
+				<MsgBlankHost by="xpath">id('idBkpHost')/div</MsgBlankHost>				
+				<MsgBlankPort by="xpath">id('idBkpPort')/div</MsgBlankPort>
+				<MsgBlankusername by="xpath">id('idBkpUname')/div</MsgBlankusername>
+				<MsgBlankpassword by="xpath">id('idBkpPwd')/div</MsgBlankpassword>
+				<MsgBlankLocation by="xpath">id('idBkpLoc')/div</MsgBlankLocation>
+				<MsgSchedulebackup by="xpath">id('nextScheduledBackup')/p</MsgSchedulebackup>
+
+			</SheduledBackup>
+		</BackupPage>
+
+
+		<NFSPage>
+			<linkNFSPage by="xpath">//a[contains(@href, '/newadmin/remoteStorage')]</linkNFSPage>
+			<txtNFSHost by="id">serverIP</txtNFSHost>
+			<txtNFSPath by="id">mountPath</txtNFSPath>
+			<bttnSaveNFS by="id">saveremote</bttnSaveNFS>
+			<MsgNFS by="xpath">//*[@id='topsection']/div/p</MsgNFS>
+		
+		</NFSPage>
+
+		<SMTPServerSettings>
+			<linkSmtpServer by="linkText">SMTP Server</linkSmtpServer>
+			<linkSavestreamer by="id">savestreamer</linkSavestreamer>
+			<linkldap_checkbox by="id">ldap_checkbox</linkldap_checkbox>
+			<linkSmtpForm  by="xpath">id('smtpForm')/label[2]/input</linkSmtpForm>
+			<linkSmtpToEmail by="id">smtpToEmail</linkSmtpToEmail>
+			<linkSmtpFromName by="id">smtpFromName</linkSmtpFromName>
+			<linkSmtpFromEmail by="id">smtpFromEmail</linkSmtpFromEmail>
+			<linkSmtpPassword  by="id">smtpPassword</linkSmtpPassword>
+			<linkSmtpUser by="id">smtpUser</linkSmtpUser>
+			<linkSmtpPort by="id">smtpPort</linkSmtpPort>
+			<linkSmtpIp by="id">smtpIp</linkSmtpIp>
+			<linkToSMTPServerSettings by="linkText">SMTPServerSettingsLink</linkToSMTPServerSettings>
+			<labeltopsection by="xpath">id('topsection')/div/p</labeltopsection>
+			<labelKeywordsListDescpDiv by="xpath">id('keywordsListDescpDiv')/h1</labelKeywordsListDescpDiv>
+		</SMTPServerSettings> 
+
+		<ECDSPage>
+			<linkMediaDelivery by="linktext">Media Delivery</linkMediaDelivery>
+			<linkDeliveryService by="linktext">Delivery Service</linkDeliveryService>
+			<bttnCDS by="id">idMediadeliveryoptionCDS</bttnCDS>
+			<bttnSNS by="id">idMediadeliveryoptionSNS</bttnSNS>
+			<txtCDMAddress by="id">cdmaddress</txtCDMAddress>
+			<txtPort by="id">cdmport</txtPort>
+			<txtContentOrigin by="id">cdmaContentOrigin</txtContentOrigin>
+			<txtCDMUsername by="id">cdmusername</txtCDMUsername>
+			<txtCDMPassword by="id">cdmpassword</txtCDMPassword>
+			<bttnCancel by="id">deliveryResetButton</bttnCancel>
+			<bttnRegister by="id">register_ecds_id</bttnRegister>
+			<bttnDelete by="id">delete_ecds_id</bttnDelete>
+			<selectRow by="id">Channel_995_isEnabled</selectRow>
+			<bttnSave by="id">save_ds</bttnSave>
+			<tableRegister by="id">tableDSId</tableRegister>
+			<labelSaveMessage by="xpath">.//*[@id='idSaveDSProg']/p/font</labelSaveMessage>
+			<labelDSName by="id">Channel_995_displayServiceName</labelDSName>
+			<labelSRDN by="id">Channel_995_displaySRDN</labelSRDN>
+			<labelDiskQuota by="id">Channel_995_idDiskQuota</labelDiskQuota>
+			<labelUsedQuota by="id">Channel_995_idUsedQuota</labelUsedQuota>
+			<labelMessage by="xpath">//*[@id='idCurrentStatus']/p/font</labelMessage>
+			<labelECDS by="xpath">//*[@id='deliveryServiceFrm']/div[1]/h1</labelECDS>
+			<labelOptionTitle by="xpath">//*[@id='deliveryServiceFrm']/div[1]/h2</labelOptionTitle>
+			<labelRegisterTitle by="xpath">//*[@id='showHideCDSinfo']/div[2]/h2</labelRegisterTitle>
+			<labelEmptyError by="xpath">//*[@id='idCdmaAddress']/div</labelEmptyError>
+		</ECDSPage>
+	
+		<LDAPPage>
+			<linkLDAP by="linktext">LDAP</linkLDAP>
+			<txtLDAPSever by="id">ldapIp</txtLDAPSever>
+			<txtLDAPPort by="name">ldapPort</txtLDAPPort>
+			<txtLDAPUserName by="name">userName</txtLDAPUserName>
+			<txtLDAPPassword by="name">password</txtLDAPPassword>
+			<optLDAPSSLEnable by="xpath">//*[@id='sslmode' and @value='1']</optLDAPSSLEnable>
+			<optLDAPSSLDisable by="xpath">//*[@id='sslmode' and @value='0']</optLDAPSSLDisable>
+			<txtLDAPSSLPort by="name">sslPort</txtLDAPSSLPort>
+			<txtLDAPUserpath by="name">userPath1</txtLDAPUserpath>
+			<txtLDAPGrouppath by="name">groupPath</txtLDAPGrouppath>
+			<txtLDAPObjectFilter by="name">userObjectFilter</txtLDAPObjectFilter>
+			<txtLDAPUserID by="name">userId</txtLDAPUserID>
+			<txtLDAPGivenName by="name">givenName</txtLDAPGivenName>
+			<txtLDAPLastName by="name">lastName</txtLDAPLastName>
+			<txtLDAPEmail by="name">emailServer</txtLDAPEmail>
+			<txtLDAPDisplayName by="name">displayName</txtLDAPDisplayName>
+			<txtLDAPGroup by="name">group</txtLDAPGroup>
+			<bttnCacelLDAP by="id">cancelPermission</bttnCacelLDAP>
+			<bttnLDAPSave  by ="id">save</bttnLDAPSave>
+			<bttnLDAPSaveSynch by="id">saveSync</bttnLDAPSaveSynch>
+			<labelLDAPStatus by="id">userStatus</labelLDAPStatus>
+		</LDAPPage>
+	</AdministrationPage> 
+
+	<watchLaterTestPage> 	
+	 	<labelWatchLaterVideoCount by="id">watchlater-totalvideos</labelWatchLaterVideoCount>
+	 	<bttnRemoveVideo by="className">btn</bttnRemoveVideo>
+	 	<linkPlayIcon by="className">player-icon</linkPlayIcon>
+	 	<labelVideoTitleOnThumbanail by="className">vid-display-title</labelVideoTitleOnThumbanail>
+	 	<labelVideoNewIcon by="className">video-new</labelVideoNewIcon>
+	 	<labelTotalLatestVideo by="className">latest-vid-one</labelTotalLatestVideo>
+	 	<labelVideoThumbnail by="className">img-responsive</labelVideoThumbnail>
+	 	<labelVideoName by="className">playpg-control</labelVideoName>
+	 	<labelViewicon by="xpath">//*[@class='vid-icon-bar']/span[3]</labelViewicon>
+	 	<labelViewCount by="xpath">//*[@class='vid-icon-bar']/span[4]</labelViewCount>
+	 	<labelAuthorName by="className">name</labelAuthorName>
+	 	<labelLikeCount by="className">number</labelLikeCount>
+	 	<labelLikeIcon by="xpath">//*[@class='latest-vid-description']/div[1]/div[1]/span[1]/span</labelLikeIcon>
+	</watchLaterTestPage>	
+	<shareWithMePage>
+	 <titleOnPage by="xpath">//*[@id='latestVideoTitle']/span</titleOnPage>
+	 </shareWithMePage>
+	 
+	 <iCaneditpage>
+	 <titleICanEdit by="id">i-can-edit-</titleICanEdit>
+	 <labelICanEditTotalVideo by="id">i-can-edit-totalvideos</labelICanEditTotalVideo>
+	</iCaneditpage>
+</Pages>
