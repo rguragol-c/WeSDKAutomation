@@ -158,6 +158,7 @@ public class Browser
 			file= new File(System.getProperty("user.dir") + File.separator + "utilities" + File.separator + "chromedriver.exe");
 			System.setProperty("webdriver.chrome.driver",file.getAbsolutePath());
 			return new ChromeDriver();
+			
 		}
 	}
 
